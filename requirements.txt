@@ -43,6 +43,7 @@ Pympler==1.0.1
 pyparsing==3.0.9
 pyrsistent==0.19.2
 python-dateutil==2.8.2
+python-decouple==3.6
 pytz==2022.7
 pytz-deprecation-shim==0.1.0.post0
 rdflib==6.2.0
@@ -57,6 +58,7 @@ soupsieve==2.3.2.post1
 SPARQLWrapper==2.0.0
 st-annotated-text==3.0.0
 streamlit==1.15.1
+streamlit-aggrid==0.3.3
 streamlit-camera-input-live==0.2.0
 streamlit-card==0.0.4
 streamlit-draggable-list==0.0.1
