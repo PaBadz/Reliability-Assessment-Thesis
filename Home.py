@@ -29,10 +29,7 @@ st.set_page_config(
 )
 
 st.title('Masterthesis Reliability of Predictions')
-try:
-    st.write(st.session_state)
-except:
-    st.write("No session state yet")
+
 selected2 = option_menu(None, ["Database", "Upload"],
                         icons=['database', 'cloud-upload'],
                         menu_icon="", default_index=0, orientation="horizontal")
