@@ -118,8 +118,8 @@ if selected2 == 'Upload':
     X = uploaded_file_df.drop(y, axis=1)
 
     # Only test prupose. Must be deleted
-    X.drop(columns=X.columns[int(0)], axis=1, inplace=True)
-    X.drop(columns=X.columns[int(15)], axis=1, inplace=True)
+    # X.drop(columns=X.columns[int(0)], axis=1, inplace=True)
+    # X.drop(columns=X.columns[int(15)], axis=1, inplace=True)
     y = uploaded_file_df[y]
     df = pd.DataFrame(data=X, columns=X.columns)
 
