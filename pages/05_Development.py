@@ -1,3 +1,4 @@
+import streamlit
 from st_draggable_list import DraggableList
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode, JsCode
 from functions.perturbation_algorithms_ohne_values import *
@@ -279,28 +280,35 @@ try:
 
 
                             elif method == 'Sensor Precision':
-                                if key not in st.session_state.loaded_feature_sensor_precision_dict:
-                                    st.warning("Sensor Precision is not determined in Data Understanding Step")
-                                else:
-                                    st.session_state[f"additional_value_{key}_{method}"] = \
-                                    st.session_state.loaded_feature_sensor_precision_dict[key]
+                                try:
+                                    if key not in st.session_state.loaded_feature_sensor_precision_dict:
+                                        st.warning("Sensor Precision is not determined in Data Understanding Step")
+                                        st.session_state[f"additional_value_{key}_{method}"] = 0
+                                    else:
+                                        st.session_state[f"additional_value_{key}_{method}"] = \
+                                        st.session_state.loaded_feature_sensor_precision_dict[key]
 
-                                st.markdown(f"##### {method}")
-                                st.session_state[f"additional_value_{key}_{method}"] = float(
-                                    st.slider("Sensor Precision", min_value=float(1), max_value=float(100),
-                                              value=st.session_state[f"additional_value_{key}_{method}"],
-                                              key=f"additional_value_widget_{key}_{method}",
-                                              on_change=update_additional_value, args=(key, method)))
-                                st.session_state[f"steps_{key}_{method}"] = int(
-                                    st.slider("Steps", min_value=int(1), max_value=int(100), step=int(1),
-                                              value=st.session_state[f"steps_{key}_{method}"],
-                                              key=f"steps_widget_{key}_{method}", on_change=update_steps,
-                                              args=(key, method)))
+                                    st.markdown(f"##### {method}")
+                                    step = st.number_input("Define stepsize", min_value=0.01, max_value=float(
+                                        st.session_state.unique_values_dict[key][-1]), step=0.01,
+                                                           key=f"step_sensor_precision_{key}")
 
-                                settingList[method] = (
+                                    st.session_state[f"additional_value_{key}_{method}"] = float(
+                                        st.slider("Sensor Precision", min_value=float(1), max_value=float(100),
+                                                  value=float(st.session_state[f"additional_value_{key}_{method}"]),
+                                                  key=f"additional_value_widget_{key}_{method}",step=float(step),
+                                                  on_change=update_additional_value, args=(key, method)))
+                                    st.session_state[f"steps_{key}_{method}"] = int(
+                                        st.slider("Steps", min_value=int(1), max_value=int(100), step=int(1),
+                                                  value=int(st.session_state[f"steps_{key}_{method}"]),
+                                                  key=f"steps_widget_{key}_{method}", on_change=update_steps,
+                                                  args=(key, method)))
+
+                                    settingList[method] = (
                                     sensorPrecision_settings(st.session_state[f"additional_value_{key}_{method}"],
                                                              st.session_state[f"steps_{key}_{method}"]))
-
+                                except Exception as e:
+                                    st.write(e)
                                 st.write("---------------")
 
                             elif method == 'Fixed amount':
@@ -455,6 +463,7 @@ try:
 
                             if method == "Perturb all values":
                                 st.write("All unique values will be perturbed")
+                                st.write(st.session_state.data_restriction_final[key])
                                 st.session_state[f"value_perturbate{key}_{method}"] = (
                                     st.select_slider(f'{key}', options=
                                     st.session_state.data_restriction_final[key], value=st.session_state[
@@ -465,7 +474,7 @@ try:
                                                      on_change=update_value_perturbate,
                                                      args=(key, method)))
                                 settingList[method] = (
-                                    perturbAllValues_settings(st.session_state[f"value_perturbate{key}_{method}"]))#,st.session_state.data_restriction_final[key]))
+                                    perturbAllValues_settings(st.session_state.data_restriction_final[key]))#st.session_state[f"value_perturbate{key}_{method}"]))#,st.session_state.data_restriction_final[key]))
 
                                 st.write("---------------")
 
@@ -777,56 +786,57 @@ try:
                         for k, v in selected_rows[i].items():
                             # TODO Hier die Umwandlung der perturbations auslagern
                             # Es muss für jede Methode eine andere möglichkeit geben
+                            try:
+                                if k == column:
+                                    for algorithm_keys in method.keys():
 
-                            if k == column:
-                                for algorithm_keys in method.keys():
-                                    if algorithm_keys == 'Percentage perturbation':
-                                        perturbedList[algorithm_keys] = (
-                                            percentage_perturbation(method[algorithm_keys]["steps"],
-                                                                   selected_rows[i][k][0]))
+                                        if algorithm_keys == 'Percentage perturbation':
 
-                                    elif algorithm_keys == '5% perturbation':
-                                        perturbedList[algorithm_keys] = (
-                                            percentage_perturbation(10, selected_rows[i][k][0]))
+                                            perturbedList[algorithm_keys] = (percentage_perturbation(method[algorithm_keys]["steps"],selected_rows[i][k][0],st.session_state.data_restriction_final[column]))
 
-                                    elif algorithm_keys == '10% perturbation':
-                                        perturbedList[algorithm_keys] = (
-                                            percentage_perturbation(10, selected_rows[i][k][0]))
 
-                                    elif algorithm_keys == 'Sensor Precision':
-                                        perturbedList[algorithm_keys] = (
-                                            sensorPrecision(method[algorithm_keys]["sensorPrecision"],
-                                                            method[algorithm_keys]["steps"], selected_rows[i][k][0]))
-                                    elif algorithm_keys == 'Fixed amount':
-                                        perturbedList[algorithm_keys] = (
-                                            fixedAmountSteps(method[algorithm_keys]["amount"],
-                                                             method[algorithm_keys]["steps"],
-                                                             selected_rows[i][k][0]))
-                                    elif algorithm_keys == 'Range perturbation':
-                                        perturbedList[algorithm_keys] = (
-                                            perturbRange(method[algorithm_keys]["lowerBound"],
-                                                         method[algorithm_keys]["upperBound"],
-                                                         method[algorithm_keys]["steps"]))
+                                        elif algorithm_keys == '5% perturbation':
+                                            perturbedList[algorithm_keys] = (percentage_perturbation(10, selected_rows[i][k][0],st.session_state.data_restriction_final[column]))
 
-                                    elif algorithm_keys == 'Perturb in order':
-                                        try:
+                                        elif algorithm_keys == '10% perturbation':
+                                            perturbedList[algorithm_keys] = (percentage_perturbation(10, selected_rows[i][k][0],st.session_state.data_restriction_final[column]))
+
+                                        elif algorithm_keys == 'Sensor Precision':
                                             perturbedList[algorithm_keys] = (
-                                                perturbInOrder(method[algorithm_keys]["steps"],
-                                                               selected_rows[i][k][0],
-                                                               st.session_state.unique_values_dict[column]))#method[algorithm_keys]["values"]
+                                                sensorPrecision(method[algorithm_keys]["sensorPrecision"],
+                                                                method[algorithm_keys]["steps"], selected_rows[i][k][0]))
+                                        elif algorithm_keys == 'Fixed amount':
+                                            perturbedList[algorithm_keys] = (
+                                                fixedAmountSteps(method[algorithm_keys]["amount"],
+                                                                 method[algorithm_keys]["steps"],
+                                                                 selected_rows[i][k][0]))
+                                        elif algorithm_keys == 'Range perturbation':
+                                            perturbedList[algorithm_keys] = (
+                                                perturbRange(method[algorithm_keys]["lowerBound"],
+                                                             method[algorithm_keys]["upperBound"],
+                                                             method[algorithm_keys]["steps"]))
 
-                                        except Exception as e:
-                                            st.write(e)
+                                        elif algorithm_keys == 'Perturb in order':
+                                            try:
+                                                perturbedList[algorithm_keys] = (
+                                                    perturbInOrder(method[algorithm_keys]["steps"],
+                                                                   selected_rows[i][k][0],
+                                                                   st.session_state.data_restriction_final[column]))#method[algorithm_keys]["values"]
 
-                                    elif algorithm_keys == 'Perturb all values':
-                                        perturbedList[algorithm_keys] = (
-                                            perturbAllValues(  # method[algorithm_keys]["value"],
-                                                selected_rows[i][k][0],
-                                                st.session_state.unique_values_dict[column]))
+                                            except Exception as e:
+                                                st.write(e)
+
+                                        elif algorithm_keys == 'Perturb all values':
+                                            perturbedList[algorithm_keys] = (
+                                                perturbAllValues(  # method[algorithm_keys]["value"],
+                                                    selected_rows[i][k][0],
+                                                    st.session_state.data_restriction_final[column]))
+                            except Exception as e:
+                                st.error(e)
                             perturbed_value_list[column] = perturbedList
 
                     index_perturb.append(perturbed_value_list.copy())
-
+                # TODO Delete
                 st.write(perturbed_value_list)
 
                 for i in range(0, len(selected_rows)):

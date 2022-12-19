@@ -1,5 +1,5 @@
 # Cardinal perturbation
-def percentage_perturbation(percentage_steps, value):
+def percentage_perturbation(percentage_steps, value, data_restriction):
     # perturbation within a certain percentage range
     # feature has to be cardinal in order to be accessed
     # feature is increased and decreased in percentage steps
@@ -11,7 +11,10 @@ def percentage_perturbation(percentage_steps, value):
             pass
         else:
             new_value = value * i / 100 + value
-            perturbedList.append(float(new_value))
+            if float(data_restriction[0]) <= float(new_value) <= float(data_restriction[1]):
+                perturbedList.append(float(new_value))
+            else:
+                pass
             # print(new_value)
     return perturbedList
 
