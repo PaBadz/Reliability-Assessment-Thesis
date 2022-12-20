@@ -337,3 +337,30 @@ def deleteWasGeneratedByDUA(sparqlupdate,df, activity):  # panda df
     sparqlupdate.setMethod(POST)
     sparqlupdate.query()
 
+def getAttributes(host):
+
+    if not any(key.startswith('level_of_measurement_') for key in st.session_state):
+        st.session_state["dataframe_feature_names"] = get_feature_names(host)
+
+    try:
+        st.session_state["level_of_measurement_dic"], st.session_state["DF_feature_scale_name"] = getFeatureScale(host)
+        for key, value in st.session_state["level_of_measurement_dic"].items():
+            st.session_state[f'level_of_measurement_{key}'] = value
+    except:
+        st.session_state["DF_feature_scale_name"] = pd.DataFrame()
+        # st.session_state["level_of_measurement_dic"] = dict()
+
+    try:
+        st.session_state["volatility_of_features_dic"], st.session_state[
+            "DF_feature_volatility_name"] = getFeatureVolatility(host)
+    except:
+        st.session_state["volatility_of_features_dic"] = dict()
+
+    try:
+        st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
+    except Exception as e:
+        st.error(
+            "No Unique Values in database. If this is the first time a new dataset is uploaded please define a scale for each feature and upload the unique values.")
+    if "loaded_feature_sensor_precision_dict" not in st.session_state:
+        st.session_state["loaded_feature_sensor_precision_dict"], st.session_state[
+            "DF_feature_sensor_precision_dict"] = getSensorPrecision(host)

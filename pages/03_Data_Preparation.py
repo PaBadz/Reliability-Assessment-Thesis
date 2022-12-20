@@ -60,9 +60,11 @@ if selected2 == "Binned Features":
                 key=f'BinnedValues_{key}')
 
             st.markdown("""---""")
-            st.write(st.session_state.BinnedValues_age)
         else:
             pass
+
+
+
 
     lower_border = st.number_input("Select lower border")
 

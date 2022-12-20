@@ -23,7 +23,7 @@ def percentage_perturbation_settings(percentage_steps):
     settings['steps'] = percentage_steps
     return settings
 
-def sensorPrecision(sensorPrecision: float, steps: int, value):
+def sensorPrecision(sensorPrecision: float, steps: int, value, data_restriction):
     perturbedList = list()
     perturbedList.append(value)
     for i in range(-steps, steps + 1):
@@ -31,7 +31,8 @@ def sensorPrecision(sensorPrecision: float, steps: int, value):
             pass
         else:
             perturbed_value = value * (1 + (sensorPrecision / 1000) * i)
-            perturbedList.append(float(perturbed_value))
+            if float(data_restriction[0]) <= float(perturbed_value) <= float(data_restriction[1]):
+                perturbedList.append(float(perturbed_value))
 
     return perturbedList
 
@@ -41,7 +42,7 @@ def sensorPrecision_settings(sensorPrecision, steps):
     settings['steps'] = steps
     return settings
 
-def fixedAmountSteps(amount, steps, value):
+def fixedAmountSteps(amount, steps, value, data_restriction):
     perturbedList = list()
     perturbedList.append(value)
     for i in range(-steps, steps + 1):
@@ -49,7 +50,8 @@ def fixedAmountSteps(amount, steps, value):
             pass
         else:
             perturbed_value = value + amount * i
-            perturbedList.append(float(perturbed_value))
+            if float(data_restriction[0]) <= float(perturbed_value) <= float(data_restriction[1]):
+                perturbedList.append(float(perturbed_value))
             # print(perturbed_value)
     return perturbedList
 

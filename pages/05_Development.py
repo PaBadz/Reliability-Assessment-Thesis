@@ -14,6 +14,7 @@ except:
 
 
 getDefault(host)
+getAttributes(host)
 
 if "data_restrictions_dict" not in st.session_state:
     st.session_state["data_restrictions_dict"] = dict()
@@ -253,7 +254,7 @@ try:
                                 st.markdown(f"##### {method}")
 
                                 st.session_state[f"steps_{key}_{method}"] = int(
-                                    st.slider("Percentage of steps", min_value=int(1), max_value=int(100), step=int(1),
+                                    st.number_input("Percentage of steps", min_value=int(1), max_value=int(100),
                                               value=st.session_state[f"steps_{key}_{method}"],
                                               key=f"steps_widget_{key}_{method}", on_change=update_steps,
                                               args=(key, method)))
@@ -313,15 +314,23 @@ try:
 
                             elif method == 'Fixed amount':
                                 st.markdown(f"##### Define settings for algorithm: {method}")
-                                st.session_state[f"additional_value_{key}_{method}"] = int(
-                                    st.slider("Amount", min_value=int(1), max_value=int(100), step=int(1),
-                                              value=st.session_state[f"additional_value_{key}_{method}"],
+                                st.session_state[f"additional_value_{key}_{method}"] =  float(st.number_input("Amount",value=st.session_state[f"additional_value_{key}_{method}"],min_value=float(
+                                        st.session_state.data_restriction_final[key][0]), max_value=float(
+                                        st.session_state.data_restriction_final[key][1]),
                                               key=f"additional_value_widget_{key}_{method}",
                                               on_change=update_additional_value,
                                               args=(key, method)))
+                                #float(
+                                    # st.slider("Amount", min_value=float(
+                                    #     st.session_state.data_restriction_final[key][0]), max_value=float(
+                                    #     st.session_state.data_restriction_final[key][1]), step=float(1),
+                                    #           value=st.session_state[f"additional_value_{key}_{method}"],
+                                    #           key=f"additional_value_widget_{key}_{method}",
+                                    #           on_change=update_additional_value,
+                                    #           args=(key, method)))
 
                                 st.session_state[f"steps_{key}_{method}"] = int(
-                                    st.slider("Steps", min_value=int(1), max_value=int(100), step=int(1),
+                                    st.number_input("Steps", #min_value=int(1), max_value=int(100), step=int(1),
                                               value=st.session_state[f"steps_{key}_{method}"],
                                               key=f"steps_widget_{key}_{method}", on_change=update_steps,
                                               args=(key, method)))
@@ -341,8 +350,9 @@ try:
                                         float(st.session_state.data_restriction_final[key][-1])]
 
                                 with st.form(f"Input values {key}"):
-                                    lower = st.number_input("Input value")
-                                    upper = st.number_input("Input upper value")
+                                    lower = st.number_input("Input value", )
+                                    upper = st.number_input("Input upper value",max_value=float(
+                                        st.session_state.data_restriction_final[key][-1]))
                                     if st.form_submit_button("Upload"):
                                         st.session_state[f"additional_value_{key}_{method}_bound"] = [float(lower),
                                                                                                       float(upper)]
@@ -360,7 +370,7 @@ try:
                                     st.session_state[f"steps_{key}_{method}"] = 1
 
                                 st.session_state[f"steps_{key}_{method}"] = int(
-                                    st.slider("Steps", min_value=int(1), max_value=int(100), step=int(1),
+                                    st.number_input("Steps", step = int(1),#min_value=int(1), max_value=int(100), step=int(1),
                                               value=st.session_state[f"steps_{key}_{method}"],
                                               key=f"steps_widget_{key}_{method}", on_change=update_steps,
                                               args=(key, method)))
@@ -577,7 +587,7 @@ try:
                         dic = dict()
                         for key, value in st.session_state.level_of_measurement_dic.items():
                             if value == "Cardinal":
-                                dic[key] = st.slider(f"Select Value for {key}",
+                                dic[key] = st.number_input(f"Select Value for {key}",
                                                      min_value=float(st.session_state.data_restriction_final[key][0]),
                                                      max_value=float(st.session_state.data_restriction_final[key][-1]),
                                                      key=f"add_data_{key}")
@@ -589,7 +599,7 @@ try:
                                 dic[key] = st.selectbox(f"Select Value for {key}",
                                                         options=st.session_state.data_restriction_final[key],
                                                         key=f"add_data_{key}")
-                        if st.form_submit_button("Submit Data"):
+                        if st.form_submit_button("Submit Data",type='primary'):
                             st.write(dic)
                             st.session_state.df_r = st.session_state.df_r.append(dic, ignore_index=True)
 
@@ -804,12 +814,12 @@ try:
                                         elif algorithm_keys == 'Sensor Precision':
                                             perturbedList[algorithm_keys] = (
                                                 sensorPrecision(method[algorithm_keys]["sensorPrecision"],
-                                                                method[algorithm_keys]["steps"], selected_rows[i][k][0]))
+                                                                method[algorithm_keys]["steps"], selected_rows[i][k][0],st.session_state.data_restriction_final[column]))
                                         elif algorithm_keys == 'Fixed amount':
                                             perturbedList[algorithm_keys] = (
                                                 fixedAmountSteps(method[algorithm_keys]["amount"],
                                                                  method[algorithm_keys]["steps"],
-                                                                 selected_rows[i][k][0]))
+                                                                 selected_rows[i][k][0],st.session_state.data_restriction_final[column]))
                                         elif algorithm_keys == 'Range perturbation':
                                             perturbedList[algorithm_keys] = (
                                                 perturbRange(method[algorithm_keys]["lowerBound"],

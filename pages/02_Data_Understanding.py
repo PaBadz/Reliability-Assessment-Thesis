@@ -16,7 +16,7 @@ optionsDataUnderstanding = option_menu("Data Understanding Options", ["Scale", "
                                        menu_icon="None", default_index=0, orientation="horizontal")
 
 if not any(key.startswith('level_of_measurement_') for key in st.session_state):
-    st.session_state[" dataframe_feature_names"] = get_feature_names(host)
+    st.session_state["dataframe_feature_names"] = get_feature_names(host)
 
 try:
     st.session_state["level_of_measurement_dic"], st.session_state["DF_feature_scale_name"] = getFeatureScale(host)
@@ -197,6 +197,9 @@ if optionsDataUnderstanding == "Scale":
                     uuid_determinationUniqueValues = determinationDUA(host_upload,determinationName, label, starting_time, ending_time)
                     uploadUniqueValues(host_upload,host,st.session_state["unique_values_dict"], st.session_state["level_of_measurement_dic"], uuid_determinationUniqueValues, name,
                               rprovName)
+                    time = getTimestamp()
+                    st.write(f"Starting time: {starting_time}")
+                    st.write(f"Ending:{time}")
                     st.experimental_rerun()
                 except Exception as e:
                     st.write(e)
@@ -204,6 +207,8 @@ if optionsDataUnderstanding == "Scale":
 
         if st.button("Show ordered unique values"):
             st.write(st.session_state['unique_values_dict'])
+
+
 
 
 

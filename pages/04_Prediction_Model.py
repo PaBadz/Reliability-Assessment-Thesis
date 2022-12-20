@@ -17,7 +17,6 @@ except:
 tab1, tab2 = st.tabs(["Data", "Model"])
 
 
-
 with tab2:
     from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
     from sklearn.impute import SimpleImputer
@@ -34,6 +33,7 @@ with tab2:
                                              ("Ordinal", OrdinalEncoder(handle_unknown='error'), ordinal),
                                              ("Cardinal", SimpleImputer(strategy='median'), cardinal)],
                                remainder='drop', verbose_feature_names_out=False)
+
         x_trans_df = pd.DataFrame(ct.fit_transform(st.session_state['X']), columns=ct.get_feature_names_out())
 
         X_train, X_test, y_train, y_test = train_test_split(x_trans_df, st.session_state['y'], test_size=0.2,
@@ -80,7 +80,8 @@ with tab2:
 
         if st.button("Save Model"):
             pickle.dump(clf, open(filename, 'wb'))
-    except:
+    except Exception as e:
+        st.write(e)
         pass
 
 
@@ -91,9 +92,10 @@ with tab1:
     loaded_model2 = st.file_uploader("Upload Model")
 
     if loaded_model2 is None:
-        st.stop()
-    loaded_model = pickle.load(loaded_model2)
-    st.write(type(loaded_model))
-    st.write(loaded_model.feature_names_in_)
-    st.session_state.model = loaded_model
+        pass
+    else:
+        loaded_model = pickle.load(loaded_model2)
+        st.write(type(loaded_model))
+        st.write(loaded_model.feature_names_in_)
+        st.session_state.model = loaded_model
 

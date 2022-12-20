@@ -6,6 +6,33 @@ from streamlit_option_menu import option_menu
 import pandas as pd
 
 
+# def getAttributes():
+#     if not any(key.startswith('level_of_measurement_') for key in st.session_state):
+#         st.session_state[" dataframe_feature_names"] = get_feature_names(host)
+#
+#     try:
+#         st.session_state["level_of_measurement_dic"], st.session_state["DF_feature_scale_name"] = getFeatureScale(host)
+#         for key, value in st.session_state["level_of_measurement_dic"].items():
+#             st.session_state[f'level_of_measurement_{key}'] = value
+#     except:
+#         st.session_state["DF_feature_scale_name"] = pd.DataFrame()
+#         # st.session_state["level_of_measurement_dic"] = dict()
+#
+#     try:
+#         st.session_state["volatility_of_features_dic"], st.session_state[
+#             "DF_feature_volatility_name"] = getFeatureVolatility(host)
+#     except:
+#         st.session_state["volatility_of_features_dic"] = dict()
+#
+#     try:
+#         st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
+#     except Exception as e:
+#         st.error(
+#             "No Unique Values in database. If this is the first time a new dataset is uploaded please define a scale for each feature and upload the unique values.")
+#     if "loaded_feature_sensor_precision_dict" not in st.session_state:
+#         st.session_state["loaded_feature_sensor_precision_dict"], st.session_state[
+#             "DF_feature_sensor_precision_dict"] = getSensorPrecision(host)
+
 def _set_database():
     for key in st.session_state.keys():
         if key == "fuseki_database" or key == "name_fuseki_database" or key == "fueski_dataset_options":
@@ -14,6 +41,8 @@ def _set_database():
             del st.session_state[key]
 
     st.session_state.fuseki_database = st.session_state.name_fuseki_database
+
+
 
 
 
@@ -60,14 +89,14 @@ host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
 host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
 
 
-
-
 if st.session_state.fuseki_database=="None":
     st.stop()
 
 
-if selected2 == "Database":
 
+if selected2 == "Database":
+    # TODO create logic for getAttributes which distinguishes between 1st time use and 2nd time use
+    # getAttributes(host)
 
     st.markdown("#### Process of reliability of predictions based on CRISP-DM")
     st.text("""CRISP-DM stands for Cross Industry Standard for Data Mining Processes. In this Web App you will be able to 
@@ -203,3 +232,6 @@ if selected2 == 'Upload':
             #                          type='primary')
             # if create_model:
             #     switch_page("Data Understanding")
+
+
+
