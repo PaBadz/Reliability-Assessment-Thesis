@@ -47,7 +47,9 @@ if selected2 == 'Choose Algorithms':
         tab1, tab2, tab3 = st.tabs(["Cardinal", "Ordinal", "Nominal"])
         # TODO insert infobox if volatility is high with recommendation
         for columns, level in st.session_state.level_of_measurement_dic.items():
+
             if level == "Cardinal":
+                settingList = dict()
                 with tab1:
 
                     with st.expander(label=f"Algorithms for ***{columns}***"):
@@ -71,12 +73,15 @@ if selected2 == 'Choose Algorithms':
                                                                                on_change=changeAlgorithm,
                                                                                args=(columns,))
                             st.session_state.cardinal_val[columns] = st.session_state.default[columns]
+                            # TODO create dictionary similar to settingList in order to reuse code                           # settinglist[method] = [configurations]
+                            st.write(st.session_state.cardinal_val[columns])
 
                         except Exception as e:
                             st.write(e)
                             st.info('No Cardinal Values', icon="ℹ️")
 
             if level == "Ordinal":
+                settingList = dict()
                 with tab2:
                     with st.expander(label=f"Algorithms for ***{columns}***"):
                         try:
@@ -99,11 +104,13 @@ if selected2 == 'Choose Algorithms':
                                                                                args=(columns,))
                             st.session_state.ordinal_val[columns] = st.session_state.default[columns]
 
+
                         except Exception as e:
                             st.write(e)
                             st.info('No Ordinal Values', icon="ℹ️")
 
             if level == "Nominal":
+                settingList = dict()
 
                 with tab3:
                     with st.expander(label=f"Algorithms for ***{columns}***"):
@@ -244,7 +251,10 @@ try:
                                     st.session_state.data_restriction_final[key][0])
 
                             if f"additional_value_{key}_{method}" not in st.session_state:
-                                st.session_state[f"additional_value_{key}_{method}"] = 0
+                                if 0 < float(st.session_state.data_restriction_final[key][0]):
+                                    st.session_state[f"additional_value_{key}_{method}"] = st.session_state.data_restriction_final[key][0]
+                                else:
+                                    st.session_state[f"additional_value_{key}_{method}"] = 0
                             if "lower_bound" not in st.session_state:
                                 st.session_state[f"lower_bound{key}_{method}"] = 0
                             if "upper_bound" not in st.session_state:
@@ -265,7 +275,6 @@ try:
 
                             if method == "5% perturbation":
                                 st.markdown(f"##### {method}")
-
                                 settingList[method] = (
                                     percentage_perturbation_settings(5))
                                 st.write("---------------")
@@ -284,29 +293,30 @@ try:
                                 try:
                                     if key not in st.session_state.loaded_feature_sensor_precision_dict:
                                         st.warning("Sensor Precision is not determined in Data Understanding Step")
-                                        st.session_state[f"additional_value_{key}_{method}"] = 0
+                                        # set precision to 0
+                                        st.session_state[f"additional_value_{key}_{method}"] = 0.01
                                     else:
                                         st.session_state[f"additional_value_{key}_{method}"] = \
                                         st.session_state.loaded_feature_sensor_precision_dict[key]
 
                                     st.markdown(f"##### {method}")
-                                    step = st.number_input("Define stepsize", min_value=0.01, max_value=float(
-                                        st.session_state.unique_values_dict[key][-1]), step=0.01,
-                                                           key=f"step_sensor_precision_{key}")
+                                    # step = st.number_input("Define stepsize", min_value=0.01, max_value=float(
+                                    #     st.session_state.unique_values_dict[key][-1]), step=0.01,
+                                    #                        key=f"step_sensor_precision_{key}")
 
                                     st.session_state[f"additional_value_{key}_{method}"] = float(
-                                        st.slider("Sensor Precision", min_value=float(1), max_value=float(100),
+                                        st.number_input("Sensor Precision", min_value=float(0.01), max_value=float(100),
                                                   value=float(st.session_state[f"additional_value_{key}_{method}"]),
-                                                  key=f"additional_value_widget_{key}_{method}",step=float(step),
+                                                  key=f"additional_value_widget_{key}_{method}",#step=float(step)
                                                   on_change=update_additional_value, args=(key, method)))
+
                                     st.session_state[f"steps_{key}_{method}"] = int(
-                                        st.slider("Steps", min_value=int(1), max_value=int(100), step=int(1),
+                                        st.number_input("Steps", min_value=int(1), step=int(1),
                                                   value=int(st.session_state[f"steps_{key}_{method}"]),
                                                   key=f"steps_widget_{key}_{method}", on_change=update_steps,
                                                   args=(key, method)))
 
-                                    settingList[method] = (
-                                    sensorPrecision_settings(st.session_state[f"additional_value_{key}_{method}"],
+                                    settingList[method] = (sensorPrecision_settings(st.session_state[f"additional_value_{key}_{method}"],
                                                              st.session_state[f"steps_{key}_{method}"]))
                                 except Exception as e:
                                     st.write(e)
@@ -314,7 +324,8 @@ try:
 
                             elif method == 'Fixed amount':
                                 st.markdown(f"##### Define settings for algorithm: {method}")
-                                st.session_state[f"additional_value_{key}_{method}"] =  float(st.number_input("Amount",value=st.session_state[f"additional_value_{key}_{method}"],min_value=float(
+                                st.write(st.session_state[f"additional_value_{key}_{method}"])
+                                st.session_state[f"additional_value_{key}_{method}"] =  float(st.number_input("Amount",value=float(st.session_state[f"additional_value_{key}_{method}"]),min_value=float(
                                         st.session_state.data_restriction_final[key][0]), max_value=float(
                                         st.session_state.data_restriction_final[key][1]),
                                               key=f"additional_value_widget_{key}_{method}",
@@ -498,7 +509,7 @@ try:
                 st.write(st.session_state['settings'])
             with st.form("Save Modeling Activity to Database"):
                 #KG DEVELOPMENT
-                #KG: DefinitionOfPertubationOption
+                #KG: DefinitionOfPertubartionOption
                 #KG: Define ModelingActivity and then create PerturbationOption Entity with BUA, DUA, DPA as input
 
                 ending_time = getTimestamp()
@@ -506,7 +517,9 @@ try:
                 starting_time = getTimestamp()
                 # KG label nötig? Um die PerturbationOption zu identifizieren?
 
-                label = st.text_input("Definition of Perturbation Option",help="Insert a name for the perturbation option")
+
+                # First create ModelingActivity
+                label = "Definition of Perturbation Option" #st.text_input("Definition of Perturbation Option",help="Insert a name for the perturbation option")
                 determinationNameUUID = 'DefinitionOfPerturbationOption'
                 determinationName = 'DefinitionOfPerturbationOption'
 
@@ -516,56 +529,102 @@ try:
 
                 #todo ausgliedern
                 # kann auch implementiert werden bei predict --> dadurch verpflichtend
-
-                if st.form_submit_button("Save Modeling Activity to Database"):
+                if st.form_submit_button("Save Modeling Activity to Database", help="Modeling Activity + Generation of Perturbation Option with BUA, DUA, DPA as input and Perturbation Option. Save the Modeling Activity and Entity to the Database. Later this button will be replaced and done automatically."):
                     # Modeling Phase
 
                     try:
 
+                        query = (f"""PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                            PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
+                            PREFIX prov:  <http://www.w3.org/ns/prov#>
+                            PREFIX owl: <http://www.w3.org/2002/07/owl#>
+                            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+                            PREFIX instance:<http://www.semanticweb.org/dke/ontologies#>
+                             SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?DUA {{
+                                ?featureID rdf:type rprov:Feature .
+                                ?featureID rdfs:label ?featureName.
+                                ?DataUnderstandingEntityID rprov:toFeature ?featureID.
+                                ?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.}}""")
+                        results_update = get_connection_fuseki(host, query)
+                        # get Activities for PerturbationOption
+                        result_2 = pd.json_normalize(results_update["results"]["bindings"])
+                        result_2 = result_2.groupby(["featureID.value", "featureName.value"], as_index=False)[
+                            "DataUnderstandingEntityID.value"].agg(list)
+
                         for key in st.session_state['settings']:
+                            # upload ModelingActivity to fueski
                             uuid_DefinitionOfPerturbationOption = determinationDUA(host_upload, determinationName,
                                                                                    label,
                                                                                    starting_time, ending_time)
 
-                            query = (f"""PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-                                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                                PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
-                                PREFIX prov:  <http://www.w3.org/ns/prov#>
-                                PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                                PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-                                PREFIX instance:<http://www.semanticweb.org/dke/ontologies#>
-                                 SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?DUA {{
-                                    ?featureID rdf:type rprov:Feature .
-                                    ?featureID rdfs:label ?featureName.
-                                    ?DataUnderstandingEntityID rdf:type owl:NamedIndividual.
-                                    ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                                    ?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.}}""")
-                            results_update = get_connection_fuseki(host, query)
 
-                            result_2 = pd.json_normalize(results_update["results"]["bindings"])
 
+                        # if feature is in perturbation settings
+                        # create list with activities an loop in order to insert them as modelingEntityWasDerivedFrom
+
+                        for key in st.session_state['settings']:
                             if key in result_2["featureName.value"].values:
-                                uuid_PerturbationOption = uuid.uuid4()
-                                st.write(key)
                                 test = (result_2[result_2["featureName.value"]==key])
                                 liste = (test["DataUnderstandingEntityID.value"].values).tolist()
 
-                                for activitites in liste:
-                                    # TODO Check generationAlgorithm - key only for testing purposes
-                                    query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
-                                                          rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
-                                                          rprov:generationAlgorithm "{key}, {st.session_state['settings'][key]}";
-                                                          rprov:modelingEntityWasDerivedFrom <{activitites}>;
-                                                          rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
-                                                        }}""")
-                                    host_upload.setQuery(prefix + query)
-                                    host_upload.setMethod(POST)
-                                    host_upload.query()
+                                # create another loop in order to get different UUIDs for PerturbationOptions
+                                #KG sollen die einzelnen Optionen einzeln oder gesammelt gespeichert werden
+                                for method, perturbationOption in st.session_state['settings'][key].items():
+                                    uuid_PerturbationOption = uuid.uuid4()
+                                    for entities in liste:
 
+
+                                        # Entities werden hier ausgegeben
+                                        for entity in entities:
+                                            uuid_generationAlgorithm = uuid.uuid4()
+
+                                        # TODO Check generationAlgorithm - key only for testing purposes
+                                        # todo aufteilung
+
+                                            perturbationOptionlabel = str(perturbationOption)
+                                            perturbationOptionlabel = perturbationOptionlabel.replace("'","").replace("{","").replace("}","")
+
+
+
+                                            query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
+                                                                  rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
+                                                                  rprov:generationAlgorithm "{method}";
+                                                                  rprov:values "{perturbationOption}"@en;
+                                                                  rprov:modelingEntityWasDerivedFrom <{entity}>;
+                                                                  rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
+                                                                  rdfs:label "{method} with following settings: {perturbationOptionlabel}"@en.
+                                                                }}""")##{st.session_state['settings'][key]}
+
+
+
+
+                                            host_upload.setQuery(prefix + query)
+                                            host_upload.setMethod(POST)
+                                            host_upload.query()
+
+                                            # Test mit Bag
+
+                                            # query = (
+                                            #     f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
+                                            #                                                                   rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
+                                            #                                                                   rprov:generationAlgorithm <urn:uuid:{uuid_generationAlgorithm}>;
+                                            #                                                                   rprov:modelingEntityWasDerivedFrom <{activity}>;
+                                            #                                                                   rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
+                                            #                                                                   rdfs:label "Perturbation option contains {method} algorithm with following settings: {perturbationOption}";
+                                            #                                                                 }}""")  ##{st.session_state['settings'][key]}
+
+                                            #
+                                            # query = (f"""INSERT DATA {{<urn:uuid:{uuid_generationAlgorithm}> rdf:type owl:NamedIndividual;
+                                            #                       rdf:_{method} '{{{perturbationOption.items()}}}';}}""")
+                                            # host_upload.setQuery(prefix + query)
+                                            # host_upload.setMethod(POST)
+                                            # host_upload.query()
+                        # st.stop()
                     except Exception as e:
                         st.write(e)
                         st.error("Error: Could not create DUA")
-                #
+
 
 
         with col3:
@@ -1062,13 +1121,13 @@ try:
                                 test = (result_2[result_2["featureName.value"] == key])
                                 liste = (test["DataUnderstandingEntityID.value"].values).tolist()
 
-                                for activitites in liste:
+                                for entities in liste:
                                     # TODO Check generationAlgorithm - key only for testing purposes
                                     query = (
                                         f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
                                                           rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
                                                           rprov:generationAlgorithm "{key}, {st.session_state['settings'][key]}";
-                                                          rprov:modelingEntityWasDerivedFrom <{activitites}>;
+                                                          rprov:modelingEntityWasDerivedFrom <{entities}>;
                                                           rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
                                                         }}""")
                                     host_upload.setQuery(prefix + query)

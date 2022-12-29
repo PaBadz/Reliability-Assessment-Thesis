@@ -184,8 +184,8 @@ if selected2 == 'Upload':
 
     # Determination of feature
     if st.button("Upload dataset to the server", type='primary', help="Determines the features of the dataset, in the next step you can determine the scale of the features"):
-        determinationNameUUID = 'DeterminationOfOfFeature'
-        determinationName = 'DeterminationOfOfFeature'
+        determinationNameUUID = 'DeterminationOfFeature'
+        determinationName = 'DeterminationOfFeature'
         label = '"detOfFeature"@en'
         dicName = 'volatility_of_features_dic'
         name = 'Feature'

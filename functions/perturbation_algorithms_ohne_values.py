@@ -5,7 +5,7 @@ def percentage_perturbation(percentage_steps, value, data_restriction):
     # feature is increased and decreased in percentage steps
     # perturbation level is orange
     perturbedList = list()
-    perturbedList.append(value)
+    # perturbedList.append(value)
     for i in range(-percentage_steps, percentage_steps+1):
         if i == 0:
             pass
@@ -25,7 +25,7 @@ def percentage_perturbation_settings(percentage_steps):
 
 def sensorPrecision(sensorPrecision: float, steps: int, value, data_restriction):
     perturbedList = list()
-    perturbedList.append(value)
+    # perturbedList.append(value)
     for i in range(-steps, steps + 1):
         if i == 0:
             pass
@@ -44,7 +44,7 @@ def sensorPrecision_settings(sensorPrecision, steps):
 
 def fixedAmountSteps(amount, steps, value, data_restriction):
     perturbedList = list()
-    perturbedList.append(value)
+    # perturbedList.append(value)
     for i in range(-steps, steps + 1):
         if i == 0:
             pass
@@ -85,7 +85,7 @@ def perturbInOrder(steps, value, values):
     size = len(values)
 
     ind = values.index(value)
-    perturbedList.append(value)
+    # perturbedList.append(value)
     for i in range(1, steps + 1):
         if ind - i >= 0:
             perturbedList.append(values[ind - i])

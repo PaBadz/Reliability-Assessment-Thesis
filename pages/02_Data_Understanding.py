@@ -1,4 +1,4 @@
-
+from st_draggable_list import DraggableList
 from functions.functions_Reliability import *
 from functions.functions_DataUnderstanding import *
 from functions.fuseki_connection import *
@@ -262,6 +262,9 @@ if optionsDataUnderstanding == "Volatility":
 
 if optionsDataUnderstanding == "Data Restrictions":
 
+    # TODO insert option for ordinal data to be selected with slider
+
+
     st.markdown("""
     **Here you can see set the data restrictions for each feature**
     
@@ -344,6 +347,7 @@ if optionsDataUnderstanding == "Data Restrictions":
                     step = st.number_input("Define stepsize",min_value=0.01, max_value=float(
                             st.session_state.unique_values_dict[key][-1]), step=0.01, key =f"step_cardinal_{key}")
 
+                    # TODO change input of cardinal values to number input
                     st.session_state[f'data_restrictions_{key}_cardinal'] = st.slider(
                         f"Select Range for Cardinal Value {key}",
                         value=st.session_state[f'data_restrictions_{key}_cardinal'],

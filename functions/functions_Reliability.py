@@ -55,21 +55,25 @@ def getDefault(host):
 
 def getPerturbationOptions(host):
     dictionary_DataRestriction = dict()
-    query = (f"""    SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?DUA {{
+    query = (f"""    SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?DUA ?values ?label{{
     ?featureID rdf:type rprov:Feature .
     ?featureID rdfs:label ?featureName.
     ?DataUnderstandingEntityID rdf:type owl:NamedIndividual.
 	?DataUnderstandingEntityID rprov:perturbedFeature ?featureID.
     ?DataUnderstandingEntityID rprov:generationAlgorithm ?DUA.
+    ?DataUnderstandingEntityID rprov:values ?values.
+    ?DataUnderstandingEntityID rdfs:label ?label.
     }}
     """)
 
     results_feature_DataRestriction = get_connection_fuseki(host, (prefix + query))
     results_feature_DataRestriction = pd.json_normalize(results_feature_DataRestriction["results"]["bindings"])
 
-    #results_feature_DataRestriction =  results_feature_DataRestriction.groupby(["featureName.value", "DataUnderstandingEntityID.value", "DUA.value"], as_index=False)
+    #results_feature_DataRestriction =  results_feature_DataRestriction.groupby(["featureName.value","DUA.value","DataUnderstandingEntityID.value"], as_index=False).apply(lambda x: x)
     # # results_feature_DataRestriction = results_feature_DataRestriction.groupby(["time.value","sub.value","label.value"]).apply(lambda x: [list(x['item.value'])]).apply(pd.Series)
     #results_feature_DataRestriction.columns = ['Feature', 'DataUnderstandingEntity', 'PertubationOption']
+    results_feature_DataRestriction = results_feature_DataRestriction[["featureID.value","featureName.value","DataUnderstandingEntityID.value","DUA.value", "values.value", "label.value"]]
+    results_feature_DataRestriction.columns = ['FeatureID','FeatureName', 'DataUnderstandingEntity', 'PerturbationOption', "Settings","label"]
 
     return results_feature_DataRestriction
 
