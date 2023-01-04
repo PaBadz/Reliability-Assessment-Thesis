@@ -20,7 +20,7 @@ if "data_restrictions_dict" not in st.session_state:
     st.session_state["data_restrictions_dict"] = dict()
 
 # horizontal menu
-selected2 = option_menu(None, ["Choose Algorithms", "Perturbation"],
+selected2 = option_menu(None, ["Choose Algorithms", "Define Perturbation Options", "Test Perturbation"],
                         icons=['house', 'gear'],
                         orientation="horizontal")
 
@@ -88,7 +88,7 @@ if selected2 == 'Choose Algorithms':
                             if st.session_state.volatility_of_features_dic[columns] == 'High Volatility':
                                 st.warning("Feature has high volatility!")
                                 st.info(
-                                    "Switch to perturbation Recommendations to see which algrorithms were used in the past.")
+                                    "Switch to perturbation Recommendations to see which algorithms were used in the past.")
                             elif st.session_state.volatility_of_features_dic[columns] == 'Medium Volatility':
                                 st.info(
                                     "Feature has medium volatility!  \nSwitch to perturbation Recommendations to see which algrorithms were used in the past.")
@@ -212,190 +212,248 @@ if selected2 == 'Choose Algorithms':
 
 
 try:
-    if selected2 == 'Perturbation':
-        col1, col2, col3 = st.columns([3, 0.2, 7])
-        with col1:
-            if "perturbed_value_list" not in st.session_state:
-                st.session_state.perturbed_value_list = {}
-                for columns in st.session_state.dataframe_feature_names["featureName.value"]:
-                    st.session_state.perturbed_value_list[columns] = []
+    if selected2 == 'Define Perturbation Options':
 
-            tab1, tab2, tab3 = st.tabs(["Cardinal", "Ordinal", "Nominal"])
-            settings = dict()
-            perturbed_value_list = dict()
-            with tab1:
+        if "perturbed_value_list" not in st.session_state:
+            st.session_state.perturbed_value_list = {}
+            for columns in st.session_state.dataframe_feature_names["featureName.value"]:
+                st.session_state.perturbed_value_list[columns] = []
 
-                for key, value in st.session_state['cardinal_val'].items():
-                    if "settingList" not in st.session_state:
-                        st.session_state.settingList = dict()
-                    settingList = dict()
-                    if "perturbedList" not in st.session_state:
-                        st.session_state.perturbedList = dict()
-                    perturbedList = dict()
+        tab1, tab2, tab3 = st.tabs(["Cardinal", "Ordinal", "Nominal"])
+        settings = dict()
+        perturbed_value_list = dict()
+        with tab1:
 
-                    with st.expander(f"Settings for feature {key}"):
+            for key, value in st.session_state['cardinal_val'].items():
+                if "settingList" not in st.session_state:
+                    st.session_state.settingList = dict()
+                settingList = dict()
+                if "perturbedList" not in st.session_state:
+                    st.session_state.perturbedList = dict()
+                perturbedList = dict()
 
-                        for method in value:
-                            if f"steps_{key}_{method}" not in st.session_state:
+                with st.expander(f"Settings for feature {key}"):
+
+                    for method in value:
+                        if f"steps_{key}_{method}" not in st.session_state:
+                            st.session_state[f"steps_{key}_{method}"] = 1
+
+                        # First Initialize value which is to perturbate
+                        if f"value_perturbate{key}_{method}" not in st.session_state:
+                            st.session_state[f"value_perturbate{key}_{method}"] = float(
+                                st.session_state.data_restriction_final[key][0])
+
+                        # set Data Restriction if selected
+                        if st.session_state[f"value_perturbate{key}_{method}"] < float(
+                                st.session_state.data_restriction_final[key][0]):
+                            st.session_state[f"value_perturbate{key}_{method}"] = float(
+                                st.session_state.data_restriction_final[key][0])
+
+                        if f"additional_value_{key}_{method}" not in st.session_state:
+                            if 0 < float(st.session_state.data_restriction_final[key][0]):
+                                st.session_state[f"additional_value_{key}_{method}"] = st.session_state.data_restriction_final[key][0]
+                            else:
+                                st.session_state[f"additional_value_{key}_{method}"] = 0
+                        if "lower_bound" not in st.session_state:
+                            st.session_state[f"lower_bound{key}_{method}"] = 0
+                        if "upper_bound" not in st.session_state:
+                            st.session_state[f"upper_bound{key}_{method}"] = 0
+
+                        if method == 'Percentage perturbation':
+                            st.markdown(f"##### {method}")
+
+                            st.session_state[f"steps_{key}_{method}"] = int(
+                                st.number_input("Percentage of steps", min_value=int(1), max_value=int(100),
+                                          value=st.session_state[f"steps_{key}_{method}"],
+                                          key=f"steps_widget_{key}_{method}", on_change=update_steps,
+                                          args=(key, method)))
+
+                            settingList[method] = (
+                                percentage_perturbation_settings(st.session_state[f"steps_{key}_{method}"]))
+                            st.write("---------------")
+
+                        if method == "5% perturbation":
+                            st.markdown(f"##### {method}")
+                            settingList[method] = (
+                                percentage_perturbation_settings(5))
+                            st.write("---------------")
+
+                        if method == "10% perturbation":
+                            st.markdown(f"##### {method}")
+
+                            settingList[method] = (
+                                percentage_perturbation_settings(10))
+                            st.write("---------------")
+
+
+
+
+                        elif method == 'Sensor Precision':
+                            try:
+                                if key not in st.session_state.loaded_feature_sensor_precision_dict:
+                                    st.warning("Sensor Precision is not determined in Data Understanding Step")
+                                    # set precision to 0
+                                    st.session_state[f"additional_value_{key}_{method}"] = 0.01
+                                else:
+                                    st.session_state[f"additional_value_{key}_{method}"] = \
+                                    st.session_state.loaded_feature_sensor_precision_dict[key]
+
+                                st.markdown(f"##### {method}")
+                                # step = st.number_input("Define stepsize", min_value=0.01, max_value=float(
+                                #     st.session_state.unique_values_dict[key][-1]), step=0.01,
+                                #                        key=f"step_sensor_precision_{key}")
+
+                                st.session_state[f"additional_value_{key}_{method}"] = float(
+                                    st.number_input("Sensor Precision", min_value=float(0.01), max_value=float(100),
+                                              value=float(st.session_state[f"additional_value_{key}_{method}"]),
+                                              key=f"additional_value_widget_{key}_{method}",#step=float(step)
+                                              on_change=update_additional_value, args=(key, method)))
+
+                                st.session_state[f"steps_{key}_{method}"] = int(
+                                    st.number_input("Steps", min_value=int(1), step=int(1),
+                                              value=int(st.session_state[f"steps_{key}_{method}"]),
+                                              key=f"steps_widget_{key}_{method}", on_change=update_steps,
+                                              args=(key, method)))
+
+                                settingList[method] = (sensorPrecision_settings(st.session_state[f"additional_value_{key}_{method}"],
+                                                         st.session_state[f"steps_{key}_{method}"]))
+                            except Exception as e:
+                                st.write(e)
+                            st.write("---------------")
+
+                        elif method == 'Fixed amount':
+                            st.markdown(f"##### Define settings for algorithm: {method}")
+                            st.write(st.session_state[f"additional_value_{key}_{method}"])
+                            st.session_state[f"additional_value_{key}_{method}"] =  float(st.number_input("Amount",value=float(st.session_state[f"additional_value_{key}_{method}"]),min_value=float(
+                                    st.session_state.data_restriction_final[key][0]), max_value=float(
+                                    st.session_state.data_restriction_final[key][1]),
+                                          key=f"additional_value_widget_{key}_{method}",
+                                          on_change=update_additional_value,
+                                          args=(key, method)))
+                            #float(
+                                # st.slider("Amount", min_value=float(
+                                #     st.session_state.data_restriction_final[key][0]), max_value=float(
+                                #     st.session_state.data_restriction_final[key][1]), step=float(1),
+                                #           value=st.session_state[f"additional_value_{key}_{method}"],
+                                #           key=f"additional_value_widget_{key}_{method}",
+                                #           on_change=update_additional_value,
+                                #           args=(key, method)))
+
+                            st.session_state[f"steps_{key}_{method}"] = int(
+                                st.number_input("Steps", #min_value=int(1), max_value=int(100), step=int(1),
+                                          value=st.session_state[f"steps_{key}_{method}"],
+                                          key=f"steps_widget_{key}_{method}", on_change=update_steps,
+                                          args=(key, method)))
+
+                            settingList[method] = (
+                                fixedAmountSteps_settings(st.session_state[f"additional_value_{key}_{method}"],
+                                                          st.session_state[f"steps_{key}_{method}"]))
+
+                            st.write("---------------")
+
+                        elif method == 'Range perturbation':
+                            st.markdown(f"##### Define settings for algorithm: {method}")
+
+                            if f"additional_value_{key}_{method}_bound" not in st.session_state:
+                                st.session_state[f"additional_value_{key}_{method}_bound"] = [
+                                    float(st.session_state.data_restriction_final[key][0]),
+                                    float(st.session_state.data_restriction_final[key][-1])]
+
+                            with st.form(f"Input values {key}"):
+                                lower = st.number_input("Input value", )
+                                upper = st.number_input("Input upper value",max_value=float(
+                                    st.session_state.data_restriction_final[key][-1]))
+                                if st.form_submit_button("Upload"):
+                                    st.session_state[f"additional_value_{key}_{method}_bound"] = [float(lower),
+                                                                                                  float(upper)]
+
+                            st.session_state[f"additional_value_{key}_{method}_bound"] = (
+                                st.slider("Amount", min_value=float(
+                                    st.session_state.data_restriction_final[key][0]), max_value=float(
+                                    st.session_state.data_restriction_final[key][-1]),
+                                          value=st.session_state[f"additional_value_{key}_{method}_bound"],
+                                          key=f"additional_value_widget_{key}_{method}",
+                                          on_change=upper_lower_bound,
+                                          args=(key, method)))
+
+                            if st.session_state[f"steps_{key}_{method}"] == 0:
                                 st.session_state[f"steps_{key}_{method}"] = 1
 
-                            # First Initialize value which is to perturbate
-                            if f"value_perturbate{key}_{method}" not in st.session_state:
-                                st.session_state[f"value_perturbate{key}_{method}"] = float(
-                                    st.session_state.data_restriction_final[key][0])
+                            st.session_state[f"steps_{key}_{method}"] = int(
+                                st.number_input("Steps", step = int(1),#min_value=int(1), max_value=int(100), step=int(1),
+                                          value=st.session_state[f"steps_{key}_{method}"],
+                                          key=f"steps_widget_{key}_{method}", on_change=update_steps,
+                                          args=(key, method)))
 
-                            # set Data Restriction if selected
-                            if st.session_state[f"value_perturbate{key}_{method}"] < float(
-                                    st.session_state.data_restriction_final[key][0]):
-                                st.session_state[f"value_perturbate{key}_{method}"] = float(
-                                    st.session_state.data_restriction_final[key][0])
+                            settingList[method] = (
+                                perturbRange_settings(st.session_state[f"additional_value_{key}_{method}_bound"][0],
+                                                      st.session_state[f"additional_value_{key}_{method}_bound"][1],
+                                                      st.session_state[f"steps_{key}_{method}"]))
+                            perturbedList[method] = (
+                                perturbRange(st.session_state[f"additional_value_{key}_{method}_bound"][0],
+                                             st.session_state[f"additional_value_{key}_{method}_bound"][1],
+                                             st.session_state[f"steps_{key}_{method}"]))
+                            st.write("---------------")
+                            st.write("---------------")
 
-                            if f"additional_value_{key}_{method}" not in st.session_state:
-                                if 0 < float(st.session_state.data_restriction_final[key][0]):
-                                    st.session_state[f"additional_value_{key}_{method}"] = st.session_state.data_restriction_final[key][0]
-                                else:
-                                    st.session_state[f"additional_value_{key}_{method}"] = 0
-                            if "lower_bound" not in st.session_state:
-                                st.session_state[f"lower_bound{key}_{method}"] = 0
-                            if "upper_bound" not in st.session_state:
-                                st.session_state[f"upper_bound{key}_{method}"] = 0
+                if settingList:
+                    settings[key] = settingList
+                if perturbedList:
+                    perturbed_value_list[key] = perturbedList
+            st.session_state['settings'] = settings
+            st.session_state['perturbed_value_list'] = perturbed_value_list
 
-                            if method == 'Percentage perturbation':
-                                st.markdown(f"##### {method}")
+        with tab2:
+            for key, value in st.session_state['ordinal_val'].items():
+                if "settingList" not in st.session_state:
+                    st.session_state.settingList = dict()
+                settingList = dict()
+                if "perturbedList" not in st.session_state:
+                    st.session_state.perturbedList = dict()
+                perturbedList = dict()
 
-                                st.session_state[f"steps_{key}_{method}"] = int(
-                                    st.number_input("Percentage of steps", min_value=int(1), max_value=int(100),
-                                              value=st.session_state[f"steps_{key}_{method}"],
-                                              key=f"steps_widget_{key}_{method}", on_change=update_steps,
-                                              args=(key, method)))
+                with st.expander(f"Einstellungen für column {key}"):
+                    for method in value:
+                        if f"steps_{key}_{method}" not in st.session_state:
+                            st.session_state[f"steps_{key}_{method}"] = 0
+                        if f"value_perturbate{key}_{method}" not in st.session_state:
+                            st.session_state[f"value_perturbate{key}_{method}"] = \
+                                st.session_state.data_restriction_final[key][0]
+                        if f"additional_value_{key}_{method}" not in st.session_state:
+                            st.session_state[f"additional_value_{key}_{method}"] = 0
 
-                                settingList[method] = (
-                                    percentage_perturbation_settings(st.session_state[f"steps_{key}_{method}"]))
-                                st.write("---------------")
+                        if method == "Perturb in order":
+                            st.session_state[f"steps_{key}_{method}"] = int(
+                                st.slider("Steps", min_value=int(1),
+                                          max_value=int(len(st.session_state.data_restriction_final[key]) - 1),
+                                          step=int(1),
+                                          value=st.session_state[f"steps_{key}_{method}"],
+                                          key=f"steps_widget_{key}_{method}", on_change=update_steps,
+                                          args=(key, method)))
 
-                            if method == "5% perturbation":
-                                st.markdown(f"##### {method}")
-                                settingList[method] = (
-                                    percentage_perturbation_settings(5))
-                                st.write("---------------")
+                            settingList[method] = (
+                                perturbInOrder_settings(st.session_state[f"steps_{key}_{method}"]))#,st.session_state.data_restriction_final[key]
 
-                            if method == "10% perturbation":
-                                st.markdown(f"##### {method}")
+                            st.write("---------------")
 
-                                settingList[method] = (
-                                    percentage_perturbation_settings(10))
-                                st.write("---------------")
+                        if method == "Perturb all values":
+                            st.write("All unique values will be perturbed")
+                            st.session_state[f"value_perturbate{key}_{method}"] = (
+                                st.select_slider(f'{key}', options=
+                                st.session_state.data_restriction_final[key], value=st.session_state[
+                                    f"value_perturbate{key}_{method}"],
 
+                                                 help="Wähle den zu perturbierenden Wert aus",
+                                                 key=f"value_perturbation_widget_{key}_{method}",
+                                                 on_change=update_value_perturbate,
+                                                 args=(key, method)))
+                            settingList[method] = (
+                                perturbAllValues_settings(st.session_state[f"value_perturbate{key}_{method}"]))#,st.session_state.data_restriction_final[key]))
 
-
-
-                            elif method == 'Sensor Precision':
-                                try:
-                                    if key not in st.session_state.loaded_feature_sensor_precision_dict:
-                                        st.warning("Sensor Precision is not determined in Data Understanding Step")
-                                        # set precision to 0
-                                        st.session_state[f"additional_value_{key}_{method}"] = 0.01
-                                    else:
-                                        st.session_state[f"additional_value_{key}_{method}"] = \
-                                        st.session_state.loaded_feature_sensor_precision_dict[key]
-
-                                    st.markdown(f"##### {method}")
-                                    # step = st.number_input("Define stepsize", min_value=0.01, max_value=float(
-                                    #     st.session_state.unique_values_dict[key][-1]), step=0.01,
-                                    #                        key=f"step_sensor_precision_{key}")
-
-                                    st.session_state[f"additional_value_{key}_{method}"] = float(
-                                        st.number_input("Sensor Precision", min_value=float(0.01), max_value=float(100),
-                                                  value=float(st.session_state[f"additional_value_{key}_{method}"]),
-                                                  key=f"additional_value_widget_{key}_{method}",#step=float(step)
-                                                  on_change=update_additional_value, args=(key, method)))
-
-                                    st.session_state[f"steps_{key}_{method}"] = int(
-                                        st.number_input("Steps", min_value=int(1), step=int(1),
-                                                  value=int(st.session_state[f"steps_{key}_{method}"]),
-                                                  key=f"steps_widget_{key}_{method}", on_change=update_steps,
-                                                  args=(key, method)))
-
-                                    settingList[method] = (sensorPrecision_settings(st.session_state[f"additional_value_{key}_{method}"],
-                                                             st.session_state[f"steps_{key}_{method}"]))
-                                except Exception as e:
-                                    st.write(e)
-                                st.write("---------------")
-
-                            elif method == 'Fixed amount':
-                                st.markdown(f"##### Define settings for algorithm: {method}")
-                                st.write(st.session_state[f"additional_value_{key}_{method}"])
-                                st.session_state[f"additional_value_{key}_{method}"] =  float(st.number_input("Amount",value=float(st.session_state[f"additional_value_{key}_{method}"]),min_value=float(
-                                        st.session_state.data_restriction_final[key][0]), max_value=float(
-                                        st.session_state.data_restriction_final[key][1]),
-                                              key=f"additional_value_widget_{key}_{method}",
-                                              on_change=update_additional_value,
-                                              args=(key, method)))
-                                #float(
-                                    # st.slider("Amount", min_value=float(
-                                    #     st.session_state.data_restriction_final[key][0]), max_value=float(
-                                    #     st.session_state.data_restriction_final[key][1]), step=float(1),
-                                    #           value=st.session_state[f"additional_value_{key}_{method}"],
-                                    #           key=f"additional_value_widget_{key}_{method}",
-                                    #           on_change=update_additional_value,
-                                    #           args=(key, method)))
-
-                                st.session_state[f"steps_{key}_{method}"] = int(
-                                    st.number_input("Steps", #min_value=int(1), max_value=int(100), step=int(1),
-                                              value=st.session_state[f"steps_{key}_{method}"],
-                                              key=f"steps_widget_{key}_{method}", on_change=update_steps,
-                                              args=(key, method)))
-
-                                settingList[method] = (
-                                    fixedAmountSteps_settings(st.session_state[f"additional_value_{key}_{method}"],
-                                                              st.session_state[f"steps_{key}_{method}"]))
-
-                                st.write("---------------")
-
-                            elif method == 'Range perturbation':
-                                st.markdown(f"##### Define settings for algorithm: {method}")
-
-                                if f"additional_value_{key}_{method}_bound" not in st.session_state:
-                                    st.session_state[f"additional_value_{key}_{method}_bound"] = [
-                                        float(st.session_state.data_restriction_final[key][0]),
-                                        float(st.session_state.data_restriction_final[key][-1])]
-
-                                with st.form(f"Input values {key}"):
-                                    lower = st.number_input("Input value", )
-                                    upper = st.number_input("Input upper value",max_value=float(
-                                        st.session_state.data_restriction_final[key][-1]))
-                                    if st.form_submit_button("Upload"):
-                                        st.session_state[f"additional_value_{key}_{method}_bound"] = [float(lower),
-                                                                                                      float(upper)]
-
-                                st.session_state[f"additional_value_{key}_{method}_bound"] = (
-                                    st.slider("Amount", min_value=float(
-                                        st.session_state.data_restriction_final[key][0]), max_value=float(
-                                        st.session_state.data_restriction_final[key][-1]),
-                                              value=st.session_state[f"additional_value_{key}_{method}_bound"],
-                                              key=f"additional_value_widget_{key}_{method}",
-                                              on_change=upper_lower_bound,
-                                              args=(key, method)))
-
-                                if st.session_state[f"steps_{key}_{method}"] == 0:
-                                    st.session_state[f"steps_{key}_{method}"] = 1
-
-                                st.session_state[f"steps_{key}_{method}"] = int(
-                                    st.number_input("Steps", step = int(1),#min_value=int(1), max_value=int(100), step=int(1),
-                                              value=st.session_state[f"steps_{key}_{method}"],
-                                              key=f"steps_widget_{key}_{method}", on_change=update_steps,
-                                              args=(key, method)))
-
-                                settingList[method] = (
-                                    perturbRange_settings(st.session_state[f"additional_value_{key}_{method}_bound"][0],
-                                                          st.session_state[f"additional_value_{key}_{method}_bound"][1],
-                                                          st.session_state[f"steps_{key}_{method}"]))
-                                perturbedList[method] = (
-                                    perturbRange(st.session_state[f"additional_value_{key}_{method}_bound"][0],
-                                                 st.session_state[f"additional_value_{key}_{method}_bound"][1],
-                                                 st.session_state[f"steps_{key}_{method}"]))
-                                st.write("---------------")
-                                st.write("---------------")
+                            perturbedList[method] = (
+                                perturbAllValues(st.session_state[f"value_perturbate{key}_{method}"],
+                                                 st.session_state.data_restriction_final[key]))
+                            st.write("---------------")
 
                     if settingList:
                         settings[key] = settingList
@@ -404,283 +462,224 @@ try:
                 st.session_state['settings'] = settings
                 st.session_state['perturbed_value_list'] = perturbed_value_list
 
-            with tab2:
-                for key, value in st.session_state['ordinal_val'].items():
-                    if "settingList" not in st.session_state:
-                        st.session_state.settingList = dict()
-                    settingList = dict()
-                    if "perturbedList" not in st.session_state:
-                        st.session_state.perturbedList = dict()
-                    perturbedList = dict()
+        with tab3:
+            for key, value in st.session_state['nominal_val'].items():
+                if "settingList" not in st.session_state:
+                    st.session_state.settingList = dict()
+                settingList = dict()
+                if "perturbedList" not in st.session_state:
+                    st.session_state.perturbedList = dict()
+                perturbedList = dict()
 
-                    with st.expander(f"Einstellungen für column {key}"):
-                        for method in value:
-                            if f"steps_{key}_{method}" not in st.session_state:
-                                st.session_state[f"steps_{key}_{method}"] = 0
-                            if f"value_perturbate{key}_{method}" not in st.session_state:
-                                st.session_state[f"value_perturbate{key}_{method}"] = \
-                                    st.session_state.data_restriction_final[key][0]
-                            if f"additional_value_{key}_{method}" not in st.session_state:
-                                st.session_state[f"additional_value_{key}_{method}"] = 0
+                with st.expander(f"Einstellungen für column {key}"):
+                    for method in value:
+                        if f"steps_{key}_{method}" not in st.session_state:
+                            st.session_state[f"steps_{key}_{method}"] = 0
+                        if f"value_perturbate{key}_{method}" not in st.session_state:
+                            st.session_state[f"value_perturbate{key}_{method}"] = \
+                                st.session_state.data_restriction_final[key][0]
+                        if f"additional_value_{key}_{method}" not in st.session_state:
+                            st.session_state[f"additional_value_{key}_{method}"] = 0
 
-                            if method == "Perturb in order":
-                                st.session_state[f"steps_{key}_{method}"] = int(
-                                    st.slider("Steps", min_value=int(1),
-                                              max_value=int(len(st.session_state.data_restriction_final[key]) - 1),
-                                              step=int(1),
-                                              value=st.session_state[f"steps_{key}_{method}"],
-                                              key=f"steps_widget_{key}_{method}", on_change=update_steps,
-                                              args=(key, method)))
+                        if method == "Perturb all values":
+                            st.write("All unique values will be perturbed")
+                            st.write(st.session_state.data_restriction_final[key])
+                            st.session_state[f"value_perturbate{key}_{method}"] = (
+                                st.select_slider(f'{key}', options=
+                                st.session_state.data_restriction_final[key], value=st.session_state[
+                                    f"value_perturbate{key}_{method}"],
 
-                                settingList[method] = (
-                                    perturbInOrder_settings(st.session_state[f"steps_{key}_{method}"]))#,st.session_state.data_restriction_final[key]
+                                                 help="Wähle den zu perturbierenden Wert aus",
+                                                 key=f"value_perturbation_widget_{key}_{method}",
+                                                 on_change=update_value_perturbate,
+                                                 args=(key, method)))
+                            settingList[method] = (
+                                perturbAllValues_settings(st.session_state.data_restriction_final[key]))#st.session_state[f"value_perturbate{key}_{method}"]))#,st.session_state.data_restriction_final[key]))
 
-                                st.write("---------------")
+                            st.write("---------------")
 
-                            if method == "Perturb all values":
-                                st.write("All unique values will be perturbed")
-                                st.session_state[f"value_perturbate{key}_{method}"] = (
-                                    st.select_slider(f'{key}', options=
-                                    st.session_state.data_restriction_final[key], value=st.session_state[
-                                        f"value_perturbate{key}_{method}"],
+                    if settingList:
+                        settings[key] = settingList
+                    if perturbedList:
+                        perturbed_value_list[key] = perturbedList
+                st.session_state['settings'] = settings
+                st.session_state['perturbed_value_list'] = perturbed_value_list
+        with st.expander("Show Perturbation Setting"):
+            st.write(st.session_state['settings'])
+        with st.form("Save Modeling Activity to Database"):
+            #KG DEVELOPMENT
+            #KG: DefinitionOfPertubartionOption
+            #KG: Define ModelingActivity and then create PerturbationOption Entity with BUA, DUA, DPA as input
 
-                                                     help="Wähle den zu perturbierenden Wert aus",
-                                                     key=f"value_perturbation_widget_{key}_{method}",
-                                                     on_change=update_value_perturbate,
-                                                     args=(key, method)))
-                                settingList[method] = (
-                                    perturbAllValues_settings(st.session_state[f"value_perturbate{key}_{method}"]))#,st.session_state.data_restriction_final[key]))
+            ending_time = getTimestamp()
 
-                                perturbedList[method] = (
-                                    perturbAllValues(st.session_state[f"value_perturbate{key}_{method}"],
-                                                     st.session_state.data_restriction_final[key]))
-                                st.write("---------------")
-
-                        if settingList:
-                            settings[key] = settingList
-                        if perturbedList:
-                            perturbed_value_list[key] = perturbedList
-                    st.session_state['settings'] = settings
-                    st.session_state['perturbed_value_list'] = perturbed_value_list
-
-            with tab3:
-                for key, value in st.session_state['nominal_val'].items():
-                    if "settingList" not in st.session_state:
-                        st.session_state.settingList = dict()
-                    settingList = dict()
-                    if "perturbedList" not in st.session_state:
-                        st.session_state.perturbedList = dict()
-                    perturbedList = dict()
-
-                    with st.expander(f"Einstellungen für column {key}"):
-                        for method in value:
-                            if f"steps_{key}_{method}" not in st.session_state:
-                                st.session_state[f"steps_{key}_{method}"] = 0
-                            if f"value_perturbate{key}_{method}" not in st.session_state:
-                                st.session_state[f"value_perturbate{key}_{method}"] = \
-                                    st.session_state.data_restriction_final[key][0]
-                            if f"additional_value_{key}_{method}" not in st.session_state:
-                                st.session_state[f"additional_value_{key}_{method}"] = 0
-
-                            if method == "Perturb all values":
-                                st.write("All unique values will be perturbed")
-                                st.write(st.session_state.data_restriction_final[key])
-                                st.session_state[f"value_perturbate{key}_{method}"] = (
-                                    st.select_slider(f'{key}', options=
-                                    st.session_state.data_restriction_final[key], value=st.session_state[
-                                        f"value_perturbate{key}_{method}"],
-
-                                                     help="Wähle den zu perturbierenden Wert aus",
-                                                     key=f"value_perturbation_widget_{key}_{method}",
-                                                     on_change=update_value_perturbate,
-                                                     args=(key, method)))
-                                settingList[method] = (
-                                    perturbAllValues_settings(st.session_state.data_restriction_final[key]))#st.session_state[f"value_perturbate{key}_{method}"]))#,st.session_state.data_restriction_final[key]))
-
-                                st.write("---------------")
-
-                        if settingList:
-                            settings[key] = settingList
-                        if perturbedList:
-                            perturbed_value_list[key] = perturbedList
-                    st.session_state['settings'] = settings
-                    st.session_state['perturbed_value_list'] = perturbed_value_list
-            with st.expander("Show Perturbation Setting"):
-                st.write(st.session_state['settings'])
-            with st.form("Save Modeling Activity to Database"):
-                #KG DEVELOPMENT
-                #KG: DefinitionOfPertubartionOption
-                #KG: Define ModelingActivity and then create PerturbationOption Entity with BUA, DUA, DPA as input
-
-                ending_time = getTimestamp()
-
-                starting_time = getTimestamp()
-                # KG label nötig? Um die PerturbationOption zu identifizieren?
+            starting_time = getTimestamp()
+            # KG label nötig? Um die PerturbationOption zu identifizieren?
 
 
-                # First create ModelingActivity
-                label = "Definition of Perturbation Option" #st.text_input("Definition of Perturbation Option",help="Insert a name for the perturbation option")
-                determinationNameUUID = 'DefinitionOfPerturbationOption'
-                determinationName = 'DefinitionOfPerturbationOption'
+            # First create ModelingActivity
+            label = "Definition of Perturbation Option" #st.text_input("Definition of Perturbation Option",help="Insert a name for the perturbation option")
+            determinationNameUUID = 'DefinitionOfPerturbationOption'
+            determinationName = 'DefinitionOfPerturbationOption'
 
-                name = 'PerturbationOption'
-                rprovName = 'PerturbationOption'
-                ending_time = getTimestamp()
+            name = 'PerturbationOption'
+            rprovName = 'PerturbationOption'
+            ending_time = getTimestamp()
 
-                #todo ausgliedern
-                # kann auch implementiert werden bei predict --> dadurch verpflichtend
-                if st.form_submit_button("Save Modeling Activity to Database", help="Modeling Activity + Generation of Perturbation Option with BUA, DUA, DPA as input and Perturbation Option. Save the Modeling Activity and Entity to the Database. Later this button will be replaced and done automatically."):
-                    # Modeling Phase
+            #todo ausgliedern
+            # kann auch implementiert werden bei predict --> dadurch verpflichtend
+            if st.form_submit_button("Save Modeling Activity to Database", help="Modeling Activity + Generation of Perturbation Option with BUA, DUA, DPA as input and Perturbation Option. Save the Modeling Activity and Entity to the Database. Later this button will be replaced and done automatically."):
+                # Modeling Phase
 
-                    try:
+                try:
 
-                        query = (f"""PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-                            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                            PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
-                            PREFIX prov:  <http://www.w3.org/ns/prov#>
-                            PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-                            PREFIX instance:<http://www.semanticweb.org/dke/ontologies#>
-                             SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?DUA {{
-                                ?featureID rdf:type rprov:Feature .
-                                ?featureID rdfs:label ?featureName.
-                                ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                                ?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.}}""")
-                        results_update = get_connection_fuseki(host, query)
-                        # get Activities for PerturbationOption
-                        result_2 = pd.json_normalize(results_update["results"]["bindings"])
-                        result_2 = result_2.groupby(["featureID.value", "featureName.value"], as_index=False)[
-                            "DataUnderstandingEntityID.value"].agg(list)
+                    query = (f"""PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                        PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
+                        PREFIX prov:  <http://www.w3.org/ns/prov#>
+                        PREFIX owl: <http://www.w3.org/2002/07/owl#>
+                        PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+                        PREFIX instance:<http://www.semanticweb.org/dke/ontologies#>
+                         SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?DUA {{
+                            ?featureID rdf:type rprov:Feature .
+                            ?featureID rdfs:label ?featureName.
+                            ?DataUnderstandingEntityID rprov:toFeature ?featureID.
+                            ?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.}}""")
+                    results_update = get_connection_fuseki(host, query)
+                    # get Activities for PerturbationOption
+                    result_2 = pd.json_normalize(results_update["results"]["bindings"])
+                    result_2 = result_2.groupby(["featureID.value", "featureName.value"], as_index=False)[
+                        "DataUnderstandingEntityID.value"].agg(list)
 
-                        for key in st.session_state['settings']:
-                            # upload ModelingActivity to fueski
-                            uuid_DefinitionOfPerturbationOption = determinationDUA(host_upload, determinationName,
-                                                                                   label,
-                                                                                   starting_time, ending_time)
+                    for key in st.session_state['settings']:
+                        # upload ModelingActivity to fueski
+                        uuid_DefinitionOfPerturbationOption = determinationDUA(host_upload, determinationName,
+                                                                               label,
+                                                                               starting_time, ending_time)
 
 
 
-                        # if feature is in perturbation settings
-                        # create list with activities an loop in order to insert them as modelingEntityWasDerivedFrom
+                    # if feature is in perturbation settings
+                    # create list with activities an loop in order to insert them as modelingEntityWasDerivedFrom
 
-                        for key in st.session_state['settings']:
-                            if key in result_2["featureName.value"].values:
-                                test = (result_2[result_2["featureName.value"]==key])
-                                liste = (test["DataUnderstandingEntityID.value"].values).tolist()
+                    for key in st.session_state['settings']:
+                        if key in result_2["featureName.value"].values:
+                            test = (result_2[result_2["featureName.value"]==key])
+                            liste = (test["DataUnderstandingEntityID.value"].values).tolist()
 
-                                # create another loop in order to get different UUIDs for PerturbationOptions
-                                #KG sollen die einzelnen Optionen einzeln oder gesammelt gespeichert werden
-                                for method, perturbationOption in st.session_state['settings'][key].items():
-                                    uuid_PerturbationOption = uuid.uuid4()
-                                    for entities in liste:
-
-
-                                        # Entities werden hier ausgegeben
-                                        for entity in entities:
-                                            uuid_generationAlgorithm = uuid.uuid4()
-
-                                        # TODO Check generationAlgorithm - key only for testing purposes
-                                        # todo aufteilung
-
-                                            perturbationOptionlabel = str(perturbationOption)
-                                            perturbationOptionlabel = perturbationOptionlabel.replace("'","").replace("{","").replace("}","")
+                            # create another loop in order to get different UUIDs for PerturbationOptions
+                            #KG sollen die einzelnen Optionen einzeln oder gesammelt gespeichert werden
+                            for method, perturbationOption in st.session_state['settings'][key].items():
+                                uuid_PerturbationOption = uuid.uuid4()
+                                for entities in liste:
 
 
+                                    # Entities werden hier ausgegeben
+                                    for entity in entities:
+                                        uuid_generationAlgorithm = uuid.uuid4()
 
-                                            query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
-                                                                  rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
-                                                                  rprov:generationAlgorithm "{method}";
-                                                                  rprov:values "{perturbationOption}"@en;
-                                                                  rprov:modelingEntityWasDerivedFrom <{entity}>;
-                                                                  rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
-                                                                  rdfs:label "{method} with following settings: {perturbationOptionlabel}"@en.
-                                                                }}""")##{st.session_state['settings'][key]}
+                                    # TODO Check generationAlgorithm - key only for testing purposes
+                                    # todo aufteilung
+
+                                        perturbationOptionlabel = str(perturbationOption)
+                                        perturbationOptionlabel = perturbationOptionlabel.replace("'","").replace("{","").replace("}","")
+
+
+
+                                        query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
+                                                              rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
+                                                              rprov:generationAlgorithm "{method}";
+                                                              rprov:values "{perturbationOption}"@en;
+                                                              rprov:modelingEntityWasDerivedFrom <{entity}>;
+                                                              rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
+                                                              rdfs:label "{method} with following settings: {perturbationOptionlabel}"@en.
+                                                            }}""")##{st.session_state['settings'][key]}
 
 
 
 
-                                            host_upload.setQuery(prefix + query)
-                                            host_upload.setMethod(POST)
-                                            host_upload.query()
+                                        host_upload.setQuery(prefix + query)
+                                        host_upload.setMethod(POST)
+                                        host_upload.query()
 
-                                            # Test mit Bag
+                                        # Test mit Bag
 
-                                            # query = (
-                                            #     f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
-                                            #                                                                   rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
-                                            #                                                                   rprov:generationAlgorithm <urn:uuid:{uuid_generationAlgorithm}>;
-                                            #                                                                   rprov:modelingEntityWasDerivedFrom <{activity}>;
-                                            #                                                                   rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
-                                            #                                                                   rdfs:label "Perturbation option contains {method} algorithm with following settings: {perturbationOption}";
-                                            #                                                                 }}""")  ##{st.session_state['settings'][key]}
+                                        # query = (
+                                        #     f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
+                                        #                                                                   rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
+                                        #                                                                   rprov:generationAlgorithm <urn:uuid:{uuid_generationAlgorithm}>;
+                                        #                                                                   rprov:modelingEntityWasDerivedFrom <{activity}>;
+                                        #                                                                   rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
+                                        #                                                                   rdfs:label "Perturbation option contains {method} algorithm with following settings: {perturbationOption}";
+                                        #                                                                 }}""")  ##{st.session_state['settings'][key]}
 
-                                            #
-                                            # query = (f"""INSERT DATA {{<urn:uuid:{uuid_generationAlgorithm}> rdf:type owl:NamedIndividual;
-                                            #                       rdf:_{method} '{{{perturbationOption.items()}}}';}}""")
-                                            # host_upload.setQuery(prefix + query)
-                                            # host_upload.setMethod(POST)
-                                            # host_upload.query()
-                        # st.stop()
-                    except Exception as e:
-                        st.write(e)
-                        st.error("Error: Could not create DUA")
+                                        #
+                                        # query = (f"""INSERT DATA {{<urn:uuid:{uuid_generationAlgorithm}> rdf:type owl:NamedIndividual;
+                                        #                       rdf:_{method} '{{{perturbationOption.items()}}}';}}""")
+                                        # host_upload.setQuery(prefix + query)
+                                        # host_upload.setMethod(POST)
+                                        # host_upload.query()
+                    # st.stop()
+                except Exception as e:
+                    st.write(e)
+                    st.error("Error: Could not create DUA")
 
 
 
-        with col3:
+    if selected2 == "Test Perturbation":
 
-            insert, delete = st.tabs(["Insert", "Delete"])
+        insert, delete = st.tabs(["Insert", "Delete"])
 
-            with insert:
+        with insert:
 
-                if "df_r" not in st.session_state:
-                    st.session_state.df_r = pd.DataFrame(
-                        columns=st.session_state.dataframe_feature_names["featureName.value"].tolist())
-                if st.button("Add empty row"):
+            if "df_r" not in st.session_state:
+                st.session_state.df_aggrid_beginning = pd.DataFrame(
+                    columns=st.session_state.dataframe_feature_names["featureName.value"].tolist())
+            if st.button("Add empty row"):
 
-                    a = ["" for a in st.session_state.df_r]
-                    st.session_state.df_r.loc[len(st.session_state.df_r)] = a
+                a = ["" for a in st.session_state.df_aggrid_beginning]
+                st.session_state.df_aggrid_beginning.loc[len(st.session_state.df_aggrid_beginning)] = a
 
-                with st.expander("Submit new Data"):
-                    with st.form("Add Data"):
-                        dic = dict()
-                        for key, value in st.session_state.level_of_measurement_dic.items():
-                            if value == "Cardinal":
-                                dic[key] = st.number_input(f"Select Value for {key}",
-                                                     min_value=float(st.session_state.data_restriction_final[key][0]),
-                                                     max_value=float(st.session_state.data_restriction_final[key][-1]),
-                                                     key=f"add_data_{key}")
-                            if value == "Ordinal":
-                                dic[key] = st.selectbox(f"Select Value for {key}",
-                                                        options=st.session_state.data_restriction_final[key],
-                                                        key=f"add_data_{key}")
-                            if value == "Nominal":
-                                dic[key] = st.selectbox(f"Select Value for {key}",
-                                                        options=st.session_state.data_restriction_final[key],
-                                                        key=f"add_data_{key}")
-                        if st.form_submit_button("Submit Data",type='primary'):
-                            st.write(dic)
-                            st.session_state.df_r = st.session_state.df_r.append(dic, ignore_index=True)
+            with st.expander("Submit new Data"):
+                with st.form("Add Data"):
+                    dic = dict()
+                    for key, value in st.session_state.level_of_measurement_dic.items():
+                        if value == "Cardinal":
+                            dic[key] = st.number_input(f"Select Value for {key}",
+                                                 min_value=float(st.session_state.data_restriction_final[key][0]),
+                                                 max_value=float(st.session_state.data_restriction_final[key][-1]),
+                                                 key=f"add_data_{key}")
+                        if value == "Ordinal":
+                            dic[key] = st.selectbox(f"Select Value for {key}",
+                                                    options=st.session_state.data_restriction_final[key],
+                                                    key=f"add_data_{key}")
+                        if value == "Nominal":
+                            dic[key] = st.selectbox(f"Select Value for {key}",
+                                                    options=st.session_state.data_restriction_final[key],
+                                                    key=f"add_data_{key}")
+                    if st.form_submit_button("Submit Data",type='primary'):
+                        st.write(dic)
+                        st.session_state.df_aggrid_beginning = st.session_state.df_aggrid_beginning.append(dic, ignore_index=True)
 
 
 
 
 
-            with delete:
-                if st.session_state.df_r.shape[0] == 0:
+        with delete:
+                if st.session_state.df_aggrid_beginning.shape[0] == 0:
                     st.write("No data available")
                 else:
 
-                    drop_index = int(st.number_input("Index to drop", (st.session_state.df_r.index[0]), (st.session_state.df_r.index[-1])))
+                    drop_index = int(st.number_input("Index to drop", (st.session_state.df_aggrid_beginning.index[0]), (st.session_state.df_aggrid_beginning.index[-1])))
 
                     try:
                         if st.button(f"Drop row with index {drop_index}"):
-                            st.session_state.df_r = st.session_state.df_r.drop(drop_index).reset_index(drop=True)
+                            st.session_state.df_aggrid_beginning = st.session_state.df_aggrid_beginning.drop(drop_index).reset_index(drop=True)
                             #st.session_state.df_r.index += 1
                     except Exception as e:
                         st.info(e)
 
-                st.write(st.session_state.df_r)
+                st.write(st.session_state.df_aggrid_beginning)
 
         # with tab3:
         #     with st.expander("Show Perturbed Values"):
@@ -697,7 +696,7 @@ try:
         #     final_df = pd.concat([st.session_state['result_df'], st.session_state['df_r']])
         #     st.write(final_df)
 
-        gb = GridOptionsBuilder.from_dataframe(st.session_state.df_r)
+        gb = GridOptionsBuilder.from_dataframe(st.session_state.df_aggrid_beginning)
         # gb.configure_default_column(groupable=False,value=True,
         #                             editable=True, sortable=True, filter=True, resizable=True,
         #                             sizeColumnsToFit=True)
@@ -728,7 +727,7 @@ try:
 
         gridOptions = gb.build()
 
-        data = AgGrid(st.session_state.df_r,
+        data = AgGrid(st.session_state.df_aggrid_beginning,
                       gridOptions=gridOptions,
                       enable_enterprise_modules=False,
                       allow_unsafe_jscode=True,
@@ -829,7 +828,7 @@ try:
             """
             st.write(result)
 
-            st.session_state.df_r = result
+            st.session_state.df_aggrid_beginning = result
 
             # change values in selected rows to list in order to extend the list with perturbated values
             for i in selected_rows:

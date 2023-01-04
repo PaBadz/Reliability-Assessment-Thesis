@@ -59,3 +59,7 @@ if st.button("Upload Assessment Approach", type="primary"):
 want_to_contribute = st.button("Data Understanding")
 if want_to_contribute:
     switch_page("Data Understanding")
+
+want_to_contribute = st.button("Data Preparation")
+if want_to_contribute:
+    switch_page("Data Preparation")

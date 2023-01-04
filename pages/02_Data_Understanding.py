@@ -60,7 +60,7 @@ if optionsDataUnderstanding == "Scale":
             with st.form("Change level of measurement for features"):
                 options = ['Ordinal', 'Cardinal', 'Nominal']
 
-                for index, row in st.session_state.dataframe_feature_names["featureName.value"].iteritems():
+                for index, row in st.session_state.dataframe_feature_names["featureName.value"].items():
                     if (f'level_of_measurement_{row}') not in st.session_state:
                         st.session_state[f'level_of_measurement_{row}'] = "Nominal"
                     # wenn level of measurement dictionary nicht leer ist gibt es die level of measurement an
@@ -234,7 +234,7 @@ if optionsDataUnderstanding == "Volatility":
             starting_time = getTimestamp()
             with st.form("Change level of volatility for features"):
                 options = ['High Volatility', 'Medium Volatility', 'Low Volatility']
-                for index, row in st.session_state.dataframe_feature_names["featureName.value"].iteritems():
+                for index, row in st.session_state.dataframe_feature_names["featureName.value"].items():
                     if (f'volatility_of_feature_{row}') not in st.session_state:
                         st.session_state[f'volatility_of_feature_{row}'] = "Low Volatility"
                     try:

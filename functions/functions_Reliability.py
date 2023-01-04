@@ -9,7 +9,7 @@ from functions.fuseki_connection import *
 # ------------------------------------------------------------------------------------------------------------------------
 def deleteTable(key):
     if st.button("Delete Table", type="primary", key=key):
-        st.session_state.df_r = pd.DataFrame(
+        st.session_state.df_aggrid_beginning = pd.DataFrame(
             columns=st.session_state.dataframe_feature_names["featureName.value"].tolist())
 
 def update_steps(key, method):
@@ -51,6 +51,24 @@ def getDefault(host):
         st.write(e)
         st.info("Dont forget to upload unique values")
 
+def getPerturbationRecommendations(host):
+    query = (f"""
+            SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?DUA ?values ?label ?PerturbationAssessment{{
+            ?featureID rdf:type rprov:Feature .
+            ?featureID rdfs:label ?featureName.
+            ?DataUnderstandingEntityID rdf:type owl:NamedIndividual.
+	?DataUnderstandingEntityID rprov:perturbedFeature ?featureID.
+    ?DataUnderstandingEntityID rprov:generationAlgorithm ?DUA.
+    ?DataUnderstandingEntityID rprov:values ?values.
+    ?DataUnderstandingEntityID rdfs:label ?label.
+            ?PerturbationAssessment rprov:deploymentEntityWasDerivedFrom ?DataUnderstandingEntityID.
+            }}""")
+
+    results_feature_recommendation = get_connection_fuseki(host, (prefix + query))
+    results_feature_recommendation = pd.json_normalize(results_feature_recommendation["results"]["bindings"])
+    results_feature_recommendation = results_feature_recommendation.groupby(['featureName.value', 'DataUnderstandingEntityID.value','label.value'])['DataUnderstandingEntityID.type'].count().reset_index()
+
+    return results_feature_recommendation
 
 
 def getPerturbationOptions(host):
@@ -106,6 +124,13 @@ def getRestriction(host):
 
 def changeAlgorithm(key):
     st.session_state.default[key] = st.session_state[f"algo_{key}"]
+
+def changePerturbationOption(column):
+    st.session_state.perturbationOptions[column] = st.session_state[f"perturbationOption_{column}"]
+
+
+
+
 
 
 def update_steps(key, method):

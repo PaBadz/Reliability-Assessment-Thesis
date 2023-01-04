@@ -59,6 +59,7 @@ st.set_page_config(
 
 st.title('Masterthesis Reliability of Predictions')
 
+
 selected2 = option_menu(None, ["Database", "Upload"],
                         icons=['database', 'cloud-upload'],
                         menu_icon="", default_index=0, orientation="horizontal")
@@ -108,6 +109,19 @@ if selected2 == "Database":
             - Evaluation
             - Deployment""")
 
+    want_to_contribute = st.button("Business Understanding")
+    if want_to_contribute:
+        switch_page("Data Understanding")
+
+    want_to_contribute = st.button("Data Understanding")
+    if want_to_contribute:
+        switch_page("Data Understanding")
+
+    want_to_contribute = st.button("Data Preparation")
+    if want_to_contribute:
+        switch_page("Data Preparation")
+
+
 
     # if 'dataset_name' not in st.session_state:
     #     st.session_state['dataset_name'] = 'None'
@@ -128,6 +142,7 @@ if selected2 == 'Upload':
 - First time selection of the scale level
 - Creating the order of ordinal data and uploading the unique values of the variables
 - If a model is to be created, this must also be done when uploading the dataset. Upload of the model can also take place later.""")
+
 
     data = st.file_uploader("Choose a CSV file", accept_multiple_files=True)
     if not data:

@@ -165,7 +165,7 @@ def getUniqueValuesSeq(host):
 
 
 
-    for _index, row in results_feature_uniqueValues.iteritems():
+    for _index, row in results_feature_uniqueValues.items():
         dictionary_uniqueValues[_index] = row
 
 
@@ -189,7 +189,7 @@ def getDataRestrictionSeq(data_restriction,host):
     results_feature_DataRestriction = pd.json_normalize(results_feature_DataRestriction["results"]["bindings"])
     results_feature_DataRestriction= results_feature_DataRestriction.groupby("label.value")["item.value"].apply(list)
 
-    for _index, row in results_feature_DataRestriction.iteritems():
+    for _index, row in results_feature_DataRestriction.items():
         dictionary_DataRestriction[_index] = row
 
     return dictionary_DataRestriction
