@@ -11,9 +11,9 @@ except:
 
 
 
-selected2 = option_menu("Data Preparation Options", ["Binned Features", "Regression Function", "Missing Values"],
-                        icons=['collection', 'arrow-down-up', 'slash-circle'],
-                        menu_icon="None", default_index=0, orientation="horizontal")
+data_preparation_options = option_menu("Data Preparation Options", ["Binned Features", "Missing Values"],
+                                       icons=['collection', 'slash-circle'],
+                                       menu_icon="None", default_index=0, orientation="horizontal")
 
 if not any(key.startswith('level_of_measurement_') for key in st.session_state):
     st.session_state["dataframe_feature_names"] = get_feature_names(host)
@@ -33,23 +33,15 @@ except:
     st.session_state["volatility_of_features_dic"] = dict()
 
 try:
-    st.session_state["unique_values_dict"], st.session_state["DF_uniqueValues"] = getUniqueValues(host)
-    for key, value in st.session_state["unique_values_dict"].items():
-        res = value.split(', ')
-        st.session_state["unique_values_dict"][key] = res
+    st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
 except Exception as e:
-    st.info("No unique values found")
-    #st.write(e)
-    st.stop()
+    st.error("No Unique Values in database. If this is the first time a new dataset is uploaded please define a scale for each feature and upload the unique values.")
 
 
 
 
-if selected2 == "Binned Features":
+if data_preparation_options == "Binned Features":
     st.markdown("""## Binning of cardinal features""")
-    st.write(st.session_state.level_of_measurement_dic)
-
-
     for key, values in st.session_state.level_of_measurement_dic.items():
         data_restrictions_dic = dict()
         data = list()
@@ -57,11 +49,12 @@ if selected2 == "Binned Features":
             keywords = st_tags(
                 label=f'Enter Keywords: {key}',
                 text='Press enter to add more',
-                key=f'BinnedValues_{key}')
+                key=f'binnedValues_{key}')
 
             st.markdown("""---""")
         else:
             pass
+    st.write(st.session_state.binnedValues_balance)
 
 
 
@@ -76,14 +69,6 @@ if selected2 == "Binned Features":
 
 
 
-
-
-
-
-elif selected2 == "Regression Function":
-    st.markdown("""## Option for Missing Values?""")
-
-
-elif selected2 == "Missing Values":
+elif data_preparation_options == "Missing Values":
     st.markdown("""## How were missing data replaced?""")
 

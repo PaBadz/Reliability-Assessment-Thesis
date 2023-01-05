@@ -6,7 +6,6 @@ def percentage_perturbation(percentage_steps, value, data_restriction):
     # feature is increased and decreased in percentage steps
     # perturbation level is orange
     perturbedList = list()
-    st.write(type(value))
     # perturbedList.append(value)
     for i in range(-percentage_steps, percentage_steps+1):
         if i == 0:

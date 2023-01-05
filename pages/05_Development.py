@@ -20,7 +20,7 @@ if "data_restrictions_dict" not in st.session_state:
     st.session_state["data_restrictions_dict"] = dict()
 
 # horizontal menu
-selected2 = option_menu(None, ["Choose Algorithms", "Define Perturbation Options", "Test Perturbation"],
+selected2 = option_menu(None, ["Choose Algorithms", "Define Perturbation Options"],
                         icons=['house', 'gear'],
                         orientation="horizontal")
 
@@ -37,7 +37,7 @@ if "default" not in st.session_state:
         st.session_state.default[columns] = []
 
 if selected2 == 'Choose Algorithms':
-    t1, t2, t3 = st.tabs(["Algorithms", "Data Restriction", "Perturbation Recommendations"])
+    t1, t2 = st.tabs(["Algorithms", "Data Restriction"])
     with t1:
         colored_header(
             label="Choose Algorithms",
@@ -158,6 +158,7 @@ if selected2 == 'Choose Algorithms':
 
     # Select and Deselect Data Restriction
     with t2:
+        st.info("Data Restriction needed here?")
         try:
             d = getRestriction(host)
             data_restriction = st.selectbox("Select Data Restriction", options=d["URN"].unique())
@@ -200,12 +201,6 @@ if selected2 == 'Choose Algorithms':
 
             # st.write(st.session_state["data_restrictions_dict"])
 
-    with t3:
-        # TODO recommencation system
-        st.info("Not implemented yet")
-        st.info("Right now it only show if a feature has a high volatility!")
-        st.write(st.session_state["volatility_of_features_dic"])
-        st.write(st.session_state["DF_feature_volatility_name"])
 
 # Define Algorithmns
 
@@ -224,7 +219,19 @@ try:
         perturbed_value_list = dict()
         with tab1:
 
+
+            # check if algorithm for level of scale is chosen
+            is_empty = True
+            for values in st.session_state['cardinal_val'].values():
+                if values:
+                    is_empty = False
+
+            if is_empty:
+                st.info("No Algorithm for cardinal feature chosen")
+
+
             for key, value in st.session_state['cardinal_val'].items():
+
                 if "settingList" not in st.session_state:
                     st.session_state.settingList = dict()
                 settingList = dict()
@@ -323,7 +330,6 @@ try:
 
                         elif method == 'Fixed amount':
                             st.markdown(f"##### Define settings for algorithm: {method}")
-                            st.write(st.session_state[f"additional_value_{key}_{method}"])
                             st.session_state[f"additional_value_{key}_{method}"] =  float(st.number_input("Amount",value=float(st.session_state[f"additional_value_{key}_{method}"]),min_value=float(
                                     st.session_state.data_restriction_final[key][0]), max_value=float(
                                     st.session_state.data_restriction_final[key][1]),
@@ -404,6 +410,16 @@ try:
             st.session_state['perturbed_value_list'] = perturbed_value_list
 
         with tab2:
+
+            # check if algorithm for level of scale is chosen
+            is_empty = True
+            for values in st.session_state['ordinal_val'].values():
+                if values:
+                    is_empty = False
+
+            if is_empty:
+                st.info("No Algorithm for ordinal feature chosen")
+
             for key, value in st.session_state['ordinal_val'].items():
                 if "settingList" not in st.session_state:
                     st.session_state.settingList = dict()
@@ -463,6 +479,15 @@ try:
                 st.session_state['perturbed_value_list'] = perturbed_value_list
 
         with tab3:
+            # check if algorithm for level of scale is chosen
+            is_empty = True
+            for values in st.session_state['nominal_val'].values():
+                if values:
+                    is_empty = False
+
+            if is_empty:
+                st.info("No Algorithm for nominal feature chosen")
+
             for key, value in st.session_state['nominal_val'].items():
                 if "settingList" not in st.session_state:
                     st.session_state.settingList = dict()
@@ -504,33 +529,34 @@ try:
                         perturbed_value_list[key] = perturbedList
                 st.session_state['settings'] = settings
                 st.session_state['perturbed_value_list'] = perturbed_value_list
-        with st.expander("Show Perturbation Setting"):
-            st.write(st.session_state['settings'])
-        with st.form("Save Modeling Activity to Database"):
-            #KG DEVELOPMENT
-            #KG: DefinitionOfPertubartionOption
-            #KG: Define ModelingActivity and then create PerturbationOption Entity with BUA, DUA, DPA as input
 
-            ending_time = getTimestamp()
-
-            starting_time = getTimestamp()
-            # KG label nötig? Um die PerturbationOption zu identifizieren?
+        if st.session_state['settings']!={}:
+            with st.expander("Show Perturbation Setting"):
+                st.write(st.session_state['settings'])
 
 
-            # First create ModelingActivity
-            label = "Definition of Perturbation Option" #st.text_input("Definition of Perturbation Option",help="Insert a name for the perturbation option")
-            determinationNameUUID = 'DefinitionOfPerturbationOption'
-            determinationName = 'DefinitionOfPerturbationOption'
 
-            name = 'PerturbationOption'
-            rprovName = 'PerturbationOption'
-            ending_time = getTimestamp()
-
-            #todo ausgliedern
-            # kann auch implementiert werden bei predict --> dadurch verpflichtend
-            if st.form_submit_button("Save Modeling Activity to Database", help="Modeling Activity + Generation of Perturbation Option with BUA, DUA, DPA as input and Perturbation Option. Save the Modeling Activity and Entity to the Database. Later this button will be replaced and done automatically."):
+                #todo ausgliedern
+                # kann auch implementiert werden bei predict --> dadurch verpflichtend
+            if st.button("Save Modeling Activity to Database", type='primary', help="Modeling Activity + Generation of Perturbation Option with BUA, DUA, DPA as input and Perturbation Option. Save the Modeling Activity and Entity to the Database. Later this button will be replaced and done automatically."):
                 # Modeling Phase
+                # KG DEVELOPMENT
+                # KG: DefinitionOfPertubartionOption
+                # KG: Define ModelingActivity and then create PerturbationOption Entity with BUA, DUA, DPA as input
 
+                ending_time = getTimestamp()
+
+                starting_time = getTimestamp()
+                # KG label nötig? Um die PerturbationOption zu identifizieren?
+
+                # First create ModelingActivity
+                label = "Definition of Perturbation Option"  # st.text_input("Definition of Perturbation Option",help="Insert a name for the perturbation option")
+                determinationNameUUID = 'DefinitionOfPerturbationOption'
+                determinationName = 'DefinitionOfPerturbationOption'
+
+                name = 'PerturbationOption'
+                rprovName = 'PerturbationOption'
+                ending_time = getTimestamp()
                 try:
 
                     query = (f"""PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -585,15 +611,26 @@ try:
                                         perturbationOptionlabel = perturbationOptionlabel.replace("'","").replace("{","").replace("}","")
 
 
+                                        if method == "Perturb all values":
+                                            query = (
+                                                f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
+                                                                                                         rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
+                                                                                                         rprov:generationAlgorithm "{method}";
+                                                                                                         rprov:values "{perturbationOption}"@en;
+                                                                                                         rprov:modelingEntityWasDerivedFrom <{entity}>;
+                                                                                                         rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
+                                                                                                         rdfs:label "{method}"@en.
+                                                                                                       }}""")  ##{st.session_state['settings'][key]}rprov:values "{perturbationOption}"@en;
+                                        else:
 
-                                        query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
-                                                              rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
-                                                              rprov:generationAlgorithm "{method}";
-                                                              rprov:values "{perturbationOption}"@en;
-                                                              rprov:modelingEntityWasDerivedFrom <{entity}>;
-                                                              rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
-                                                              rdfs:label "{method} with following settings: {perturbationOptionlabel}"@en.
-                                                            }}""")##{st.session_state['settings'][key]}
+                                            query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
+                                                                  rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
+                                                                  rprov:generationAlgorithm "{method}";
+                                                                  rprov:values "{perturbationOption}"@en;
+                                                                  rprov:modelingEntityWasDerivedFrom <{entity}>;
+                                                                  rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
+                                                                  rdfs:label "{method} with following settings: {perturbationOptionlabel}"@en.
+                                                                }}""")##{st.session_state['settings'][key]}
 
 
 
@@ -624,518 +661,6 @@ try:
                     st.write(e)
                     st.error("Error: Could not create DUA")
 
-
-
-    if selected2 == "Test Perturbation":
-
-        insert, delete = st.tabs(["Insert", "Delete"])
-
-        with insert:
-
-            if "df_r" not in st.session_state:
-                st.session_state.df_aggrid_beginning = pd.DataFrame(
-                    columns=st.session_state.dataframe_feature_names["featureName.value"].tolist())
-            if st.button("Add empty row"):
-
-                a = ["" for a in st.session_state.df_aggrid_beginning]
-                st.session_state.df_aggrid_beginning.loc[len(st.session_state.df_aggrid_beginning)] = a
-
-            with st.expander("Submit new Data"):
-                with st.form("Add Data"):
-                    dic = dict()
-                    for key, value in st.session_state.level_of_measurement_dic.items():
-                        if value == "Cardinal":
-                            dic[key] = st.number_input(f"Select Value for {key}",
-                                                 min_value=float(st.session_state.data_restriction_final[key][0]),
-                                                 max_value=float(st.session_state.data_restriction_final[key][-1]),
-                                                 key=f"add_data_{key}")
-                        if value == "Ordinal":
-                            dic[key] = st.selectbox(f"Select Value for {key}",
-                                                    options=st.session_state.data_restriction_final[key],
-                                                    key=f"add_data_{key}")
-                        if value == "Nominal":
-                            dic[key] = st.selectbox(f"Select Value for {key}",
-                                                    options=st.session_state.data_restriction_final[key],
-                                                    key=f"add_data_{key}")
-                    if st.form_submit_button("Submit Data",type='primary'):
-                        st.write(dic)
-                        st.session_state.df_aggrid_beginning = st.session_state.df_aggrid_beginning.append(dic, ignore_index=True)
-
-
-
-
-
-        with delete:
-                if st.session_state.df_aggrid_beginning.shape[0] == 0:
-                    st.write("No data available")
-                else:
-
-                    drop_index = int(st.number_input("Index to drop", (st.session_state.df_aggrid_beginning.index[0]), (st.session_state.df_aggrid_beginning.index[-1])))
-
-                    try:
-                        if st.button(f"Drop row with index {drop_index}"):
-                            st.session_state.df_aggrid_beginning = st.session_state.df_aggrid_beginning.drop(drop_index).reset_index(drop=True)
-                            #st.session_state.df_r.index += 1
-                    except Exception as e:
-                        st.info(e)
-
-                st.write(st.session_state.df_aggrid_beginning)
-
-        # with tab3:
-        #     with st.expander("Show Perturbed Values"):
-        #         st.write(st.session_state['perturbed_value_list'])
-        #     st.subheader("Both perturbated tables combined")
-        #
-        #     for i in st.session_state.result_df:
-        #         st.write(i)
-        #         st.write(type(i))
-        #     for i in st.session_state.df_r:
-        #         st.write(i)
-        #         st.write(type(i))
-        #
-        #     final_df = pd.concat([st.session_state['result_df'], st.session_state['df_r']])
-        #     st.write(final_df)
-
-        gb = GridOptionsBuilder.from_dataframe(st.session_state.df_aggrid_beginning)
-        # gb.configure_default_column(groupable=False,value=True,
-        #                             editable=True, sortable=True, filter=True, resizable=True,
-        #                             sizeColumnsToFit=True)
-
-        cellRenderer = JsCode('''
-        cellRenderer.prototype.init = function (params) {
-            this.eGui = document.createElement('span');
-            this.eGui.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="100" viewBox="0 0 18 18"><path d="M5 8l4 4 4-4z"/></svg>' + params.value;
-        };
-
-        cellRenderer.prototype.getGui = function () {
-            return this.eGui;
-        };''')
-
-        gb.configure_selection(selection_mode="multiple", use_checkbox=False, rowMultiSelectWithClick=True)
-        gb.configure_auto_height(autoHeight=True)
-
-        for key, value in st.session_state.data_restriction_final.items():
-            if st.session_state.level_of_measurement_dic[key] != 'Cardinal':
-                gb.configure_column(f"{key}", editable=True, cellEditor="agSelectCellEditor",
-                                    cellEditorPopup=True, cellEditorParams={"values": value}, singleClickEdit=False,
-                                    sortable=True, filter=True, resizable=True, )
-                # cellRenderer=cellRenderer, singleClickEdit=True, width=90,
-                # cellEditorParams={"values": value})
-            else:
-                gb.configure_column(f"{key}", type=['numericColumn', "numberColumnFilter"], editable=True,
-                                    sortable=True, filter=True, resizable=True, )
-
-        gridOptions = gb.build()
-
-        data = AgGrid(st.session_state.df_aggrid_beginning,
-                      gridOptions=gridOptions,
-                      enable_enterprise_modules=False,
-                      allow_unsafe_jscode=True,
-                      editable=True,
-                      columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
-                      data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
-                      update_mode=GridUpdateMode.SELECTION_CHANGED,
-                      allowDragFromColumnsToolPanel=False,
-                      alwaysShowVerticalScroll=True,
-                      alwaysShowHorizontalScroll=True,
-                      theme='streamlit')
-
-        # KG: DEPLOYMENT
-        # KG: ClassificationCase
-        # KG: selected_rows are ClassificationCase Entity
-        # TODO: Create Entity from selected rows, Values: PerturbedTestCase
-        # Naming? Labeling?
-        # Values Testcase? These are the predicted perturbed rows
-
-
-        selected_rows = data["selected_rows"]
-        deleteTable("2")
-        selected_rows_DF = pd.DataFrame(selected_rows,
-                                        columns=st.session_state.dataframe_feature_names["featureName.value"])
-        try:
-            for features in selected_rows_DF:
-                if st.session_state.level_of_measurement_dic[features] == 'Cardinal':
-                    selected_rows_DF[features] = selected_rows_DF[features].astype(float)
-        except Exception as e:
-            st.error(f"ERROR! Please change! {e}")
-        st.write("### show selected rows")
-        st.write(selected_rows_DF)
-
-        st.write("Choose perturbation Mode")
-        perturbationMode = st.radio("Choose perturbation Mode", options=["Prioritized", "Selected"], horizontal=True,
-                                    label_visibility="collapsed")
-        if perturbationMode == "Prioritized":
-            data = list()
-            with st.expander("Prioritized Perturbation Mode"):
-                if f'order_feature' not in st.session_state:
-                    st.session_state[f'order_feature'] = list()
-                    for feature_name in st.session_state["dataframe_feature_names"]["featureName.value"]:
-                        dictionary_values = {'name': feature_name}
-                        data.append(dictionary_values)
-                        st.session_state[f'order_feature'] = data
-                else:
-                    data = st.session_state[f'order_feature']
-
-                prio = DraggableList(data, width="50%", key=f'order_feature')
-            st.session_state.perturb_mode = prio
-        else:
-            with st.expander("Selected Perturbation Mode"):
-
-                st.info("Perturbation Mode might not work properly")
-                st.info("maybe worthless, selected mode can be achieved otherwise")
-                selected = st.multiselect("Select features which should be perturbed",
-                                          options=st.session_state["dataframe_feature_names"]["featureName.value"],
-                                          default=st.session_state["dataframe_feature_names"]["featureName.value"])
-            st.session_state.perturb_mode = selected
-
-        if st.button("Predict"):
-            if "perturbedList" not in st.session_state:
-                st.session_state.perturbedList = dict()
-
-
-
-            # divide df based on level of measurement
-            nominal = [key for key, value in st.session_state.level_of_measurement_dic.items() if
-                       value == 'Nominal']
-            ordinal = [key for key, value in st.session_state.level_of_measurement_dic.items() if
-                       value == 'Ordinal']
-
-            cardinal = [key for key, value in st.session_state.level_of_measurement_dic.items() if
-                        value == 'Cardinal']
-
-            ct = ColumnTransformer(transformers=[
-                ("OneHot", OneHotEncoder(handle_unknown='ignore'), nominal),
-                ("Ordinal", OrdinalEncoder(handle_unknown='error'), ordinal),
-                ("Cardinal", SimpleImputer(strategy='most_frequent'), cardinal)],
-                remainder='drop', verbose_feature_names_out=False)
-
-            df = pd.DataFrame.from_dict(st.session_state.unique_values_dict, orient='index')
-            df = df.transpose()
-            x = pd.concat([df, selected_rows_DF]).reset_index(drop=True)
-            x = x.fillna(method='ffill')
-
-            x_trans_df = pd.DataFrame(ct.fit_transform(x), columns=ct.get_feature_names_out()).reset_index(
-                drop=True)
-            st.write(x_trans_df)
-            y_pred = pd.DataFrame(st.session_state.model.predict(x_trans_df))
-
-            # TODO divide selected rows in order to have seperated dataframes for each row, Idee: Result DF / len(selected_rows_DF)
-                # dadurch könnten die Selected rows getrennt werden
-            result = selected_rows_DF
-            result["prediction"] = y_pred.iloc[len(df):].reset_index(drop=True)
-            """
-            1) get prediction for selected rows
-            """
-            st.write(result)
-
-            st.session_state.df_aggrid_beginning = result
-
-            # change values in selected rows to list in order to extend the list with perturbated values
-            for i in selected_rows:
-                for k, v in i.items():
-                    if k != "_selectedRowNodeInfo":
-                        i[k] = [v]
-
-            # SOllen die perturbated values mit method key in das dataframe geladen werden
-            # eventuell mehrere dataframes pro perturbation und column erstellen
-
-            try:
-                result_df = pd.DataFrame(
-                    columns=result.columns)  # st.session_state.dataframe_feature_names["featureName.value"].tolist())
-                if "result_df" not in st.session_state:
-                    st.session_state['result_df'] = result_df
-                index_perturb = list()
-                # dictionary mit den ausgewählten methoden für jede column
-                for i in range(0, len(selected_rows)):
-                    for column, method in st.session_state['settings'].items():
-
-                        perturbedList = dict()
-
-                        for k, v in selected_rows[i].items():
-                            # TODO Hier die Umwandlung der perturbations auslagern
-                            # Es muss für jede Methode eine andere möglichkeit geben
-                            try:
-                                if k == column:
-                                    for algorithm_keys in method.keys():
-
-                                        if algorithm_keys == 'Percentage perturbation':
-
-                                            perturbedList[algorithm_keys] = (percentage_perturbation(method[algorithm_keys]["steps"],selected_rows[i][k][0],st.session_state.data_restriction_final[column]))
-
-
-                                        elif algorithm_keys == '5% perturbation':
-                                            perturbedList[algorithm_keys] = (percentage_perturbation(10, selected_rows[i][k][0],st.session_state.data_restriction_final[column]))
-
-                                        elif algorithm_keys == '10% perturbation':
-                                            perturbedList[algorithm_keys] = (percentage_perturbation(10, selected_rows[i][k][0],st.session_state.data_restriction_final[column]))
-
-                                        elif algorithm_keys == 'Sensor Precision':
-                                            perturbedList[algorithm_keys] = (
-                                                sensorPrecision(method[algorithm_keys]["sensorPrecision"],
-                                                                method[algorithm_keys]["steps"], selected_rows[i][k][0],st.session_state.data_restriction_final[column]))
-                                        elif algorithm_keys == 'Fixed amount':
-                                            perturbedList[algorithm_keys] = (
-                                                fixedAmountSteps(method[algorithm_keys]["amount"],
-                                                                 method[algorithm_keys]["steps"],
-                                                                 selected_rows[i][k][0],st.session_state.data_restriction_final[column]))
-                                        elif algorithm_keys == 'Range perturbation':
-                                            perturbedList[algorithm_keys] = (
-                                                perturbRange(method[algorithm_keys]["lowerBound"],
-                                                             method[algorithm_keys]["upperBound"],
-                                                             method[algorithm_keys]["steps"]))
-
-                                        elif algorithm_keys == 'Perturb in order':
-                                            try:
-                                                perturbedList[algorithm_keys] = (
-                                                    perturbInOrder(method[algorithm_keys]["steps"],
-                                                                   selected_rows[i][k][0],
-                                                                   st.session_state.data_restriction_final[column]))#method[algorithm_keys]["values"]
-
-                                            except Exception as e:
-                                                st.write(e)
-
-                                        elif algorithm_keys == 'Perturb all values':
-                                            perturbedList[algorithm_keys] = (
-                                                perturbAllValues(  # method[algorithm_keys]["value"],
-                                                    selected_rows[i][k][0],
-                                                    st.session_state.data_restriction_final[column]))
-                            except Exception as e:
-                                st.error(e)
-                            perturbed_value_list[column] = perturbedList
-
-                    index_perturb.append(perturbed_value_list.copy())
-                # TODO Delete
-                st.write(perturbed_value_list)
-
-                for i in range(0, len(selected_rows)):
-                    for column, method in index_perturb[i].items():
-
-                        # for column, method in perturbed_values.items():
-                        #
-                        if method:
-                            # ausgewählte methoden ist ein dictionary mit der methode als key und perturbated values als value
-
-                            # für jede ausgwählte row in aggrid gebe ein dictionary mit key = column und value = values aus
-                            for method_name, perturbed_values in method.items():
-
-                                for k, v in selected_rows[i].items():
-                                    if k == column:
-                                        selected_rows[i][k].extend(perturbed_values)
-
-                perturbated_rows_DF = pd.DataFrame(selected_rows,
-                                                  columns=result.columns)  # st.session_state.dataframe_feature_names["featureName.value"].tolist())
-
-                perturbated_rows_DF["prediction"] = result["prediction"]
-                # result_df=pd.concat([result, perturbated_rows_DF])
-                result_df = perturbated_rows_DF
-
-                for x in st.session_state.perturb_mode[::-1]:
-                    perturbated_rows_DF = perturbated_rows_DF.explode(x["name"])
-
-                perturbated_rows_DF = perturbated_rows_DF.reset_index(drop=True)
-                """
-                2) Get new perturbed cases
-                """
-                st.write(perturbated_rows_DF)
-
-                for column in result_df.columns:
-                    result_df = result_df.explode(column)
-
-                for columns in result_df:
-                    if columns in st.session_state.cardinal_val.keys():
-                        result_df[columns] = result_df[columns].astype(float)
-
-            #
-
-            except Exception as e:
-                st.info(e)
-
-            x = pd.concat([df, result_df.iloc[:, :-1]]).reset_index(drop=True)
-            x = x.fillna(method='ffill')
-
-            x_trans_df = pd.DataFrame(ct.fit_transform(x), columns=ct.get_feature_names_out()).reset_index(
-                drop=True)
-            #
-            y_pred = pd.DataFrame(st.session_state.model.predict(x_trans_df))
-
-            y_pred.iloc[len(df):].reset_index(drop=True)
-            result_df=result_df.reset_index(drop=True)
-            result_df["perturbation"] = y_pred
-            """
-            3) get prediction for perturbed cases
-            """
-            # KG: DEPLOYMENT
-            # KG
-            # Todo: Perturbation Assessment --> contains info which is handed over to the anaylst: testcases (which also could be in the ClassificationCase)
-
-
-            st.write(result_df)
-
-            # different_predictions = st.session_state.result_df[
-            #     st.session_state.result_df['prediction'] != st.session_state.result_df['perturbation']]
-            # st.write(st.session_state.result_df['perturbation'])
-            #
-            different_predictions = result_df[
-                result_df['prediction'] != result_df['perturbation']]
-            """
-            4) show cases where prediction changed
-            """
-            st.write(different_predictions)
-
-            # try:
-            #     result_df["Case"] = result_df.index
-            #     case = st.selectbox("Select case", options=[x for x in range(0, len(selected_rows))])
-            #     st.write(result_df[result_df["Case"] == case])
-            #
-            #
-            # except:
-            #     pass
-
-
-
-        with st.form("Save Perturbation Assessment to Database"):
-            # KG: DEPLOYMENT
-            # KG: ClassificationCase
-            # KG: selected_rows are ClassificationCase Entity
-            # TODO: Create Entity from selected rows, Values: PerturbedTestCase
-            # Naming? Labeling?
-            # Values Testcase? These are the predicted perturbed rows
-
-            ending_time = getTimestamp()
-
-            starting_time = getTimestamp()
-
-            label = st.text_input("Definition of Perturbation Case",
-                                  help="Insert a name for the perturbation option")
-            determinationNameUUID = 'PerturbationOfClassificationCase'
-            determinationName = 'PerturbationOfClassificationCase'
-
-            name = 'PerturbationOfClassificationCase'
-            rprovName = 'PerturbationOfClassificationCase'
-            ending_time = getTimestamp()
-
-            # todo ausgliedern
-            # kann auch implementiert werden bei predict --> dadurch verpflichtend
-
-            if st.form_submit_button("Save Perturbation Assessment to Database"):
-                # Modeling Phase
-
-                try:
-                    uuid_DefinitionOfPerturbationOption = determinationDUA(host_upload, determinationName, label,
-                                                                           starting_time, ending_time)
-
-                    # query = (f"""PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-                    #     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                    #     PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
-                    #     PREFIX prov:  <http://www.w3.org/ns/prov#>
-                    #     PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                    #     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-                    #     PREFIX instance:<http://www.semanticweb.org/dke/ontologies#>
-                    #      SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?DUA {{
-                    #         ?featureID rdf:type rprov:Feature .
-                    #         ?featureID rdfs:label ?featureName.
-                    #         ?DataUnderstandingEntityID rdf:type owl:NamedIndividual.
-                    #         ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                    #         ?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.}}""")
-                    # results_update = get_connection_fuseki(host, query)
-                    #
-                    # result_2 = pd.json_normalize(results_update["results"]["bindings"])
-                    #
-                    # for key in st.session_state['settings']:
-                    #     if key in result_2["featureName.value"].values:
-                    #         uuid_PerturbationOption = uuid.uuid4()
-                    #         st.write(key)
-                    #         test = (result_2[result_2["featureName.value"] == key])
-                    #         liste = (test["DataUnderstandingEntityID.value"].values).tolist()
-                    #
-                    #         for activitites in liste:
-                    #             # TODO Check generationAlgorithm - key only for testing purposes
-                    #             query = (
-                    #                 f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
-                    #                                   rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
-                    #                                   rprov:generationAlgorithm "{key}, {st.session_state['settings'][key]}";
-                    #                                   rprov:modelingEntityWasDerivedFrom <{activitites}>;
-                    #                                   rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
-                    #                                 }}""")
-                    #             host_upload.setQuery(prefix + query)
-                    #             host_upload.setMethod(POST)
-                    #             host_upload.query()
-
-                except Exception as e:
-                    st.write(e)
-                    st.error("Error: Could not create DUA")
-
-        with st.form("Save Classification Case to Database"):
-                # KG: DEPLOYMENT
-                # KG: ClassificationCase
-                # KG: selected_rows are ClassificationCase Entity
-                # TODO: Create Entity from selected rows, Values: PerturbedTestCase
-                # Naming? Labeling?
-                # Values Testcase? These are the predicted perturbed rows
-
-                ending_time = getTimestamp()
-
-                starting_time = getTimestamp()
-
-                label = st.text_input("Definition of Perturbation Option",
-                                      help="Insert a name for the perturbation option")
-                determinationNameUUID = 'DefinitionOfPerturbationOption'
-                determinationName = 'DefinitionOfPerturbationOption'
-
-                name = 'PerturbationOption'
-                rprovName = 'PerturbationOption'
-                ending_time = getTimestamp()
-
-                # todo ausgliedern
-                # kann auch implementiert werden bei predict --> dadurch verpflichtend
-
-                if st.form_submit_button("Save Classification Case to Database"):
-                    # Modeling Phase
-
-                    try:
-                        uuid_DefinitionOfPerturbationOption = determinationDUA(host_upload, determinationName, label,
-                                                                               starting_time, ending_time)
-
-                        query = (f"""PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-                            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                            PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
-                            PREFIX prov:  <http://www.w3.org/ns/prov#>
-                            PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-                            PREFIX instance:<http://www.semanticweb.org/dke/ontologies#>
-                             SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?DUA {{
-                                ?featureID rdf:type rprov:Feature .
-                                ?featureID rdfs:label ?featureName.
-                                ?DataUnderstandingEntityID rdf:type owl:NamedIndividual.
-                                ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                                ?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.}}""")
-                        results_update = get_connection_fuseki(host, query)
-
-                        result_2 = pd.json_normalize(results_update["results"]["bindings"])
-
-                        for key in st.session_state['settings']:
-                            if key in result_2["featureName.value"].values:
-                                uuid_PerturbationOption = uuid.uuid4()
-                                st.write(key)
-                                test = (result_2[result_2["featureName.value"] == key])
-                                liste = (test["DataUnderstandingEntityID.value"].values).tolist()
-
-                                for entities in liste:
-                                    # TODO Check generationAlgorithm - key only for testing purposes
-                                    query = (
-                                        f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
-                                                          rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
-                                                          rprov:generationAlgorithm "{key}, {st.session_state['settings'][key]}";
-                                                          rprov:modelingEntityWasDerivedFrom <{entities}>;
-                                                          rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
-                                                        }}""")
-                                    host_upload.setQuery(prefix + query)
-                                    host_upload.setMethod(POST)
-                                    host_upload.query()
-
-                    except Exception as e:
-                        st.write(e)
-                        st.error("Error: Could not create DUA")
 
 
 except Exception as e:
