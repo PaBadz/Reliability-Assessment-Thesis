@@ -120,6 +120,26 @@ def getSensorPrecision(host):
     return dictionary_SensorPrecision, results_feature_volatility
 
 
+def getMissingValues(host):
+    dictionary_MissingValues = dict()
+    query = (f"""
+    SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?MissingValues ?DUA {{
+    ?featureID rdf:type rprov:Feature .
+    ?featureID rdfs:label ?featureName.
+    ?DataUnderstandingEntityID rdf:type owl:NamedIndividual.
+    ?DataUnderstandingEntityID rprov:handlingValue ?MissingValues.
+	?DataUnderstandingEntityID rprov:toFeature ?featureID.
+  	?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.
+    }}""")
+    results_feature_volatility = get_connection_fuseki(host, (prefix+query))
+    results_feature_volatility = pd.json_normalize(results_feature_volatility["results"]["bindings"])
+
+    for _index, row in results_feature_volatility.iterrows():
+        dictionary_MissingValues[row["featureName.value"]] = row["MissingValues.value"]
+
+    return dictionary_MissingValues, results_feature_volatility
+
+
 def getUniqueValues(host):
     dictionary_uniqueValues = dict()
     query = (f"""    SELECT ?featureID ?featureName ?DataUnderstandingEntityID (GROUP_CONCAT(?uniqueValues; SEPARATOR=", ") AS ?uniqueValuesList) ?DUA {{
@@ -209,6 +229,27 @@ def determinationDUA(sparqlupdate, determinationName, label, starting_time, endi
     sparqlupdate.setMethod(POST)
     sparqlupdate.query()
     return uuid_Determination
+
+def uploadDPE(sparqlupdate,host,dic , uuid_DeterminationOfScaleOfFeature, name):
+    for key, value in dic.items():
+        uuid_ScaleOfFeature = uuid.uuid4()
+        query = (f"""PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
+                    PREFIx rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                SELECT ?subject WHERE {{?subject rdf:type rprov:Feature. ?subject rdfs:label '{key}'}}""")
+        results_update = get_connection_fuseki(host, query)
+
+        result_2 = pd.json_normalize(results_update["results"]["bindings"])
+
+        query = (f"""INSERT DATA {{<urn:uuid:{uuid_ScaleOfFeature}> rdf:type rprov:{name}, owl:NamedIndividual;
+                      rdfs:label "detMissingValues {key}"@en;
+                      rprov:handlingValue "{value}";
+                      rprov:toFeature <{result_2["subject.value"][0]}>;
+                      rprov:wasGeneratedByDUA  <urn:uuid:{uuid_DeterminationOfScaleOfFeature}>;
+                    }}""")
+        sparqlupdate.setQuery(prefix+query)
+        sparqlupdate.setMethod(POST)
+        sparqlupdate.query()
 
 
 def uploadDUE(sparqlupdate,host,dic , uuid_DeterminationOfScaleOfFeature, name, rprovName):
@@ -364,3 +405,8 @@ def getAttributes(host):
     if "loaded_feature_sensor_precision_dict" not in st.session_state:
         st.session_state["loaded_feature_sensor_precision_dict"], st.session_state[
             "DF_feature_sensor_precision_dict"] = getSensorPrecision(host)
+
+    if "missingValues_of_features_dic" not in st.session_state:
+        st.session_state["missingValues_of_features_dic"], st.session_state[
+            "DF_feature_missing_values_dic"] = getMissingValues(host)
+

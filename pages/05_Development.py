@@ -16,6 +16,7 @@ except:
 getDefault(host)
 getAttributes(host)
 
+
 if "data_restrictions_dict" not in st.session_state:
     st.session_state["data_restrictions_dict"] = dict()
 
@@ -158,12 +159,16 @@ if selected2 == 'Choose Algorithms':
 
     # Select and Deselect Data Restriction
     with t2:
+        if "flag_data_restriction" not in st.session_state:
+            st.session_state.flag_data_restriction = False
+        st.write(st.session_state["flag_data_restriction"])
         st.info("Data Restriction needed here?")
         try:
-            d = getRestriction(host)
-            data_restriction = st.selectbox("Select Data Restriction", options=d["URN"].unique())
+            uploaded_DataRestriction = getRestriction(host)
+            data_restriction = st.selectbox("Select Data Restriction", options=uploaded_DataRestriction["URN"].unique())
+            st.write(data_restriction)
 
-            st.write(d.loc[d["URN"] == data_restriction])
+            st.write(uploaded_DataRestriction.loc[uploaded_DataRestriction["URN"] == data_restriction])
             if st.button("Get Restriction", type='primary'):
                 try:
                     for key, value in st.session_state["level_of_measurement_dic"].items():
@@ -175,7 +180,9 @@ if selected2 == 'Choose Algorithms':
                             defaultValuesNominalRestriction(key)
                     st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(data_restriction, host)
                     st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
+
                     st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
+                    st.session_state["flag_data_restriction"] = True
 
 
 
@@ -188,7 +195,7 @@ if selected2 == 'Choose Algorithms':
                     st.session_state["data_restrictions_dict"] = getUniqueValuesSeq(host)
                     st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
                     st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
-                    st.write(st.session_state.data_restriction_final)
+                    st.session_state["flag_data_restriction"] = False
                     st.experimental_rerun()
                 except Exception as e:
                     st.write(e)
@@ -590,8 +597,12 @@ try:
 
                     for key in st.session_state['settings']:
                         if key in result_2["featureName.value"].values:
-                            test = (result_2[result_2["featureName.value"]==key])
-                            liste = (test["DataUnderstandingEntityID.value"].values).tolist()
+                            uploaded_entities = (result_2[result_2["featureName.value"] == key])
+                            # TODO delete data restcition if not chosen
+                            st.write(uploaded_entities)
+
+                            liste = (uploaded_entities["DataUnderstandingEntityID.value"].values).tolist()
+                            st.write(liste)
 
                             # create another loop in order to get different UUIDs for PerturbationOptions
                             #KG sollen die einzelnen Optionen einzeln oder gesammelt gespeichert werden
@@ -602,8 +613,6 @@ try:
 
                                     # Entities werden hier ausgegeben
                                     for entity in entities:
-                                        uuid_generationAlgorithm = uuid.uuid4()
-
                                     # TODO Check generationAlgorithm - key only for testing purposes
                                     # todo aufteilung
 
@@ -614,7 +623,7 @@ try:
                                         if method == "Perturb all values":
                                             query = (
                                                 f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
-                                                                                                         rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
+                                                                                                         rprov:perturbedFeature <{uploaded_entities["featureID.value"].values[0]}>;
                                                                                                          rprov:generationAlgorithm "{method}";
                                                                                                          rprov:values "{perturbationOption}"@en;
                                                                                                          rprov:modelingEntityWasDerivedFrom <{entity}>;
@@ -624,7 +633,7 @@ try:
                                         else:
 
                                             query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
-                                                                  rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
+                                                                  rprov:perturbedFeature <{uploaded_entities["featureID.value"].values[0]}>;
                                                                   rprov:generationAlgorithm "{method}";
                                                                   rprov:values "{perturbationOption}"@en;
                                                                   rprov:modelingEntityWasDerivedFrom <{entity}>;
@@ -639,23 +648,6 @@ try:
                                         host_upload.setMethod(POST)
                                         host_upload.query()
 
-                                        # Test mit Bag
-
-                                        # query = (
-                                        #     f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
-                                        #                                                                   rprov:perturbedFeature <{test["featureID.value"].values[0]}>;
-                                        #                                                                   rprov:generationAlgorithm <urn:uuid:{uuid_generationAlgorithm}>;
-                                        #                                                                   rprov:modelingEntityWasDerivedFrom <{activity}>;
-                                        #                                                                   rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
-                                        #                                                                   rdfs:label "Perturbation option contains {method} algorithm with following settings: {perturbationOption}";
-                                        #                                                                 }}""")  ##{st.session_state['settings'][key]}
-
-                                        #
-                                        # query = (f"""INSERT DATA {{<urn:uuid:{uuid_generationAlgorithm}> rdf:type owl:NamedIndividual;
-                                        #                       rdf:_{method} '{{{perturbationOption.items()}}}';}}""")
-                                        # host_upload.setQuery(prefix + query)
-                                        # host_upload.setMethod(POST)
-                                        # host_upload.query()
                     # st.stop()
                 except Exception as e:
                     st.write(e)

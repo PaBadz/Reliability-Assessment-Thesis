@@ -232,8 +232,9 @@ if optionsDataUnderstanding == "Volatility":
 
         with st.expander("Click here to changes volatility of features"):
             starting_time = getTimestamp()
+            options = ['High Volatility', 'Medium Volatility', 'Low Volatility']
             with st.form("Change level of volatility for features"):
-                options = ['High Volatility', 'Medium Volatility', 'Low Volatility']
+
                 for index, row in st.session_state.dataframe_feature_names["featureName.value"].items():
                     if (f'volatility_of_feature_{row}') not in st.session_state:
                         st.session_state[f'volatility_of_feature_{row}'] = "Low Volatility"
@@ -404,6 +405,7 @@ if optionsDataUnderstanding == "Data Restrictions":
     st.write(st.session_state["data_restrictions_dict"])
 
 if optionsDataUnderstanding == "Feature Sensor Precision":
+    # TODO insert DeterminationOfSensorPrecisionOfFeature_ to fuseki general graph
     determinationNameUUID = 'DeterminationOfSensorPrecisionOfFeature_'
     determinationName = 'DeterminationOfSensorPrecisionOfFeature'
     label = '"detSensorPrecisionOfFeature"@en'
