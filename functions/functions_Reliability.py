@@ -98,14 +98,21 @@ def getPerturbationOptions(host):
 
 # verschiedene restrictions welche eingestellt wurden
 # erstmal nicht beachten, kann später eingebaut werden
+
+
+
+
+
+# changed DeterminationOfDataRestriction to DataRestriction
 def getRestriction(host):
     dictionary_DataRestriction = dict()
-    query = (f"""    SELECT ?sub ?item ?label ?seq ?time WHERE {{
+    query = (f"""                            SELECT ?sub ?seq?item ?label ?featureName ?seq ?containerMembershipProperty WHERE {{
     ?sub rdf:type rprov:DeterminationOfDataRestriction.
-    ?sub prov:endedAtTime ?time.
     ?seq rprov:wasGeneratedByDUA ?sub.
     ?seq rdfs:label ?label.
-    ?seq rdf:DataRestriction ?list.
+    ?seq rprov:toFeature ?feature.
+    ?feature rdfs:label ?featureName.
+    ?seq rprov:DataRestriction ?list.
     ?list ?containerMembershipProperty ?item.
     FILTER(?containerMembershipProperty!= rdf:type)
     }}
@@ -114,10 +121,10 @@ def getRestriction(host):
     results_feature_DataRestriction = get_connection_fuseki(host, (prefix + query))
     results_feature_DataRestriction = pd.json_normalize(results_feature_DataRestriction["results"]["bindings"])
     results_feature_DataRestriction = \
-        results_feature_DataRestriction.groupby(["time.value", "sub.value", "label.value"], as_index=False)[
+        results_feature_DataRestriction.groupby(["sub.value","seq.value", "label.value", "featureName.value"], as_index=False)[
             "item.value"].agg(list)
     # results_feature_DataRestriction = results_feature_DataRestriction.groupby(["time.value","sub.value","label.value"]).apply(lambda x: [list(x['item.value'])]).apply(pd.Series)
-    results_feature_DataRestriction.columns = ['time', 'URN', 'Feature', 'Value']
+    results_feature_DataRestriction.columns = ['DataRestrictionActivity', 'DataRestrictionEntity', 'Label', 'Feature', 'Value']
 
     return results_feature_DataRestriction
 

@@ -6,46 +6,6 @@ from streamlit_option_menu import option_menu
 import pandas as pd
 
 
-# def getAttributes():
-#     if not any(key.startswith('level_of_measurement_') for key in st.session_state):
-#         st.session_state[" dataframe_feature_names"] = get_feature_names(host)
-#
-#     try:
-#         st.session_state["level_of_measurement_dic"], st.session_state["DF_feature_scale_name"] = getFeatureScale(host)
-#         for key, value in st.session_state["level_of_measurement_dic"].items():
-#             st.session_state[f'level_of_measurement_{key}'] = value
-#     except:
-#         st.session_state["DF_feature_scale_name"] = pd.DataFrame()
-#         # st.session_state["level_of_measurement_dic"] = dict()
-#
-#     try:
-#         st.session_state["volatility_of_features_dic"], st.session_state[
-#             "DF_feature_volatility_name"] = getFeatureVolatility(host)
-#     except:
-#         st.session_state["volatility_of_features_dic"] = dict()
-#
-#     try:
-#         st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
-#     except Exception as e:
-#         st.error(
-#             "No Unique Values in database. If this is the first time a new dataset is uploaded please define a scale for each feature and upload the unique values.")
-#     if "loaded_feature_sensor_precision_dict" not in st.session_state:
-#         st.session_state["loaded_feature_sensor_precision_dict"], st.session_state[
-#             "DF_feature_sensor_precision_dict"] = getSensorPrecision(host)
-
-def _set_database():
-    for key in st.session_state.keys():
-        if key == "fuseki_database" or key == "name_fuseki_database" or key == "fueski_dataset_options":
-            pass
-        else:
-            del st.session_state[key]
-
-    st.session_state.fuseki_database = st.session_state.name_fuseki_database
-
-
-
-
-
 st.set_page_config(
     page_title="Masterthesis Pascal Badzura",
     page_icon="🦈",
@@ -65,8 +25,6 @@ selected2 = option_menu(None, ["Database", "Upload"],
                         menu_icon="", default_index=0, orientation="horizontal")
 st.markdown("#### In Order to continue please upload a dataset to the server or choose a dataset from the database")
 if st.button('Load all datasets from Fuseki', type='primary'):
-
-
     # Get all datasets from fuseki
     sparql = SPARQLWrapper(host)
     sparql.setReturnFormat(JSON)
@@ -85,7 +43,7 @@ if 'fuseki_database' not in st.session_state:
 index = st.session_state['fueski_dataset_options'].index(st.session_state['fuseki_database'])
 
 
-st.session_state.fuseki_database = st.selectbox('Please insert a name for the database', index=index,options=st.session_state['fueski_dataset_options'],on_change=_set_database, key='name_fuseki_database')
+st.session_state.fuseki_database = st.selectbox('Please insert a name for the database', index=index,options=st.session_state['fueski_dataset_options'],on_change=set_database, key='name_fuseki_database')
 host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
 host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
 
@@ -123,18 +81,14 @@ if selected2 == "Database":
 
 
 
-    # if 'dataset_name' not in st.session_state:
-    #     st.session_state['dataset_name'] = 'None'
-    data = None
-    # if 'unique_values_dict' not in st.session_state:
-    #     with open('unique_values.json') as f:
-    #         st.session_state['unique_values_dict'] = json.load(f)
-
-    st.stop()
-
-
-def getTimestamp():
-    return datetime.now().strftime("%d.%m.%Y - %H:%M:%S")
+    # # if 'dataset_name' not in st.session_state:
+    # #     st.session_state['dataset_name'] = 'None'
+    # data = None
+    # # if 'unique_values_dict' not in st.session_state:
+    # #     with open('unique_values.json') as f:
+    # #         st.session_state['unique_values_dict'] = json.load(f)
+    #
+    # st.stop()
 
 if selected2 == 'Upload':
     st.info("""The following steps must be carried out when using the device for the first time!
@@ -161,15 +115,8 @@ if selected2 == 'Upload':
 
     X = uploaded_file_df.drop(y, axis=1)
 
-    # Only test prupose. Must be deleted
-    # X.drop(columns=X.columns[int(0)], axis=1, inplace=True)
-    # X.drop(columns=X.columns[int(15)], axis=1, inplace=True)
     y = uploaded_file_df[y]
     df = pd.DataFrame(data=X, columns=X.columns)
-
-
-
-
 
     if st.session_state.fuseki_database == 'None':
         st.stop()
@@ -186,17 +133,22 @@ if selected2 == 'Upload':
         df = pd.DataFrame(data=X, columns=X.columns)
         st.session_state['df'] = df
         st.session_state['X'] = X
+
+        # y needed if model is generated in this webapp
         st.session_state['y'] = y
-        st.session_state.cardinal_val = {}
-        st.session_state.ordinal_val = {}
-        st.session_state.nominal_val = {}
-        st.session_state.default = {}
-        for columns in df.columns:
-            st.session_state.default[columns] = []
+
+        # st.session_state.cardinal_val = {}
+        # st.session_state.ordinal_val = {}
+        # st.session_state.nominal_val = {}
+        # st.session_state.default = {}
+        # for columns in df.columns:
+        #     st.session_state.default[columns] = []
     else:
         st.write("No Data")
         st.stop()
 
+
+    # TODO outsource to function
     # Determination of feature
     if st.button("Upload dataset to the server", type='primary', help="Determines the features of the dataset, in the next step you can determine the scale of the features"):
         determinationNameUUID = 'DeterminationOfFeature'
@@ -221,32 +173,14 @@ if selected2 == 'Upload':
             unique_values_dict[features] = unique_values
 
             uuid_Feature = uuid.uuid4()
-            query = (f"""PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-                                  PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                                  PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
-                                  PREFIX prov:  <http://www.w3.org/ns/prov#>
-                                  PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                                  PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-                                  PREFIX instance:<http://www.semanticweb.org/dke/ontologies#>
-                                    INSERT DATA {{<urn:uuid:{uuid_Feature}> rdf:type rprov:Feature, owl:NamedIndividual;
-                                    rdfs:label '{features}';
-                                    rprov:wasGeneratedByDUA <urn:uuid:{uuid_determinationFeature}>.}}""")
-            sparqlupdate.setQuery(query)
-            sparqlupdate.setMethod(POST)
-            sparqlupdate.query()
+
+            upload_features(host_upload,uuid_Feature, features, uuid_determinationFeature)
+
 
 
         if "unique_values_dict" not in st.session_state:
             st.session_state['unique_values_dict'] = unique_values_dict
 
-            st.success("Features uploaded")
-            st.info("In the next step you can determine the scale of the features")
-
-            # create_model = st.button("Determine level of scale for each feature", help(
-            #     "It is neccessary to upload unique values to the server. Before this is possible, determination of scale of feature is needed. All Values for Nominal/Ordinal are saved. For Cardinal Features only min/max are saved."),
-            #                          type='primary')
-            # if create_model:
-            #     switch_page("Data Understanding")
-
-
+        st.success("Features uploaded")
+        st.info("In the next step you can determine the scale of the features")
 

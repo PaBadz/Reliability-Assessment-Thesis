@@ -1,3 +1,6 @@
+import stat
+
+import pandas as pd
 import streamlit
 from st_draggable_list import DraggableList
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode, JsCode
@@ -57,13 +60,10 @@ if selected2 == 'Choose Algorithms':
                         try:
                             if st.session_state.volatility_of_features_dic[columns] == 'High Volatility':
                                 st.warning("Feature has high volatility!")
-                                st.info(
-                                    "Switch to perturbation Recommendations to see which algrorithms were used in the past.")
 
 
                             elif st.session_state.volatility_of_features_dic[columns] == 'Medium Volatility':
-                                st.info(
-                                    "Feature has medium volatility!  \nSwitch to perturbation Recommendations to see which algrorithms were used in the past.")
+                                st.info("Feature has medium volatility!")
                         except:
                             st.info("No level of volatility determined")
                         try:
@@ -91,8 +91,7 @@ if selected2 == 'Choose Algorithms':
                                 st.info(
                                     "Switch to perturbation Recommendations to see which algorithms were used in the past.")
                             elif st.session_state.volatility_of_features_dic[columns] == 'Medium Volatility':
-                                st.info(
-                                    "Feature has medium volatility!  \nSwitch to perturbation Recommendations to see which algrorithms were used in the past.")
+                                st.info("Feature has medium volatility!")
                         except:
                             st.info("No level of volatility determined")
 
@@ -119,13 +118,10 @@ if selected2 == 'Choose Algorithms':
 
                             if st.session_state.volatility_of_features_dic[columns] == 'High Volatility':
                                 st.warning("Feature has high volatility!")
-                                st.info(
-                                    "Switch to perturbation Recommendations to see which algrorithms were used in the past.")
                             elif st.session_state.volatility_of_features_dic[columns] == 'Medium Volatility':
-                                st.info(
-                                    "Feature has medium volatility!  \nSwitch to perturbation Recommendations to see which algrorithms were used in the past.")
+                                st.info("Feature has medium volatility!")
                         except:
-                            st.info("   No level of volatility determined")
+                            st.info("No level of volatility determined")
 
                         try:
                             st.session_state.default[columns] = st.multiselect(f'{columns}', options_nominal,
@@ -159,55 +155,97 @@ if selected2 == 'Choose Algorithms':
 
     # Select and Deselect Data Restriction
     with t2:
-        if "flag_data_restriction" not in st.session_state:
-            st.session_state.flag_data_restriction = False
-        st.write(st.session_state["flag_data_restriction"])
-        st.info("Data Restriction needed here?")
+
+        st.write(st.session_state["loaded_feature_sensor_precision_dict"])
+        st.write(st.session_state["DF_feature_sensor_precision"])
+
         try:
             uploaded_DataRestriction = getRestriction(host)
-            data_restriction = st.selectbox("Select Data Restriction", options=uploaded_DataRestriction["URN"].unique())
-            st.write(data_restriction)
-
-            st.write(uploaded_DataRestriction.loc[uploaded_DataRestriction["URN"] == data_restriction])
-            if st.button("Get Restriction", type='primary'):
-                try:
-                    for key, value in st.session_state["level_of_measurement_dic"].items():
-                        if value == "Cardinal":
-                            defaultValuesCardinalRestriction(key)
-                        if value == "Ordinal":
-                            defaultValuesOrdinalRestriction(key)
-                        if value == "Nominal":
-                            defaultValuesNominalRestriction(key)
-                    st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(data_restriction, host)
-                    st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-
-                    st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
-                    st.session_state["flag_data_restriction"] = True
+            if "flag_data_restriction" not in st.session_state:
+                st.session_state.flag_data_restriction = False
+                st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
+            if st.session_state.data_restriction_URN.empty:
+                st.info("No Data Restriction selected")
+            else:
+                st.success("Data Restriction option selected")
 
 
 
-                except Exception as e:
-                    st.write(e)
-                    st.info("Dont forget to upload unique values")
 
-            if st.button("Deselect Restriction"):
-                try:
-                    st.session_state["data_restrictions_dict"] = getUniqueValuesSeq(host)
-                    st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-                    st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
-                    st.session_state["flag_data_restriction"] = False
-                    st.experimental_rerun()
-                except Exception as e:
-                    st.write(e)
-                    st.write("Didnt work")
+            with st.expander("Show selected Data Restriction:"):
+                colored_header(
+                    label="Data Restriction",
+                    description="",
+                    color_name="red-50",
+                )
+                st.dataframe(st.session_state.data_restriction_URN[["Feature", "Value"]], use_container_width=True)
+
+            try:
+
+                options_data_restriction = uploaded_DataRestriction["DataRestrictionActivity"].unique().tolist()
+                data_restriction = st.selectbox("Select Data Restriction", options=options_data_restriction)
+
+
+                selected_DataRestriction = uploaded_DataRestriction.loc[uploaded_DataRestriction["DataRestrictionActivity"] == data_restriction]
+
+
+                st.dataframe(selected_DataRestriction[["Feature", "Value"]], use_container_width=True)
+
+
+
+                if st.button("Get Restriction", type='primary'):
+
+                    st.session_state.data_restriction_URN = selected_DataRestriction
+
+                    try:
+                        for key, value in st.session_state["level_of_measurement_dic"].items():
+                            if value == "Cardinal":
+                                defaultValuesCardinalRestriction(key)
+                            if value == "Ordinal":
+                                defaultValuesOrdinalRestriction(key)
+                            if value == "Nominal":
+                                defaultValuesNominalRestriction(key)
+                        st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(data_restriction, host)
+                        st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
+
+                        st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
+                        st.session_state["flag_data_restriction"] = True
+
+                        st.experimental_rerun()
+
+
+
+
+
+
+                    except Exception as e:
+                        st.write(e)
+                        st.info("Dont forget to upload unique values")
+
+
+                if st.button("Deselect Restriction"):
+                    try:
+                        st.session_state["data_restrictions_dict"] = getUniqueValuesSeq(host)
+                        st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
+                        st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
+                        st.session_state["flag_data_restriction"] = False
+                        st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
+                        st.experimental_rerun()
+                    except Exception as e:
+                        st.write(e)
+                        st.write("Didnt work")
+
+
+
+            except Exception as e:
+                st.write(e)
 
 
         except Exception as e:
-
+            st.error(e)
+            st.info("No Data Restrictions available.")
             st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-
-            # st.write(st.session_state["data_restrictions_dict"])
-
+            st.session_state.data_restriction_URN = pd.DataFrame(columns=['DataRestrictionActivity', 'DataRestrictionEntity', 'Label', 'Feature', 'Value'])
 
 # Define Algorithmns
 
@@ -215,6 +253,9 @@ if selected2 == 'Choose Algorithms':
 
 try:
     if selected2 == 'Define Perturbation Options':
+
+
+
 
         if "perturbed_value_list" not in st.session_state:
             st.session_state.perturbed_value_list = {}
@@ -543,8 +584,17 @@ try:
 
 
 
+
                 #todo ausgliedern
                 # kann auch implementiert werden bei predict --> dadurch verpflichtend
+
+            if st.session_state.data_restriction_URN["DataRestrictionEntity"].empty:
+                st.info("No Data Restriction selected")
+            else:
+                st.write(st.session_state.data_restriction_URN["DataRestrictionEntity"])
+
+
+            labelPerturbation = st.text_input("Insert additional label for the defined Perturbation Options",help="This is optional. Name your Perturbation Option in order to find it easier later. Ever Perturbation Option should be uniquely named")
             if st.button("Save Modeling Activity to Database", type='primary', help="Modeling Activity + Generation of Perturbation Option with BUA, DUA, DPA as input and Perturbation Option. Save the Modeling Activity and Entity to the Database. Later this button will be replaced and done automatically."):
                 # Modeling Phase
                 # KG DEVELOPMENT
@@ -555,6 +605,9 @@ try:
 
                 starting_time = getTimestamp()
                 # KG label nötig? Um die PerturbationOption zu identifizieren?
+                label = st.text_input("Give a label for the PerturbationOption",
+                                      help="Note there should be no labels with the same name")
+
 
                 # First create ModelingActivity
                 label = "Definition of Perturbation Option"  # st.text_input("Definition of Perturbation Option",help="Insert a name for the perturbation option")
@@ -565,30 +618,65 @@ try:
                 rprovName = 'PerturbationOption'
                 ending_time = getTimestamp()
                 try:
+                    # st.write(st.session_state["flag_data_restriction"])
+                    # if st.session_state["flag_data_restriction"] == False:
+                    #
+                    #     query = (f"""
+                    #          SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?DUA {{
+                    #             ?featureID rdf:type rprov:Feature .
+                    #             ?featureID rdfs:label ?featureName.
+                    #             ?DataUnderstandingEntityID rprov:toFeature ?featureID.
+                    #             ?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.
+                    #              FILTER(?rprov!=rprov:SensorPrecisionOfFeature)}}""")
+                    #
+                    # else:
 
-                    query = (f"""PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                        PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
-                        PREFIX prov:  <http://www.w3.org/ns/prov#>
-                        PREFIX owl: <http://www.w3.org/2002/07/owl#>
-                        PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-                        PREFIX instance:<http://www.semanticweb.org/dke/ontologies#>
-                         SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?DUA {{
-                            ?featureID rdf:type rprov:Feature .
+                    # query = (f"""
+                    #                                   SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?DUA WHERE{{
+                    #         ?featureID rdf:type rprov:Feature .
+                    #         ?featureID rdfs:label ?featureName.
+                    #         ?DataUnderstandingEntityID rprov:toFeature ?featureID.
+    				# 		?DataUnderstandingEntityID rdf:type ?rprov.
+                    #         ?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.
+                    #
+                    #         FILTER(      ?rprov!=owl:NamedIndividual)
+                    #         FILTER(?rprov!=rprov:DataRestriction)
+                    #         FILTER(?rprov!=rprov:SensorPrecisionOfFeature)""")
+
+                    query = (f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?DUA WHERE{{
+    			?featureID rdf:type rprov:Feature .
                             ?featureID rdfs:label ?featureName.
                             ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                            ?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.}}""")
-                    results_update = get_connection_fuseki(host, query)
+    						?DataUnderstandingEntityID rdf:type ?rprov.
+                            ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA ?DUA.
+                        
+                          FILTER(      ?rprov!=owl:NamedIndividual)
+                            FILTER(?rprov!=rprov:DataRestriction)
+    FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
+    
+    }}""")
+
+
+                    results_update = get_connection_fuseki(host, (prefix+query))
                     # get Activities for PerturbationOption
                     result_2 = pd.json_normalize(results_update["results"]["bindings"])
                     result_2 = result_2.groupby(["featureID.value", "featureName.value"], as_index=False)[
                         "DataUnderstandingEntityID.value"].agg(list)
 
-                    for key in st.session_state['settings']:
+
+
+
+                    #for key in st.session_state['settings']:
+                        # TODO Decide whether PerturbationOption is generated for each feature or all together
                         # upload ModelingActivity to fueski
-                        uuid_DefinitionOfPerturbationOption = determinationDUA(host_upload, determinationName,
-                                                                               label,
-                                                                               starting_time, ending_time)
+
+
+                        ####################################################################################################
+
+                    uuid_DefinitionOfPerturbationOption = determinationDUA(host_upload, determinationName,
+                                                                           label,
+                                                                           starting_time, ending_time)
+                        ####################################################################################################
 
 
 
@@ -599,24 +687,69 @@ try:
                         if key in result_2["featureName.value"].values:
                             uploaded_entities = (result_2[result_2["featureName.value"] == key])
                             # TODO delete data restcition if not chosen
-                            st.write(uploaded_entities)
+
 
                             liste = (uploaded_entities["DataUnderstandingEntityID.value"].values).tolist()
-                            st.write(liste)
+
+
+
+                            # insert URN if flag is true and also look if feature is in data restrictions
+                            try:
+                                if key in st.session_state.data_restriction_URN["Feature"].values:
+
+                                    data_restriction = st.session_state.data_restriction_URN[st.session_state.data_restriction_URN["Feature"] == key]["DataRestrictionEntity"].reset_index(drop=True)
+                                    liste[0].append(data_restriction[0])
+                            except Exception as e:
+                                st.write(e)
+                            try:
+                                # check if algorithm is "Sensor Precision" and then check if there is an entry in the database with SensorPrecision for this feature, if so then check if the values are the same
+                                # if values are the same, append dataunderstandingentity into liste and proceed
+                                # if values are different, throw error and  write info that precision level is different to saved one
+                                # right now dataunderstandingentity will not be generated
+                                if st.session_state['cardinal_val'][key][0] == "Sensor Precision":
+
+                                    if key in st.session_state.DF_feature_sensor_precision["featureName.value"].values:
+
+                                        data_precision = st.session_state.DF_feature_sensor_precision[(
+                                            st.session_state.DF_feature_sensor_precision["featureName.value"] == key)&(
+                                            st.session_state.loaded_feature_sensor_precision_dict[key] == round(st.session_state.settings[key]["Sensor Precision"]["sensorPrecision"],2))][
+                                            "DataUnderstandingEntityID.value"].reset_index(drop=True)
+                                        liste[0].append(data_precision[0])
+                            except Exception as e:
+                                st.info(f"Different precision level for feature {key}. Right now this will not lead to creation of data understanding entity for sensor precision")
 
                             # create another loop in order to get different UUIDs for PerturbationOptions
                             #KG sollen die einzelnen Optionen einzeln oder gesammelt gespeichert werden
                             for method, perturbationOption in st.session_state['settings'][key].items():
                                 uuid_PerturbationOption = uuid.uuid4()
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                # get dataunderstandingentity for sensor precision and if perturbation option contains sensor precision insert into list
+                                # create new dataunderstandingentity if sensor precision is different?
+                                # update dataunderstandingentity if sensor precision is different?
+
+
+
                                 for entities in liste:
 
 
                                     # Entities werden hier ausgegeben
                                     for entity in entities:
-                                    # TODO Check generationAlgorithm - key only for testing purposes
-                                    # todo aufteilung
+
 
                                         perturbationOptionlabel = str(perturbationOption)
+
                                         perturbationOptionlabel = perturbationOptionlabel.replace("'","").replace("{","").replace("}","")
 
 
@@ -628,7 +761,7 @@ try:
                                                                                                          rprov:values "{perturbationOption}"@en;
                                                                                                          rprov:modelingEntityWasDerivedFrom <{entity}>;
                                                                                                          rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
-                                                                                                         rdfs:label "{method}"@en.
+                                                                                                         rdfs:label "{labelPerturbation}-{method}"@en.
                                                                                                        }}""")  ##{st.session_state['settings'][key]}rprov:values "{perturbationOption}"@en;
                                         else:
 
@@ -638,8 +771,9 @@ try:
                                                                   rprov:values "{perturbationOption}"@en;
                                                                   rprov:modelingEntityWasDerivedFrom <{entity}>;
                                                                   rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
-                                                                  rdfs:label "{method} with following settings: {perturbationOptionlabel}"@en.
-                                                                }}""")##{st.session_state['settings'][key]}
+                                                                  rdfs:label "{labelPerturbation}-{method}: {perturbationOptionlabel}"@en.
+                                                                }}""")
+                                            #{st.session_state['settings'][key]}
 
 
 

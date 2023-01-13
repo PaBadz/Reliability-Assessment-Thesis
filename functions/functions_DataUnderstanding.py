@@ -29,10 +29,9 @@ def defaultValuesCardinal(key):
                                                              float(st.session_state.unique_values_dict[key][-1])]
     try:
         del st.session_state["data_restrictions_dict"][key]
+        st.write("Geht nich")
     except:
         st.info("Default values already selected")
-    # st.session_state["data_restrictions_dict"][key] = [float(st.session_state.unique_values_dict[key][0]),
-    #                                                         float(st.session_state.unique_values_dict[key][-1])]
 
 
 def defaultValuesOrdinal(key):

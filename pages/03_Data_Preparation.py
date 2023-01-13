@@ -17,28 +17,28 @@ getAttributes(host)
 data_preparation_options = option_menu("Data Preparation Options", ["Binned Features", "Missing Values"],
                                        icons=['collection', 'slash-circle'],
                                        menu_icon="None", default_index=0, orientation="horizontal")
-
-if not any(key.startswith('level_of_measurement_') for key in st.session_state):
-    st.session_state["dataframe_feature_names"] = get_feature_names(host)
-
-try:
-    st.session_state["level_of_measurement_dic"], st.session_state["DF_feature_scale_name"] = getFeatureScale(host)
-    for key, value in st.session_state["level_of_measurement_dic"].items():
-        st.session_state[f'level_of_measurement_{key}'] = value
-except:
-    st.session_state["DF_feature_scale_name"] = pd.DataFrame()
-    st.session_state["level_of_measurement_dic"] = dict()
-
-try:
-    st.session_state["volatility_of_features_dic"], st.session_state[
-        "DF_feature_volatility_name"] = getFeatureVolatility(host)
-except:
-    st.session_state["volatility_of_features_dic"] = dict()
-
-try:
-    st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
-except Exception as e:
-    st.error("No Unique Values in database. If this is the first time a new dataset is uploaded please define a scale for each feature and upload the unique values.")
+#
+# if not any(key.startswith('level_of_measurement_') for key in st.session_state):
+#     st.session_state["dataframe_feature_names"] = get_feature_names(host)
+#
+# try:
+#     st.session_state["level_of_measurement_dic"], st.session_state["DF_feature_scale_name"] = getFeatureScale(host)
+#     for key, value in st.session_state["level_of_measurement_dic"].items():
+#         st.session_state[f'level_of_measurement_{key}'] = value
+# except:
+#     st.session_state["DF_feature_scale_name"] = pd.DataFrame()
+#     st.session_state["level_of_measurement_dic"] = dict()
+#
+# try:
+#     st.session_state["volatility_of_features_dic"], st.session_state[
+#         "DF_feature_volatility_name"] = getFeatureVolatility(host)
+# except:
+#     st.session_state["volatility_of_features_dic"] = dict()
+#
+# try:
+#     st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
+# except Exception as e:
+#     st.error("No Unique Values in database. If this is the first time a new dataset is uploaded please define a scale for each feature and upload the unique values.")
 
 
 
@@ -111,6 +111,7 @@ elif data_preparation_options == "Missing Values":
             with tab3:
                 with st.expander(f"Missing Values of {key}"):
                     st.session_state[f'missingValues_{key}'] = st.text_input("How were missing values replaced?", value=st.session_state[f'missingValues_{key}'],on_change=update_missing_values,key=(f'missingValues_{key}_widget'),args=(key,))
+
     if st.button("Submit", type="primary"):
         uuid_DocuOfHandlingOfMissingValues = determinationDUA(host_upload, determinationName,
                                                              label,

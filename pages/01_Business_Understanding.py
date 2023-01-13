@@ -25,7 +25,7 @@ if st.button("Upload Assessment Approach", type="primary"):
                           PREFIX owl: <http://www.w3.org/2002/07/owl#>
                           PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
                           PREFIX instance:<http://www.semanticweb.org/dke/ontologies#> 
-                          INSERT DATA {{<http://www.semanticweb.org/dke/ontologies#/ChoiceOfAssessmentApproach{uuid_activity}> rdf:type rprov:ChoiceOfAssessmentApproach, owl:NamedIndividual;
+                          INSERT DATA {{<urn:uuid:{uuid_activity}> rdf:type rprov:ChoiceOfAssessmentApproach, owl:NamedIndividual;
                           rdfs:label "choiceOfAssessment"@en;
                           prov:endedAtTime    "0000-00-00T00:00:00Z";
                           prov:startedAtTime  "0000-00-00T00:00:00Z".}}""")
@@ -42,10 +42,10 @@ if st.button("Upload Assessment Approach", type="primary"):
                           PREFIX owl: <http://www.w3.org/2002/07/owl#>
                           PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
                           PREFIX instance:<http://www.semanticweb.org/dke/ontologies#> 
-                          INSERT DATA {{<http://www.semanticweb.org/dke/ontologies#/{approach}{uuid_entity}> rdf:type rprov:PerturbationApproach, owl:NamedIndividual;
+                          INSERT DATA {{<urn:uuid:{uuid_entity}> rdf:type rprov:PerturbationApproach, owl:NamedIndividual;
                           rdfs:label "pertApproach" @en;
                           prov:value '{approach}'^^xsd:string;
-                          rprov: wasGeneratedByBUA <http://www.semanticweb.org/dke/ontologies#/ChoiceOfAssessmentApproach{uuid_activity};
+                          rprov:wasGeneratedByBUA <urn:uuid:{uuid_activity}>;
                           prov:endedAtTime    "0000-00-00T00:00:00Z";
                           prov:startedAtTime  "0000-00-00T00:00:00Z".}}""")
                         # rdfs:label '{approach}'^^xsd:string;#
