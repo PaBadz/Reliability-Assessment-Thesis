@@ -4,6 +4,7 @@ from datetime import datetime
 from streamlit_option_menu import option_menu
 # from streamlit_server_state import server_state, server_state_lock
 import pandas as pd
+import requests
 
 
 st.set_page_config(
@@ -24,7 +25,13 @@ selected2 = option_menu(None, ["Database", "Upload"],
                         icons=['database', 'cloud-upload'],
                         menu_icon="", default_index=0, orientation="horizontal")
 st.markdown("#### In Order to continue please upload a dataset to the server or choose a dataset from the database")
+
+
+
 if st.button('Load all datasets from Fuseki', type='primary'):
+    data = open('example_upload.ttl').read()
+    headers = {'Content-Type': 'text/turtle;charset=utf-8'}
+    r = requests.post('http://localhost:3030/databases/data?', data=data)
     # Get all datasets from fuseki
     sparql = SPARQLWrapper(host)
     sparql.setReturnFormat(JSON)
@@ -98,7 +105,8 @@ if selected2 == 'Upload':
 - If a model is to be created, this must also be done when uploading the dataset. Upload of the model can also take place later.""")
 
 
-    data = st.file_uploader("Choose a CSV file", accept_multiple_files=True)
+    data = st.file_uploader("Choose a CSV file", accept_multiple_files=True,on_change=set_database)
+    st.write(st.session_state)
     if not data:
         st.stop()
     starting_time = getTimestamp()

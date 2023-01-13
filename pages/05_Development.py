@@ -605,8 +605,6 @@ try:
 
                 starting_time = getTimestamp()
                 # KG label nötig? Um die PerturbationOption zu identifizieren?
-                label = st.text_input("Give a label for the PerturbationOption",
-                                      help="Note there should be no labels with the same name")
 
 
                 # First create ModelingActivity
@@ -706,16 +704,26 @@ try:
                                 # if values are the same, append dataunderstandingentity into liste and proceed
                                 # if values are different, throw error and  write info that precision level is different to saved one
                                 # right now dataunderstandingentity will not be generated
-                                if st.session_state['cardinal_val'][key][0] == "Sensor Precision":
+                                for perturbationOption in st.session_state['cardinal_val'][key]:
 
-                                    if key in st.session_state.DF_feature_sensor_precision["featureName.value"].values:
+                                    if perturbationOption == "Sensor Precision":
 
-                                        data_precision = st.session_state.DF_feature_sensor_precision[(
-                                            st.session_state.DF_feature_sensor_precision["featureName.value"] == key)&(
-                                            st.session_state.loaded_feature_sensor_precision_dict[key] == round(st.session_state.settings[key]["Sensor Precision"]["sensorPrecision"],2))][
-                                            "DataUnderstandingEntityID.value"].reset_index(drop=True)
-                                        liste[0].append(data_precision[0])
+                                        if key in st.session_state.DF_feature_sensor_precision["featureName.value"].values:
+
+                                            data_precision = st.session_state.DF_feature_sensor_precision[(
+                                                st.session_state.DF_feature_sensor_precision["featureName.value"] == key)&(
+                                                st.session_state.loaded_feature_sensor_precision_dict[key] == round(st.session_state.settings[key]["Sensor Precision"]["sensorPrecision"],2))][
+                                                "DataUnderstandingEntityID.value"].reset_index(drop=True)
+                                            liste[0].append(data_precision[0])
                             except Exception as e:
+                                st.write(st.session_state.DF_feature_sensor_precision)
+                                st.write(st.session_state.DF_feature_sensor_precision[(
+                                                st.session_state.DF_feature_sensor_precision["featureName.value"] == key)]["featureID.value"][0])
+                                st.write(st.session_state.settings[key]["Sensor Precision"]["sensorPrecision"])
+                                st.write(st.session_state.loaded_feature_sensor_precision_dict[key])
+                                st.write(perturbationOption)
+                                st.write(key)
+
                                 st.info(f"Different precision level for feature {key}. Right now this will not lead to creation of data understanding entity for sensor precision")
 
                             # create another loop in order to get different UUIDs for PerturbationOptions
@@ -778,9 +786,9 @@ try:
 
 
 
-                                        host_upload.setQuery(prefix + query)
-                                        host_upload.setMethod(POST)
-                                        host_upload.query()
+                                        # host_upload.setQuery(prefix + query)
+                                        # host_upload.setMethod(POST)
+                                        # host_upload.query()
 
                     # st.stop()
                 except Exception as e:
