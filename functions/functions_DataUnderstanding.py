@@ -25,8 +25,10 @@ def update_feature_sensor_precision(key):
 
 
 def defaultValuesCardinal(key):
-    st.session_state[f'data_restrictions_{key}_cardinal'] = [float(st.session_state.unique_values_dict[key][0]),
-                                                             float(st.session_state.unique_values_dict[key][-1])]
+    try:
+        st.session_state[f'data_restrictions_{key}_cardinal'] = [float(st.session_state.unique_values_dict[key][0]),float(st.session_state.unique_values_dict[key][-1])]
+    except:
+        st.info("Feature is not Cardinal")
     try:
         del st.session_state["data_restrictions_dict"][key]
         st.write("Geht nich")

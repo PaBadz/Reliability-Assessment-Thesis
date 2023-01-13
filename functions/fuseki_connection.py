@@ -107,6 +107,7 @@ def getFeatureVolatility(host):
     ?DataUnderstandingEntityID rprov:volatilityLevel ?volatility.
 	?DataUnderstandingEntityID rprov:toFeature ?featureID.
   	?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.
+  	?DataUnderstandingEntityID rprov:isValid true.
     }}""")
     results_feature_volatility = get_connection_fuseki(host, (prefix+query))
     results_feature_volatility = pd.json_normalize(results_feature_volatility["results"]["bindings"])
@@ -127,6 +128,7 @@ def getSensorPrecision(host):
     ?DataUnderstandingEntityID rprov:SensorPrecisionLevel ?SensorPrecisionLevel.
 	?DataUnderstandingEntityID rprov:toFeature ?featureID.
   	?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.
+  	?DataUnderstandingEntityID rprov:isValid true.
     }}""")
     results_feature_sensor = get_connection_fuseki(host, (prefix+query))
     results_feature_sensor = pd.json_normalize(results_feature_sensor["results"]["bindings"])
@@ -318,8 +320,9 @@ def uploadDUE(sparqlupdate,host,dic , uuid_DeterminationOfScaleOfFeature, name, 
 
             query = (f"""INSERT DATA {{<urn:uuid:{uuid_ScaleOfFeature}> rdf:type rprov:{name}, owl:NamedIndividual;
                           rprov:{rprovName} "{value}";
-                          rdfs:label "{rprovName} {key}";
+                          rdfs:label "{rprovName} {key}"@en;
                           rprov:toFeature <{result_2["subject.value"][0]}>;
+                          rprov:isValid true;
                           rprov:wasGeneratedByDUA  <urn:uuid:{uuid_DeterminationOfScaleOfFeature}>;
                         }}""")
             sparqlupdate.setQuery(prefix+query)
@@ -413,23 +416,29 @@ def uploadDataRestrictionSeq(sparqlupdate,host,dic , uuid_DeterminationOfScaleOf
 def deleteWasGeneratedByDUA(sparqlupdate,df, activity):  # panda df
     st.write("-----")
 
+    # query = (f"""
+    #         DELETE {{?object ?property ?value.
+    #         ?object ?property ?value.}}
+    #         WHERE{{?object ?property ?value; rprov:wasGeneratedByDUA <{df["DUA.value"][0]}>}}""") #
+    #
     query = (f"""
-            DELETE {{?object ?property ?value.
-            ?object ?property ?value.}}
-            WHERE{{?object ?property ?value; rprov:wasGeneratedByDUA <{df["DUA.value"][0]}>}}""")
+                DELETE {{?DUA rprov:isValid  ?value }}
+                INSERT {{?DUA rprov:isValid false}}
+            WHERE  {{?DUA rprov:isValid  ?value. ?DUA rprov:wasGeneratedByDUA <{df["DUA.value"][0]}>}}""")
+
 
     sparqlupdate.setQuery(prefix+query)
     sparqlupdate.setMethod(POST)
     sparqlupdate.query()
 
-    query = (f"""
-            DELETE {{?object ?property ?value.
-            ?object ?property ?value.}}
-            WHERE{{?object ?property ?value; rdf:type  rprov:{activity}}}""")
-
-    sparqlupdate.setQuery(prefix+query)
-    sparqlupdate.setMethod(POST)
-    sparqlupdate.query()
+    # query = (f"""
+    #         DELETE {{?object ?property ?value.
+    #         ?object ?property ?value.}}
+    #         WHERE{{?object ?property ?value; rdf:type  rprov:{activity}}}""")
+    #
+    # sparqlupdate.setQuery(prefix+query)
+    # sparqlupdate.setMethod(POST)
+    # sparqlupdate.query()
 
 def getAttributes(host):
 

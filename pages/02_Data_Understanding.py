@@ -104,6 +104,7 @@ if optionsDataUnderstanding == "Scale":
         with st.expander("Show level of measurement for features"):
             st.write(st.session_state.level_of_measurement_dic)
         if st.button("Change level of measurement", type="primary"):
+
             del st.session_state["level_of_measurement_dic"]
             deleteWasGeneratedByDUA(host_upload,st.session_state["DF_feature_scale_name"], determinationName)
             st.experimental_rerun()
@@ -186,10 +187,11 @@ if optionsDataUnderstanding == "Volatility":
 
     determinationNameUUID = 'DeterminationOfVolatilityOfFeature_'
     determinationName = 'DeterminationOfVolatilityOfFeature'
-    label = '"detVolatilityOfFeature"@en'
+    label = "detVolatilityOfFeature"
     dicName = 'volatility_of_features_dic'
     name = 'VolatilityOfFeature'
     rprovName = 'volatilityLevel'
+    st.write(st.session_state["DF_feature_scale_name"])
 
 
     if st.session_state["volatility_of_features_dic"] == {}:

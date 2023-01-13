@@ -31,6 +31,12 @@ menu_perturbation = option_menu(None, ["Perturbation Option",'Perturbation Mode'
                                 icons=['house', 'gear'],
                                 orientation="horizontal")
 
+try:
+    savedPerturbationOptions = getPerturbationOptions(host)
+except:
+    st.info("There are no Perturbation Options to select at the moment.")
+    st.stop()
+
 # options_cardinal = ['5% perturbation', '10% perturbation','Percentage perturbation',  'Sensor Precision', 'Fixed amount', 'Range perturbation']
 options_ordinal = ['Perturb in order', 'Perturb all values']
 options_nominal = ['Perturb all values']
@@ -47,7 +53,7 @@ if menu_perturbation == 'Perturbation Option':
     st.markdown(hide_table_row_index, unsafe_allow_html=True)
     t1, t2, t3 = st.tabs(["Perturbation Options", "Data Restriction", "Perturbation Recommendations"])
     with t1:
-        savedPerturbationOptions = getPerturbationOptions(host)
+
         try:
             recommendations = getPerturbationRecommendations(host)
         except:
