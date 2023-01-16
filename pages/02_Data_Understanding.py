@@ -6,6 +6,7 @@ from functions.functions_Reliability import *
 from functions.functions_DataUnderstanding import *
 from functions.fuseki_connection import *
 import streamlit_nested_layout
+from streamlit_sortables import sort_items
 
 try:
     host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
@@ -136,25 +137,21 @@ if optionsDataUnderstanding == "Scale":
                         # falls es eine session_state gibt, übergib die session state an die liste
                         if f'order_of_ordinal_{feature}' not in st.session_state:
                             st.session_state[f'order_of_ordinal_{feature}'] = list()
-                            st.session_state[f'data_restrictions_{feature}_ordinal'] = \
-                            st.session_state['unique_values_dict'][feature]
+                            # st.session_state[f'data_restrictions_{feature}_ordinal'] = \
+                            # st.session_state['unique_values_dict'][feature]
                             for unique_values in st.session_state.unique_values_dict[feature]:
                                 dictionary_values = {'name': unique_values}
-                                data.append(dictionary_values)
+                                data.append(str(unique_values))
+                                # data.append(dictionary_values)
                                 st.session_state[f'order_of_ordinal_{feature}'] = data
                         else:
                             data = st.session_state[f'order_of_ordinal_{feature}']
 
 
-                        slist = DraggableList(data, width="20%", key=f'order_of_ordinal_{feature}')
+                        st.session_state[f'order_of_ordinal_{feature}'] = sort_items(data, key = f"order_{feature}_widget")
 
-
-                        if st.button("Update Order of Values", key=f'button_order_of_ordinal_{feature}'):
-                            new_list = list()
-                            for i in range(0, len(slist)):
-                                new_list.append(slist[i]["name"])
-                            st.session_state['unique_values_dict'][feature] = new_list
-                            st.session_state[f'data_restrictions_{feature}_ordinal'] = new_list
+                        st.session_state['unique_values_dict'][feature] = st.session_state[f'order_of_ordinal_{feature}']
+                        # st.session_state[f'data_restrictions_{feature}_ordinal'] = st.session_state[f'order_of_ordinal_{feature}']
 
 
             if st.button("Upload unique values",help="This information is needed for further steps in the CRISP-DM model. Based on those values data restrictions can be modeled.",type="primary"):
