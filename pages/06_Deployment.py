@@ -491,23 +491,6 @@ if menu_perturbation == 'Perturbation Mode':
 try:
     if menu_perturbation == 'Perturbation':
         st.write(st.session_state.perturb_mode_values)
-        # with st.expander("Change Perturbation Order"):
-        #     st.info("If you want to change the order of perturbation execution drag an drop accordingly")
-        #
-        #     with st.expander("Prioritized Perturbation Mode"):
-        #         if 'perturb_mode' not in st.session_state:
-        #             data = list()
-        #             st.session_state['order_feature'] = list()
-        #             for feature_name in st.session_state["dataframe_feature_names"]["featureName.value"]:
-        #                 dictionary_values = {'name': feature_name}
-        #                 data.append(dictionary_values)
-        #                 st.session_state['order_feature'] = data
-        #         else:
-        #             data = st.session_state.perturb_mode
-        #
-        #         st.session_state.perturb_mode = DraggableList(data, width="50%", key=f'order_feature')
-        #
-
 
 
         perturbed_value_list = dict()
