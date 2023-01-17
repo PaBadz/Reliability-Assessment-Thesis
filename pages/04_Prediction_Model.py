@@ -80,6 +80,7 @@ with tab2:
 
         if st.button("Save Model"):
             pickle.dump(clf, open(filename, 'wb'))
+        st.download_button("Download Model", data=pickle.dumps(clf), file_name="model.pkl")
     except Exception as e:
         st.write(e)
         pass

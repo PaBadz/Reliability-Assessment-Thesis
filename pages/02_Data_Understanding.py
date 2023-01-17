@@ -86,7 +86,7 @@ if optionsDataUnderstanding == "Scale":
                     if (f'level_of_measurement_{row}') not in st.session_state:
                         st.session_state[f'level_of_measurement_{row}'] = "Nominal"
                     # wenn level of measurement dictionary nicht leer ist gibt es die level of measurement an
-                    st.session_state.level_of_measurement_dic[row] = st.selectbox(row, options=options, index=2,key=f'level_of_measurement_{row}')
+                    st.session_state.level_of_measurement_dic[row] = st.selectbox(row, options=options, index=2,key=f'level_of_measurement_{row}_widget')
 
                 # submit selected scale of measurements
                 if st.form_submit_button("Submit", type="primary"):
