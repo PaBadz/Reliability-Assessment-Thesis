@@ -1,3 +1,5 @@
+import struct
+
 from functions.fuseki_connection import *
 from functions.functions_Reliability import *
 from functions.functions_DataPreparation import *
@@ -21,6 +23,8 @@ except:
 data_preparation_options = option_menu("Data Preparation Options", ["Binned Features", "Missing Values"],
                                        icons=['collection', 'slash-circle'],
                                        menu_icon="None", default_index=0, orientation="horizontal")
+
+
 #
 # if not any(key.startswith('level_of_measurement_') for key in st.session_state):
 #     st.session_state["dataframe_feature_names"] = get_feature_names(host)
@@ -44,38 +48,113 @@ data_preparation_options = option_menu("Data Preparation Options", ["Binned Feat
 # except Exception as e:
 #     st.error("No Unique Values in database. If this is the first time a new dataset is uploaded please define a scale for each feature and upload the unique values.")
 
+# def update_bin(key):
+#     st.session_state[f'data_restrictions_{key}_cardinal'] = st.session_state[f'data_restrictions_{key}']
+#     st.session_state['bin_dict'][key] = st.session_state[f'data_restrictions_{key}']
 
 
 
 if data_preparation_options == "Binned Features":
-    st.markdown("""## Binning of cardinal features""")
-    for key, values in st.session_state.level_of_measurement_dic.items():
-        data_restrictions_dic = dict()
-        data = list()
-        if values == 'Cardinal':
-            keywords = st_tags(
-                label=f'Enter Keywords: {key}',
-                text='Press enter to add more',
-                key=f'binnedValues_{key}')
-
-            st.markdown("""---""")
-        else:
-            pass
-    st.write(st.session_state.binnedValues_balance)
 
 
+    # if "bin_dict" not in st.session_state:
+    #     st.session_state["bin_dict"] = dict()
+    st.markdown("""## Binning of cardinal features
+                Only Binning by distance is impplemented as of now""")
+    # for key, values in st.session_state.level_of_measurement_dic.items():
+    #     if "bin_dic" not in st.session_state:
+    #         st.session_state.bin_dic = dict()
+    #     data = list()
+    #     if values == 'Cardinal':
+    #         old_list = st_tags(
+    #             label=f'Enter Keywords: {key}',
+    #             text='Press enter to add more',
+    #             key=f'binnedValues_{key}')
+    #
+    #         old_list = [float(x) for x in old_list]
+    #
+    #         st.markdown("""---""")
+    #
+    #         if all(isinstance(i, float) for i in old_list) and len(old_list) % 2 == 0:
+    #             new_list = [old_list[n:n + 2] for n in range(0, len(old_list), 2)]
+    #             for i in range(1, len(new_list)):
+    #                 if new_list[i][0] >= new_list[i][1]:
+    #                     st.write("Der erste Wert in Liste", i + 1, "ist nicht kleiner als der zweite Wert.")
+    #                     break
+    #                 if i > 0 and new_list[i][0] <= new_list[i - 1][1]:
+    #                     st.write("Der erste Wert in Liste", i + 1, "ist nicht größer als der vorangegangene zweite Wert.")
+    #                     break
+    #             else:
+    #                 st.write(new_list)
+    #         else:
+    #             st.write("Die alte Liste enthält entweder nicht nur float-Werte oder eine ungerade Anzahl von Werten.")
+    #
+    #
+    #     else:
+    #         pass
+    st.write(st.session_state["loaded_bin_dict"])
+    if "bin_dict" not in st.session_state:
+        st.session_state.bin_dict = dict()
+    if st.session_state["loaded_bin_dict"] == {}:
+        for key, values in st.session_state.level_of_measurement_dic.items():
+            if values == 'Cardinal':
+                if f"bin_{key}" not in st.session_state:
+                    st.session_state[f"bin_{key}"] = list()
+                with st.expander(f"Bin {key}"):
+                    lower_border = st.number_input("Select lower border",value =float(st.session_state.unique_values_dict[key][0]), min_value=float(st.session_state.unique_values_dict[key][0]), key = f"lower_border_{key}")
+                    upper_border = st.number_input("Select upper border",value =float(st.session_state.unique_values_dict[key][-1]),  max_value = float(st.session_state.unique_values_dict[key][-1]),key = f"upper_border_{key}")
+                    bins = st.number_input("Select amount of bins", min_value=int(1), key = f"amount_bin_{key}")
+                    step = (upper_border - lower_border) / (bins)
 
 
-    lower_border = st.number_input("Select lower border")
-
-    upper_border = st.number_input("Select upper border")
-    bins = st.number_input("Select amount of bins", min_value=int(2))
-    binwidth = (upper_border-lower_border)/bins
-
-    st.write(binwidth)
 
 
+                    if st.button("Save", key =f"bin_{key}_button"):
+                        if bins > 1:
+                            st.session_state[f"bin_{key}"] = [
+                                round(lower_border + n * step, 1) for n in
+                                range(bins+1)]
+                            st.session_state["bin_dict"][key] = st.session_state[f"bin_{key}"]
 
+                        else:
+                            try:
+                                del st.session_state["bin_dict"][key]
+                            except:
+                                pass
+
+
+
+
+        st.write(st.session_state.bin_dict)
+        if st.button("Submit bins", key="button_bins"):
+            determinationName = 'DocuOfRangeOfBinnedFeature'
+            label = '"DocuOfRangeOfBinnedFeature"@en'
+
+            name = 'RangeOfBinnedFeature'
+            rprovName = 'RangeOfBinnedFeature'
+            ending_time = getTimestamp()
+
+            starting_time = getTimestamp()
+
+            uuid_determinationBin = determinationActivity(host_upload, determinationName, label, starting_time,
+                                                              ending_time)
+            uploadBinValues(host_upload, host, st.session_state["bin_dict"], uuid_determinationBin, rprovName)
+            st.experimental_rerun()
+    else:
+        st.write(st.session_state["DF_bin_dict"])
+        st.markdown("""
+                       **Here you can see how what bins were generatedfor each feature**
+
+                       If you want to change click on the button below.
+                       """)
+        st.write(st.session_state["bin_dict"])
+
+        if st.button("Change missing values"):
+            deleteWasGeneratedByDPA(host_upload, st.session_state["DF_bin_dict"])
+            del st.session_state["bin_dict"]
+            del st.session_state["DF_bin_dict"]
+
+            st.experimental_rerun()
 
 elif data_preparation_options == "Missing Values":
 
@@ -92,37 +171,65 @@ elif data_preparation_options == "Missing Values":
     st.markdown("""## How were missing data replaced?""")
     st.info("If missing values of feature were replaced, insert how it was done. If not, leave empty.")
     tab1, tab2, tab3 = st.tabs(["Cardinal", "Ordinal", "Nominal"])
+
+    if st.session_state.loaded_missingValues_of_features_dic=={}:
+
     # create a dictionary with features which have missing values
-    for key, values in st.session_state.level_of_measurement_dic.items():
-        if 'missingValues_of_features_dic' not in st.session_state:
-            st.session_state["missingValues_of_features_dic"] = dict()
+        for key, values in st.session_state.level_of_measurement_dic.items():
+            if 'missingValues_of_features_dic' not in st.session_state:
+                st.session_state["missingValues_of_features_dic"] = dict()
 
-        if key in st.session_state["missingValues_of_features_dic"]:
-            st.session_state[f'missingValues_{key}'] = \
-                st.session_state["missingValues_of_features_dic"][key]
-        else:
-            st.session_state[f'missingValues_{key}'] = ""
+            if key in st.session_state["missingValues_of_features_dic"]:
+                st.session_state[f'missingValues_{key}'] = \
+                    st.session_state["missingValues_of_features_dic"][key]
+            else:
+                st.session_state[f'missingValues_{key}'] = ""
 
-        if values == 'Cardinal':
-            with tab1:
-                with st.expander(f"Missing Values of {key}"):
-                    st.session_state[f'missingValues_{key}'] = st.text_input("How were missing values replaced?", value=st.session_state[f'missingValues_{key}'],on_change=update_missing_values,key=(f'missingValues_{key}_widget'), args=(key,))
-        elif values == 'Ordinal':
-            with tab2:
-                with st.expander(f"Missing Values of {key}"):
-                    st.session_state[f'missingValues_{key}'] = st.text_input("How were missing values replaced?", value=st.session_state[f'missingValues_{key}'],on_change=update_missing_values,key=(f'missingValues_{key}_widget'),args=(key,))
-        elif values == 'Nominal':
-            with tab3:
-                with st.expander(f"Missing Values of {key}"):
-                    st.session_state[f'missingValues_{key}'] = st.text_input("How were missing values replaced?", value=st.session_state[f'missingValues_{key}'],on_change=update_missing_values,key=(f'missingValues_{key}_widget'),args=(key,))
+            if values == 'Cardinal':
+                with tab1:
+                    with st.expander(f"Missing Values of {key}"):
 
-    if st.button("Submit", type="primary"):
-        uuid_DocuOfHandlingOfMissingValues = determinationDUA(host_upload, determinationName,
-                                                             label,
-                                                             starting_time, ending_time)
+                        st.session_state[f'missingValues_{key}'] = st.text_input("How were missing values replaced?", value=st.session_state[f'missingValues_{key}'],key=(f'missingValues_{key}_widget'))
+                        if st.session_state[f'missingValues_{key}'] != "":
+                            st.session_state["missingValues_of_features_dic"][key]=st.session_state[f'missingValues_{key}']
+            elif values == 'Ordinal':
+                with tab2:
+                    with st.expander(f"Missing Values of {key}"):
+                        st.session_state[f'missingValues_{key}'] = st.text_input("How were missing values replaced?", value=st.session_state[f'missingValues_{key}'],key=(f'missingValues_{key}_widget'))
+                        if st.session_state[f'missingValues_{key}'] != "":
+                            st.session_state["missingValues_of_features_dic"][key]=st.session_state[f'missingValues_{key}']
+            elif values == 'Nominal':
+                with tab3:
+                    with st.expander(f"Missing Values of {key}"):
+                        st.session_state[f'missingValues_{key}'] = st.text_input("How were missing values replaced?", value=st.session_state[f'missingValues_{key}'],key=(f'missingValues_{key}_widget'))
+                        if st.session_state[f'missingValues_{key}'] != "":
+                            st.session_state["missingValues_of_features_dic"][key]=st.session_state[f'missingValues_{key}']
+        st.write(st.session_state["missingValues_of_features_dic"])
+        if st.button("Submit", type="primary"):
+            uuid_DocuOfHandlingOfMissingValues = determinationActivity(host_upload, determinationName,
+                                                                 label,
+                                                                 starting_time, ending_time)
 
-        name = "HandlingOfMissingValues"
+            name = "HandlingOfMissingValues"
 
-        uploadDPE(host_upload, host, st.session_state["missingValues_of_features_dic"],
-                  uuid_DocuOfHandlingOfMissingValues, name)
-    st.write(st.session_state.missingValues_of_features_dic)
+            uploadDPE(host_upload, host, st.session_state["missingValues_of_features_dic"],
+                      uuid_DocuOfHandlingOfMissingValues, name)
+            st.session_state.loaded_missingValues_of_features_dic = st.session_state["missingValues_of_features_dic"]
+            st.experimental_rerun()
+    else:
+        st.markdown("""
+                **Here you can see how missing values were replaced for each feature**
+
+                If you want to change click on the button below.
+                """)
+        st.write(st.session_state["loaded_missingValues_of_features_dic"])
+
+        if st.button("Change missing values"):
+
+
+
+            deleteWasGeneratedByDPA(host_upload,st.session_state["DF_feature_missing_values_dic"])
+            del st.session_state["loaded_missingValues_of_features_dic"]
+            del st.session_state["DF_feature_missing_values_dic"]
+
+            st.experimental_rerun()

@@ -916,7 +916,7 @@ try:
                     ending_time = getTimestamp()
                     if checkbox_upload:
                         try:
-                            uuid_DefinitionOfPerturbationOption = determinationDUA(host_upload, determinationName,
+                            uuid_DefinitionOfPerturbationOption = determinationActivity(host_upload, determinationName,
                                                                                    label_list[i],
                                                                                    starting_time, ending_time)
 
@@ -1053,7 +1053,7 @@ try:
             #         # Modeling Phase
             #
             #         # generate uuid for deployment activity
-            #         uuid_DefinitionOfPerturbationOption = determinationDUA(host_upload, determinationName, label,
+            #         uuid_DefinitionOfPerturbationOption = determinationActivity(host_upload, determinationName, label,
             #                                                               starting_time, ending_time)
             #         uuid_PerturbationAssessment = uuid.uuid4()
             #         uploadPerturbationAssessment(uuid_PerturbationAssessment, label, uuid_DefinitionOfPerturbationOption)

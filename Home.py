@@ -170,7 +170,7 @@ if selected2 == 'Upload':
         uuid_determinationFeature = uuid.uuid4()
         ending_time = getTimestamp()
 
-        uuid_determinationFeature = determinationDUA(host_upload, determinationName, label,
+        uuid_determinationFeature = determinationActivity(host_upload, determinationName, label,
                                                         starting_time, ending_time)
         unique_values_dict = {}
 

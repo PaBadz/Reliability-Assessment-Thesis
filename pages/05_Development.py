@@ -689,7 +689,7 @@ try:
 
                         ####################################################################################################
 
-                    uuid_DefinitionOfPerturbationOption = determinationDUA(host_upload, determinationName,
+                    uuid_DefinitionOfPerturbationOption = determinationActivity(host_upload, determinationName,
                                                                            label,
                                                                            starting_time, ending_time)
                         ####################################################################################################

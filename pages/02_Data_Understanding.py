@@ -91,7 +91,7 @@ if optionsDataUnderstanding == "Scale":
                 # submit selected scale of measurements
                 if st.form_submit_button("Submit", type="primary"):
                     ending_time = getTimestamp()
-                    uuid_determinationScale = determinationDUA(host_upload, determinationName, label,
+                    uuid_determinationScale = determinationActivity(host_upload, determinationName, label,
                                                                starting_time, ending_time)
                     uploadDUE(host_upload,host,st.session_state["level_of_measurement_dic"], uuid_determinationScale, name,
                               rprovName)
@@ -165,7 +165,7 @@ if optionsDataUnderstanding == "Scale":
                 rprovName = 'uniqueValues'
                 try:
                     ending_time = getTimestamp()
-                    uuid_determinationUniqueValues = determinationDUA(host_upload,determinationName, label, starting_time, ending_time)
+                    uuid_determinationUniqueValues = determinationActivity(host_upload,determinationName, label, starting_time, ending_time)
                     uploadUniqueValues(host_upload,host,st.session_state["unique_values_dict"], st.session_state["level_of_measurement_dic"], uuid_determinationUniqueValues, name,
                               rprovName)
                     time = getTimestamp()
@@ -217,7 +217,7 @@ if optionsDataUnderstanding == "Volatility":
 
                 if st.form_submit_button("Submit", type="primary"):
                     ending_time = getTimestamp()
-                    uuid_determinationVolatility = determinationDUA(host_upload, determinationName, label,starting_time, ending_time)
+                    uuid_determinationVolatility = determinationActivity(host_upload, determinationName, label,starting_time, ending_time)
                     uploadDUE(host_upload,host,st.session_state["volatility_of_features_dic"], uuid_determinationVolatility, name,
                               rprovName)
     else:
@@ -228,7 +228,7 @@ if optionsDataUnderstanding == "Volatility":
         """)
         st.write(st.session_state["volatility_of_features_dic"])
         if st.button("Change Volatility"):
-            deleteWasGeneratedByDUA(host_upload,st.session_state["DF_feature_volatility_name"], determinationName)
+            deleteWasGeneratedByDUA(host_upload,st.session_state["DF_feature_volatility_name"])
             st.experimental_rerun()
 
 if optionsDataUnderstanding == "Data Restrictions":
@@ -291,7 +291,7 @@ if optionsDataUnderstanding == "Data Restrictions":
         name = 'DataRestriction'
         rprovName = 'DataRestriction'
         ending_time = getTimestamp()
-        uuid_determinationDataRestriction = determinationDUA(host_upload, determinationName, label,
+        uuid_determinationDataRestriction = determinationActivity(host_upload, determinationName, label,
                                                              starting_time, ending_time)
         uploadDataRestrictionSeq(host_upload, host, st.session_state['data_restrictions_dict'], uuid_determinationDataRestriction, name,
                   rprovName)
@@ -470,7 +470,7 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
         st.write(st.session_state["feature_sensor_precision_dict"])
 
         if st.button("Submit", type="primary"):
-            uuid_determinationSensorPrecision = determinationDUA(host_upload, determinationName,
+            uuid_determinationSensorPrecision = determinationActivity(host_upload, determinationName,
                                                                  label,
                                                                  starting_time, ending_time)
             uploadDUE(host_upload, host, st.session_state["feature_sensor_precision_dict"],
@@ -494,7 +494,7 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
 
             st.session_state["loaded_feature_sensor_precision_dict"], st.session_state["DF_feature_sensor_precision"] = getSensorPrecision(host)
 
-            deleteWasGeneratedByDUA(host_upload,st.session_state["DF_feature_sensor_precision"], determinationName)
+            deleteWasGeneratedByDUA(host_upload,st.session_state["DF_feature_sensor_precision"])
             del st.session_state["feature_sensor_precision_dict"]
             del st.session_state["loaded_feature_sensor_precision_dict"]
 

@@ -148,21 +148,22 @@ def getSensorPrecision(host):
 def getMissingValues(host):
     dictionary_MissingValues = dict()
     query = (f"""
-    SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?MissingValues ?DUA {{
+    SELECT ?featureID ?featureName ?DataPreparationEntityID ?MissingValues ?DPA {{
     ?featureID rdf:type rprov:Feature .
     ?featureID rdfs:label ?featureName.
-    ?DataUnderstandingEntityID rdf:type owl:NamedIndividual.
-    ?DataUnderstandingEntityID rprov:handlingValue ?MissingValues.
-	?DataUnderstandingEntityID rprov:toFeature ?featureID.
-  	?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.
+    ?DataPreparationEntityID rdf:type owl:NamedIndividual.
+    ?DataPreparationEntityID rprov:handlingValue ?MissingValues.
+	?DataPreparationEntityID rprov:toFeature ?featureID.
+  	?DataPreparationEntityID rprov:wasGeneratedByDPA ?DPA.
+  	?DataPreparationEntityID rprov:isValid true.
     }}""")
-    results_feature_volatility = get_connection_fuseki(host, (prefix+query))
-    results_feature_volatility = pd.json_normalize(results_feature_volatility["results"]["bindings"])
+    results_feature_MissingValues = get_connection_fuseki(host, (prefix+query))
+    results_feature_MissingValues = pd.json_normalize(results_feature_MissingValues["results"]["bindings"])
 
-    for _index, row in results_feature_volatility.iterrows():
+    for _index, row in results_feature_MissingValues.iterrows():
         dictionary_MissingValues[row["featureName.value"]] = row["MissingValues.value"]
 
-    return dictionary_MissingValues, results_feature_volatility
+    return dictionary_MissingValues, results_feature_MissingValues
 
 
 def getUniqueValues(host):
@@ -268,7 +269,7 @@ def getDataRestrictionSeqDeployment(data_restriction,feature,host):
 
 
 
-def determinationDUA(sparqlupdate, determinationName, label, starting_time, ending_time):
+def determinationActivity(sparqlupdate, determinationName, label, starting_time, ending_time):
     uuid_Determination = uuid.uuid4()
 
     #sparqlupdate = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
@@ -297,6 +298,7 @@ def uploadDPE(sparqlupdate,host,dic , uuid_DeterminationOfScaleOfFeature, name):
                           rdfs:label "detMissingValues {key}"@en;
                           rprov:handlingValue "{value}";
                           rprov:toFeature <{result_2["subject.value"][0]}>;
+                          rprov:isValid true;
                           rprov:wasGeneratedByDPA  <urn:uuid:{uuid_DeterminationOfScaleOfFeature}>;
                         }}""")
             sparqlupdate.setQuery(prefix+query)
@@ -375,6 +377,65 @@ def uploadUniqueValues(sparqlupdate,host,dic, level_measurement, uuid_Determinat
     st.success("Upload successful")
 
 
+def uploadBinValues(sparqlupdate,host,dic, uuid_Determination, rprovName):
+    with st.spinner("Uploading bin values..."):
+        for key, value in dic.items():
+            uuid_BinEntity = uuid.uuid4()
+            uuid_SeqBinEntityValues = uuid.uuid4()
+
+            query = (f"""PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
+                        PREFIx rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                    SELECT ?subject WHERE {{?subject rdf:type rprov:Feature. ?subject rdfs:label '{key}'}}""")
+            results_update = get_connection_fuseki(host, query)
+
+            result_2 = pd.json_normalize(results_update["results"]["bindings"])
+
+            #sparqlupdate = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
+
+            query = (f"""INSERT DATA {{<urn:uuid:{uuid_BinEntity}> rdf:type rprov:{rprovName}, owl:NamedIndividual;
+                              rprov:{rprovName} <urn:uuid:{uuid_SeqBinEntityValues}>;
+                              rdfs:label "{rprovName} {key}";
+                              rprov:toFeature <{result_2["subject.value"][0]}>;
+                              rprov:wasGeneratedByDPA  <urn:uuid:{uuid_Determination}>;
+                              rprov:isValid true.
+                            }}""")
+            sparqlupdate.setQuery(prefix+query)
+            sparqlupdate.setMethod(POST)
+            sparqlupdate.query()
+
+
+            i = 0
+            for values in value:
+                query = (f"""INSERT DATA {{<urn:uuid:{uuid_SeqBinEntityValues}> rdf:type rdf:Seq, owl:NamedIndividual;
+                                      rdf:_{i}  '{values}';}}""")
+                sparqlupdate.setQuery(prefix + query)
+                sparqlupdate.setMethod(POST)
+                sparqlupdate.query()
+                i = i + 1
+    st.success("Upload successful")
+
+def getBinValuesSeq(host):
+    dictionary_BinValues = dict()
+    query = (f"""      SELECT ?DPA ?feature ?label ?containerMembershipProperty ?item WHERE {{
+    ?DPE rprov:RangeOfBinnedFeature ?container.
+    ?DPE rprov:wasGeneratedByDPA ?DPA.
+    ?DPE rprov:isValid true.
+    ?container ?containerMembershipProperty ?item.
+    ?DPE rprov:toFeature ?feature.
+    ?feature rdfs:label ?label.
+    FILTER(?containerMembershipProperty!= rdf:type)}}
+    """)
+
+
+    results_feature_BinValues = get_connection_fuseki(host, (prefix+query))
+    results_feature_BinValues = pd.json_normalize(results_feature_BinValues["results"]["bindings"])
+    results_feature_BinValues_grouped= results_feature_BinValues.groupby(["label.value"])["item.value"].apply(list)
+    st.write(results_feature_BinValues)
+    for _index, row in results_feature_BinValues_grouped.items():
+        dictionary_BinValues[_index] = row
+
+    return dictionary_BinValues, results_feature_BinValues
 
 
 
@@ -409,9 +470,18 @@ def uploadDataRestrictionSeq(sparqlupdate,host,dic , uuid_DeterminationOfScaleOf
             sparqlupdate.setMethod(POST)
             sparqlupdate.query()
             i = i + 1
+def deleteWasGeneratedByDPA(sparqlupdate,df):  # panda df
+    query = (f"""
+                DELETE {{?DPA rprov:isValid  ?value }}
+                INSERT {{?DPA rprov:isValid false}}
+            WHERE  {{?DPA rprov:isValid  ?value. ?DUA rprov:wasGeneratedByDPA <{df["DPA.value"][0]}>}}""")
 
 
-def deleteWasGeneratedByDUA(sparqlupdate,df, activity):  # panda df
+    sparqlupdate.setQuery(prefix+query)
+    sparqlupdate.setMethod(POST)
+    sparqlupdate.query()
+
+def deleteWasGeneratedByDUA(sparqlupdate,df):  # panda df
     st.write("-----")
 
     # query = (f"""
@@ -469,14 +539,19 @@ def getAttributes(host):
         st.session_state["loaded_feature_sensor_precision_dict"] = dict()
         st.session_state["DF_feature_sensor_precision"] = pd.DataFrame()
 
-    # try:
-    # st.session_state["missingValues_of_features_dic"], st.session_state[
-    #     "DF_feature_missing_values_dic"] = getMissingValues(host)
-    # except:
-    #     pass
-    #     st.session_state["missingValues_of_features_dic"] = dict()
-    #     st.session_state[
-    #         "DF_feature_missing_values_dic"] = pd.DataFrame()
+    try:
+        st.session_state["loaded_missingValues_of_features_dic"], st.session_state[
+        "DF_feature_missing_values_dic"] = getMissingValues(host)
+    except:
+        pass
+        # st.session_state["missingValues_of_features_dic"] = dict()
+        # st.session_state[
+        #     "DF_feature_missing_values_dic"] = pd.DataFrame()
+
+    try:
+        st.session_state["loaded_bin_dict"], st.session_state["DF_bin_dict"] = getBinValuesSeq(host)
+    except:
+        st.session_state["loaded_bin_dict"] = dict()
 
 
 def uploadPerturbationAssessment(host_upload,uuid_PerturbationAssessment, label,
