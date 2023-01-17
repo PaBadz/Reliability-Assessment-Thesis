@@ -19,9 +19,12 @@ except:
     st.stop()
 # ------------------------------------------------------------------------------------------------------------------------
 
-
-getDefault(host)
-getAttributes(host)
+try:
+    getDefault(host)
+    getAttributes(host)
+except:
+    st.error("Please select other dataset")
+    st.stop()
 
 # if "data_restrictions_dict" not in st.session_state:
 #     st.session_state["data_restrictions_dict"] = dict()
@@ -411,7 +414,7 @@ if menu_perturbation == 'Perturbation Option':
                 featureID = st.session_state.assessmentPerturbationOptions[feature_name]["FeatureID"][0]
 
                 st.session_state["data_restrictions_dict"] = getDataRestrictionSeqDeployment(data_restriction_entity,featureID, host)
-                st.write(st.session_state["data_restrictions_dict"])
+
                 try:
                     st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
                 except Exception as e:
@@ -429,7 +432,9 @@ if menu_perturbation == 'Perturbation Option':
         except Exception as e:
             st.write("Data Restriction", st.session_state.data_restriction_final)
             #st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-    st.write("Data Restriction",st.session_state.data_restriction_final)
+
+    with st.expander("Show Data Restriction values"):
+        st.write("Data Restriction",st.session_state.data_restriction_final)
 
             # st.write(st.session_state["data_restrictions_dict"])
 
@@ -443,16 +448,16 @@ if menu_perturbation == 'Perturbation Option':
     # Define Algorithmns
 
 if menu_perturbation == 'Perturbation Mode':
-
-    st.error("selected mode can be achieved otherwise")
     st.write("Choose perturbation Mode")
-    st.error("data restriction has to be considered here too, it is connected with the perturbation option")
     st.write("It does not make sense, that the user is able to select the data restriction, only for the development"
              "in the development view it is neccessary to connect the chosen data restriction with the perturbation option and not any")
     st.info("If you want to change the order of perturbation execution drag an drop accordingly")
 
 
     options = ['Full','Prioritized', 'Selected']
+
+    feature_names = st.session_state["dataframe_feature_names"]["featureName.value"].values.tolist()
+
     if "pertubation_mode" not in st.session_state:
         st.session_state.pertubation_mode = "Full"
     ind = options.index(st.session_state.pertubation_mode)
@@ -461,31 +466,16 @@ if menu_perturbation == 'Perturbation Mode':
         "Which Perturbation Mode",
         ('Full','Prioritized', 'Selected'),index=ind)
 
+    if pertubation_mode =="Full":
+        st.session_state.perturb_mode_values = feature_names
+
     if pertubation_mode =="Prioritized":
         st.session_state.pertubation_mode = "Prioritized"
-        data2 = list()
 
-        for feature_name in st.session_state["dataframe_feature_names"]["featureName.value"]:
-            data2.append(feature_name)
-        st.session_state.perturb_mode_values = sort_items(data2)
 
-        # with st.expander("Prioritized Perturbation Mode"):
-        #     if 'perturb_mode' not in st.session_state:
-        #         data = list()
-        #         data2 = list()
-        #         st.session_state['order_feature'] = list()
-        #         for feature_name in st.session_state["dataframe_feature_names"]["featureName.value"]:
-        #             data2.append(feature_name)
-        #             dictionary_values = {'name': feature_name}
-        #             data.append(dictionary_values)
-        #             st.session_state['order_feature'] = data
-        #     else:
-        #         data = st.session_state.perturb_mode
-        #
-        #
-        # #st.session_state.perturb_mode=DraggableList(data, width="50%", key=f'order_feature')
 
-    # st.write(st.session_state.perturb_mode)
+        st.session_state.perturb_mode_values = sort_items(feature_names)
+
     if pertubation_mode == "Selected":
         st.session_state.perturb_mode_values = "Selected Perturbation Mode"
 

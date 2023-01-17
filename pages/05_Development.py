@@ -15,9 +15,12 @@ except:
     st.stop()
 # ------------------------------------------------------------------------------------------------------------------------
 
-
-getDefault(host)
-getAttributes(host)
+try:
+    getDefault(host)
+    getAttributes(host)
+except:
+    st.error("Please select other dataset")
+    st.stop()
 
 
 if "data_restrictions_dict" not in st.session_state:
@@ -155,10 +158,6 @@ if selected2 == 'Choose Algorithms':
 
     # Select and Deselect Data Restriction
     with t2:
-
-        st.write(st.session_state["loaded_feature_sensor_precision_dict"])
-        st.write(st.session_state["DF_feature_sensor_precision"])
-
         try:
             uploaded_DataRestriction = getRestriction(host)
             if "flag_data_restriction" not in st.session_state:
@@ -242,7 +241,6 @@ if selected2 == 'Choose Algorithms':
 
 
         except Exception as e:
-            st.error(e)
             st.info("No Data Restrictions available.")
             st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
             st.session_state.data_restriction_URN = pd.DataFrame(columns=['DataRestrictionActivity', 'DataRestrictionEntity', 'Label', 'Feature', 'Value'])
@@ -347,8 +345,8 @@ try:
                             try:
                                 if key not in st.session_state.loaded_feature_sensor_precision_dict:
                                     st.warning("Sensor Precision is not determined in Data Understanding Step")
-                                    st.info(
-                                        "When sensor precision is changed, old entity will be invalid and new one is created.")
+                                    #st.info(
+                                    #    "When sensor precision is changed, old entity will be invalid and new one is created.")
                                     # set precision to 0
                                     # raise error
                                     st.session_state.loaded_feature_sensor_precision_dict[key]
@@ -390,7 +388,12 @@ try:
                                                              st.session_state[f"steps_{key}_{method}"]))
 
                             except Exception as e:
-                                st.write(e)
+                                st.write("Sensor Precision for this feature should be determined in Data Understanding step.")
+                                want_to_contribute = st.button("Data Understanding", key=f"DataUnderstanding_{key}")
+                                if want_to_contribute:
+                                    switch_page("Data Understanding")
+
+                                #st.write(e)
                             st.write("---------------")
 
                         elif method == 'Fixed amount':
@@ -608,7 +611,7 @@ try:
             if st.session_state.data_restriction_URN["DataRestrictionEntity"].empty:
                 st.info("No Data Restriction selected")
             else:
-                st.write(st.session_state.data_restriction_URN["DataRestrictionEntity"])
+                st.info("Data Restriction selected")
 
 
             labelPerturbation = st.text_input("Insert additional label for the defined Perturbation Options",help="This is optional. Name your Perturbation Option in order to find it easier later. Ever Perturbation Option should be uniquely named")
@@ -716,32 +719,32 @@ try:
                                     liste[0].append(data_restriction[0])
                             except Exception as e:
                                 st.write(e)
-                            try:
-                                # check if algorithm is "Sensor Precision" and then check if there is an entry in the database with SensorPrecision for this feature, if so then check if the values are the same
-                                # if values are the same, append dataunderstandingentity into liste and proceed
-                                # if values are different, throw error and  write info that precision level is different to saved one
-                                # right now dataunderstandingentity will not be generated
-                                for perturbationOption in st.session_state['cardinal_val'][key]:
-
-                                    if perturbationOption == "Sensor Precision":
-
-                                        if key in st.session_state.DF_feature_sensor_precision["featureName.value"].values:
-
-                                            data_precision = st.session_state.DF_feature_sensor_precision[(
-                                                st.session_state.DF_feature_sensor_precision["featureName.value"] == key)&(
-                                                st.session_state.loaded_feature_sensor_precision_dict[key] == round(st.session_state.settings[key]["Sensor Precision"]["sensorPrecision"],2))][
-                                                "DataUnderstandingEntityID.value"].reset_index(drop=True)
-                                            liste[0].append(data_precision[0])
-                            except Exception as e:
-                                st.write(st.session_state.DF_feature_sensor_precision)
-                                st.write(st.session_state.DF_feature_sensor_precision[(
-                                                st.session_state.DF_feature_sensor_precision["featureName.value"] == key)]["featureID.value"][0])
-                                st.write(st.session_state.settings[key]["Sensor Precision"]["sensorPrecision"])
-                                st.write(st.session_state.loaded_feature_sensor_precision_dict[key])
-                                st.write(perturbationOption)
-                                st.write(key)
-
-                                st.info(f"Different precision level for feature {key}. Right now this will not lead to creation of data understanding entity for sensor precision")
+                            # try:
+                            #     # check if algorithm is "Sensor Precision" and then check if there is an entry in the database with SensorPrecision for this feature, if so then check if the values are the same
+                            #     # if values are the same, append dataunderstandingentity into liste and proceed
+                            #     # if values are different, throw error and  write info that precision level is different to saved one
+                            #     # right now dataunderstandingentity will not be generated
+                            #     for perturbationOption in st.session_state['cardinal_val'][key]:
+                            #
+                            #         if perturbationOption == "Sensor Precision":
+                            #
+                            #             if key in st.session_state.DF_feature_sensor_precision["featureName.value"].values:
+                            #
+                            #                 data_precision = st.session_state.DF_feature_sensor_precision[(
+                            #                     st.session_state.DF_feature_sensor_precision["featureName.value"] == key)&(
+                            #                     st.session_state.loaded_feature_sensor_precision_dict[key] == round(st.session_state.settings[key]["Sensor Precision"]["sensorPrecision"],2))][
+                            #                     "DataUnderstandingEntityID.value"].reset_index(drop=True)
+                            #                 liste[0].append(data_precision[0])
+                            # except Exception as e:
+                            #     st.write(st.session_state.DF_feature_sensor_precision)
+                            #     st.write(st.session_state.DF_feature_sensor_precision[(
+                            #                     st.session_state.DF_feature_sensor_precision["featureName.value"] == key)]["featureID.value"][0])
+                            #     st.write(st.session_state.settings[key]["Sensor Precision"]["sensorPrecision"])
+                            #     st.write(st.session_state.loaded_feature_sensor_precision_dict[key])
+                            #     st.write(perturbationOption)
+                            #     st.write(key)
+                            #
+                            #     st.info(f"Different precision level for feature {key}. Right now this will not lead to creation of data understanding entity for sensor precision")
 
                             # create another loop in order to get different UUIDs for PerturbationOptions
                             #KG sollen die einzelnen Optionen einzeln oder gesammelt gespeichert werden
@@ -803,9 +806,9 @@ try:
 
 
 
-                                        # host_upload.setQuery(prefix + query)
-                                        # host_upload.setMethod(POST)
-                                        # host_upload.query()
+                                        host_upload.setQuery(prefix + query)
+                                        host_upload.setMethod(POST)
+                                        host_upload.query()
 
                     # st.stop()
                 except Exception as e:

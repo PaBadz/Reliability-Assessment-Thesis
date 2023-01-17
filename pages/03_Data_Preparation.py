@@ -11,9 +11,13 @@ except:
     st.info("Please select a database first")
     st.stop()
 
-getDefault(host)
-getAttributes(host)
 
+try:
+    getDefault(host)
+    getAttributes(host)
+except:
+    st.error("Please select other dataset")
+    st.stop()
 data_preparation_options = option_menu("Data Preparation Options", ["Binned Features", "Missing Values"],
                                        icons=['collection', 'slash-circle'],
                                        menu_icon="None", default_index=0, orientation="horizontal")

@@ -250,8 +250,6 @@ def getDataRestrictionSeqDeployment(data_restriction,feature,host):
     FILTER(?containerMembershipProperty!= rdf:type)}}
     """)
 
-    st.write("query", query)
-
 
     try:
         results_feature_DataRestriction = get_connection_fuseki(host, (prefix+query))

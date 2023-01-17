@@ -48,8 +48,8 @@ def getDefault(host):
     try:
         st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
     except Exception as e:
-        st.write(e)
-        st.info("Dont forget to upload unique values")
+        pass
+        #st.info("Dont forget to upload unique values")
 
 def getPerturbationRecommendations(host):
     query = (f"""

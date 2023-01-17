@@ -26,8 +26,11 @@ optionsDataUnderstanding = option_menu("Data Understanding Options", ["Scale", "
 
 # if st.session_state.first_load is False:
 #     getAttributes(host)
-
-getAttributes(host)
+try:
+    getAttributes(host)
+except:
+    st.error("Please select other Database")
+    st.stop()
 # if not any(key.startswith('level_of_measurement_') for key in st.session_state):
 #     st.session_state["dataframe_feature_names"] = get_feature_names(host)
 #
@@ -103,11 +106,11 @@ if optionsDataUnderstanding == "Scale":
 
         with st.expander("Show level of measurement for features"):
             st.write(st.session_state.level_of_measurement_dic)
-        if st.button("Change level of measurement", type="primary"):
-
-            del st.session_state["level_of_measurement_dic"]
-            deleteWasGeneratedByDUA(host_upload,st.session_state["DF_feature_scale_name"], determinationName)
-            st.experimental_rerun()
+        # if st.button("Change level of measurement", type="primary"):
+        #
+        #     del st.session_state["level_of_measurement_dic"]
+        #     deleteWasGeneratedByDUA(host_upload,st.session_state["DF_feature_scale_name"], determinationName)
+        #     st.experimental_rerun()
 
         colored_header(
             label="Order of ordinal features",
@@ -187,7 +190,7 @@ if optionsDataUnderstanding == "Volatility":
     dicName = 'volatility_of_features_dic'
     name = 'VolatilityOfFeature'
     rprovName = 'volatilityLevel'
-    st.write(st.session_state["DF_feature_scale_name"])
+
 
 
     if st.session_state["volatility_of_features_dic"] == {}:
