@@ -1,7 +1,6 @@
 import statistics
 
 import pandas as pd
-from st_draggable_list import DraggableList
 from functions.functions_Reliability import *
 from functions.functions_DataUnderstanding import *
 from functions.fuseki_connection import *

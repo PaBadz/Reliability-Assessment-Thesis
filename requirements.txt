@@ -62,8 +62,6 @@ streamlit==1.16.0
 streamlit-aggrid==0.3.3
 streamlit-camera-input-live==0.2.0
 streamlit-card==0.0.4
-streamlit-
-draggable-list==0.0.1
 streamlit-embedcode==0.1.2
 streamlit-ext==0.1.5
 streamlit-extras==0.2.4

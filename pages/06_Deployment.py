@@ -4,7 +4,6 @@ import pandas as pd
 import streamlit
 from SPARQLWrapper import SPARQLWrapper
 from streamlit_sortables import sort_items
-from st_draggable_list import DraggableList
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode, JsCode
 from functions.perturbation_algorithms_ohne_values import *
 from functions.functions_Reliability import *
