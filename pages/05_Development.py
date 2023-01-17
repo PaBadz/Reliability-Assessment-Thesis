@@ -3,6 +3,7 @@ import stat
 import pandas as pd
 import streamlit
 from st_draggable_list import DraggableList
+
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode, JsCode
 from functions.perturbation_algorithms_ohne_values import *
 from functions.functions_Reliability import *
@@ -76,6 +77,15 @@ if selected2 == 'Choose Algorithms':
                             st.session_state.cardinal_val[columns] = st.session_state.default[columns]
                             # TODO create dictionary similar to settingList in order to reuse code                           # settinglist[method] = [configurations]
                             st.write(st.session_state.cardinal_val[columns])
+                            try:
+                                if "Sensor Precision" in st.session_state.cardinal_val[columns]:
+                                    if columns not in st.session_state.loaded_feature_sensor_precision_dict.keys():
+                                        st.error(f"No Sensor Precision for {columns} in Data Understanding step determined. ")
+                                        st.info("Go to Data Understanding and determine sensor precision for this feature.")
+                                        st.session_state.loaded_feature_sensor_precision_dict[columns]
+                            except:
+                                pass
+
 
                         except Exception as e:
                             st.write(e)
@@ -347,8 +357,11 @@ try:
                             try:
                                 if key not in st.session_state.loaded_feature_sensor_precision_dict:
                                     st.warning("Sensor Precision is not determined in Data Understanding Step")
+                                    st.info("When sensor precision is changed, old entity will be invalid and new one is created.")
                                     # set precision to 0
-                                    st.session_state[f"additional_value_{key}_{method}"] = 0.01
+                                    # raise error
+                                    st.session_state.loaded_feature_sensor_precision_dict[key]
+                                    # st.session_state[f"additional_value_{key}_{method}"] = 0.01
                                 else:
                                     st.session_state[f"additional_value_{key}_{method}"] = \
                                     st.session_state.loaded_feature_sensor_precision_dict[key]
@@ -358,22 +371,36 @@ try:
                                 #     st.session_state.unique_values_dict[key][-1]), step=0.01,
                                 #                        key=f"step_sensor_precision_{key}")
 
-                                st.session_state[f"additional_value_{key}_{method}"] = float(
-                                    st.number_input("Sensor Precision", min_value=float(0.01), max_value=float(100),
-                                              value=float(st.session_state[f"additional_value_{key}_{method}"]),
-                                              key=f"additional_value_widget_{key}_{method}",#step=float(step)
-                                              on_change=update_additional_value, args=(key, method)))
-
                                 st.session_state[f"steps_{key}_{method}"] = int(
                                     st.number_input("Steps", min_value=int(1), step=int(1),
                                               value=int(st.session_state[f"steps_{key}_{method}"]),
                                               key=f"steps_widget_{key}_{method}", on_change=update_steps,
                                               args=(key, method)))
 
+                                # st.session_state[f"additional_value_{key}_{method}"] = round(float(
+                                #     st.number_input("Sensor Precision", min_value=float(0.01), max_value=float(100),
+                                #               value=float(st.session_state[f"additional_value_{key}_{method}"]),
+                                #               key=f"additional_value_widget_{key}_{method}",#step=float(step)
+                                #               on_change=update_additional_value, args=(key, method))),2)
+
+                                st.write(f"Sensor Precision: **{st.session_state.loaded_feature_sensor_precision_dict[key]}**")
+
+                                # st.session_state[f"steps_{key}_{method}"] = int(
+                                #     st.number_input("Steps", min_value=int(1), step=int(1),
+                                #               value=int(st.session_state[f"steps_{key}_{method}"]),
+                                #               key=f"steps_widget_{key}_{method}", on_change=update_steps,
+                                #               args=(key, method)))
+
                                 settingList[method] = (sensorPrecision_settings(st.session_state[f"additional_value_{key}_{method}"],
                                                          st.session_state[f"steps_{key}_{method}"]))
                             except Exception as e:
                                 st.write(e)
+                                st.error(f"No Sensor Precision for {key} in Data Understanding step determined. ")
+                                st.info("Go to Data Understanding and determine sensor precision for this feature.")
+                                want_to_contribute = st.button("Data Understanding")
+                                if want_to_contribute:
+                                    switch_page("Data Understanding")
+
                             st.write("---------------")
 
                         elif method == 'Fixed amount':
@@ -605,8 +632,6 @@ try:
 
                 starting_time = getTimestamp()
                 # KG label nötig? Um die PerturbationOption zu identifizieren?
-                label = st.text_input("Give a label for the PerturbationOption",
-                                      help="Note there should be no labels with the same name")
 
 
                 # First create ModelingActivity
@@ -617,6 +642,7 @@ try:
                 name = 'PerturbationOption'
                 rprovName = 'PerturbationOption'
                 ending_time = getTimestamp()
+
                 try:
                     # st.write(st.session_state["flag_data_restriction"])
                     # if st.session_state["flag_data_restriction"] == False:
@@ -706,17 +732,20 @@ try:
                                 # if values are the same, append dataunderstandingentity into liste and proceed
                                 # if values are different, throw error and  write info that precision level is different to saved one
                                 # right now dataunderstandingentity will not be generated
-                                if st.session_state['cardinal_val'][key][0] == "Sensor Precision":
+                                for perturbationOption in st.session_state['cardinal_val'][key]:
 
-                                    if key in st.session_state.DF_feature_sensor_precision["featureName.value"].values:
+                                    if perturbationOption == "Sensor Precision":
 
-                                        data_precision = st.session_state.DF_feature_sensor_precision[(
-                                            st.session_state.DF_feature_sensor_precision["featureName.value"] == key)&(
-                                            st.session_state.loaded_feature_sensor_precision_dict[key] == round(st.session_state.settings[key]["Sensor Precision"]["sensorPrecision"],2))][
-                                            "DataUnderstandingEntityID.value"].reset_index(drop=True)
-                                        liste[0].append(data_precision[0])
+                                        if key in st.session_state.DF_feature_sensor_precision["featureName.value"].values:
+
+                                            data_precision = st.session_state.DF_feature_sensor_precision[(
+                                                st.session_state.DF_feature_sensor_precision["featureName.value"] == key)&(
+                                                st.session_state.loaded_feature_sensor_precision_dict[key] == round(st.session_state.settings[key]["Sensor Precision"]["sensorPrecision"],2))][
+                                                "DataUnderstandingEntityID.value"].reset_index(drop=True)
+                                            liste[0].append(data_precision[0])
                             except Exception as e:
-                                st.info(f"Different precision level for feature {key}. Right now this will not lead to creation of data understanding entity for sensor precision")
+
+                               st.info(f"Different precision level for feature {key}. Right now this will not lead to creation of data understanding entity for sensor precision")
 
                             # create another loop in order to get different UUIDs for PerturbationOptions
                             #KG sollen die einzelnen Optionen einzeln oder gesammelt gespeichert werden
@@ -778,9 +807,9 @@ try:
 
 
 
-                                        host_upload.setQuery(prefix + query)
-                                        host_upload.setMethod(POST)
-                                        host_upload.query()
+                                        # host_upload.setQuery(prefix + query)
+                                        # host_upload.setMethod(POST)
+                                        # host_upload.query()
 
                     # st.stop()
                 except Exception as e:
