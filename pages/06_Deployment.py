@@ -3,11 +3,7 @@ import distutils.command.build_ext
 import pandas as pd
 import streamlit
 from SPARQLWrapper import SPARQLWrapper
-<<<<<<<<< Temporary merge branch 1
-=========
 from streamlit_sortables import sort_items
->>>>>>>>> Temporary merge branch 2
-from st_draggable_list import DraggableList
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode, JsCode
 from functions.perturbation_algorithms_ohne_values import *
 from functions.functions_Reliability import *
@@ -35,15 +31,12 @@ menu_perturbation = option_menu(None, ["Perturbation Option",'Perturbation Mode'
                                 icons=['house', 'gear'],
                                 orientation="horizontal")
 
-<<<<<<<<< Temporary merge branch 1
-=========
 try:
     savedPerturbationOptions = getPerturbationOptions(host)
 except:
     st.info("There are no Perturbation Options to select at the moment.")
     st.stop()
 
->>>>>>>>> Temporary merge branch 2
 # options_cardinal = ['5% perturbation', '10% perturbation','Percentage perturbation',  'Sensor Precision', 'Fixed amount', 'Range perturbation']
 options_ordinal = ['Perturb in order', 'Perturb all values']
 options_nominal = ['Perturb all values']
@@ -60,11 +53,7 @@ if menu_perturbation == 'Perturbation Option':
     st.markdown(hide_table_row_index, unsafe_allow_html=True)
     t1, t2, t3 = st.tabs(["Perturbation Options", "Data Restriction", "Perturbation Recommendations"])
     with t1:
-<<<<<<<<< Temporary merge branch 1
-        savedPerturbationOptions = getPerturbationOptions(host)
-=========
 
->>>>>>>>> Temporary merge branch 2
         try:
             recommendations = getPerturbationRecommendations(host)
         except:
@@ -454,62 +443,14 @@ if menu_perturbation == 'Perturbation Option':
     # Define Algorithmns
 
 if menu_perturbation == 'Perturbation Mode':
-<<<<<<<<< Temporary merge branch 1
-=========
 
     st.error("selected mode can be achieved otherwise")
->>>>>>>>> Temporary merge branch 2
     st.write("Choose perturbation Mode")
     st.error("data restriction has to be considered here too, it is connected with the perturbation option")
     st.write("It does not make sense, that the user is able to select the data restriction, only for the development"
              "in the development view it is neccessary to connect the chosen data restriction with the perturbation option and not any")
     st.info("If you want to change the order of perturbation execution drag an drop accordingly")
 
-<<<<<<<<< Temporary merge branch 1
-    with st.expander("Prioritized Perturbation Mode"):
-        if 'perturb_mode' not in st.session_state:
-            data = list()
-            st.session_state['order_feature'] = list()
-            for feature_name in st.session_state["dataframe_feature_names"]["featureName.value"]:
-                dictionary_values = {'name': feature_name}
-                data.append(dictionary_values)
-                st.session_state['order_feature'] = data
-        else:
-            data = st.session_state.perturb_mode
-
-
-        st.session_state.perturb_mode=DraggableList(data, width="50%", key=f'order_feature')
-
-
-    # else:
-    #     with st.expander("Selected Perturbation Mode"):
-    #
-    #         st.info("Perturbation Mode might not work properly")
-    #         st.info("maybe worthless, selected mode can be achieved otherwise")
-    #         selected = st.multiselect("Select features which should be perturbed",
-    #                                   options=st.session_state["dataframe_feature_names"]["featureName.value"],
-    #                                   default=st.session_state["dataframe_feature_names"]["featureName.value"])
-    #     st.session_state.perturb_mode = selected
-
-try:
-    if menu_perturbation == 'Perturbation':
-        with st.expander("Change Perturbation Order"):
-            st.info("If you want to change the order of perturbation execution drag an drop accordingly")
-
-            with st.expander("Prioritized Perturbation Mode"):
-                if 'perturb_mode' not in st.session_state:
-                    data = list()
-                    st.session_state['order_feature'] = list()
-                    for feature_name in st.session_state["dataframe_feature_names"]["featureName.value"]:
-                        dictionary_values = {'name': feature_name}
-                        data.append(dictionary_values)
-                        st.session_state['order_feature'] = data
-                else:
-                    data = st.session_state.perturb_mode
-
-                st.session_state.perturb_mode = DraggableList(data, width="50%", key=f'order_feature')
-
-=========
 
     options = ['Full','Prioritized', 'Selected']
     if "pertubation_mode" not in st.session_state:
@@ -576,7 +517,6 @@ try:
         #
         #         st.session_state.perturb_mode = DraggableList(data, width="50%", key=f'order_feature')
         #
->>>>>>>>> Temporary merge branch 2
 
 
 
@@ -884,11 +824,8 @@ try:
                     # index perturb contains the different perturbation values for each case
                     index_perturb.append(perturbed_value_list.copy())
 
-<<<<<<<<< Temporary merge branch 1
-=========
 
 
->>>>>>>>> Temporary merge branch 2
                 try:
                     for i in range(0, len(selected_rows)):
                         for column, method in index_perturb[i].items():
@@ -912,14 +849,6 @@ try:
                 except Exception as e:
                     st.empty(e)
 
-<<<<<<<<< Temporary merge branch 1
-                # insert predictions of case into perturbed cases
-                result_df["prediction"] = result["prediction"]
-
-                try:
-                    for x in st.session_state.perturb_mode[::-1]:
-                        result_df = result_df.explode(x["name"])
-=========
 
                 # insert predictions of case into perturbed cases
                 result_df["prediction"] = result["prediction"]
@@ -929,7 +858,6 @@ try:
                     for x in st.session_state.perturb_mode_values[::-1]:
                         result_df = result_df.explode(x)
                         # result_df = result_df.explode(x["name"])
->>>>>>>>> Temporary merge branch 2
                 except Exception as e:
                     st.write(e)
 
@@ -937,12 +865,9 @@ try:
 
 
 
-<<<<<<<<< Temporary merge branch 1
-=========
 
 
 
->>>>>>>>> Temporary merge branch 2
                 # delete duplicate rows in order to prevent multiple same perturbations
 
                 result_df=result_df.drop_duplicates(keep='first')

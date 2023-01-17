@@ -347,31 +347,48 @@ try:
                             try:
                                 if key not in st.session_state.loaded_feature_sensor_precision_dict:
                                     st.warning("Sensor Precision is not determined in Data Understanding Step")
+                                    st.info(
+                                        "When sensor precision is changed, old entity will be invalid and new one is created.")
                                     # set precision to 0
-                                    st.session_state[f"additional_value_{key}_{method}"] = 0.01
+                                    # raise error
+                                    st.session_state.loaded_feature_sensor_precision_dict[key]
+                                    # st.session_state[f"additional_value_{key}_{method}"] = 0.01
                                 else:
                                     st.session_state[f"additional_value_{key}_{method}"] = \
                                     st.session_state.loaded_feature_sensor_precision_dict[key]
+
+
 
                                 st.markdown(f"##### {method}")
                                 # step = st.number_input("Define stepsize", min_value=0.01, max_value=float(
                                 #     st.session_state.unique_values_dict[key][-1]), step=0.01,
                                 #                        key=f"step_sensor_precision_{key}")
 
-                                st.session_state[f"additional_value_{key}_{method}"] = float(
-                                    st.number_input("Sensor Precision", min_value=float(0.01), max_value=float(100),
-                                              value=float(st.session_state[f"additional_value_{key}_{method}"]),
-                                              key=f"additional_value_widget_{key}_{method}",#step=float(step)
-                                              on_change=update_additional_value, args=(key, method)))
-
                                 st.session_state[f"steps_{key}_{method}"] = int(
                                     st.number_input("Steps", min_value=int(1), step=int(1),
-                                              value=int(st.session_state[f"steps_{key}_{method}"]),
-                                              key=f"steps_widget_{key}_{method}", on_change=update_steps,
-                                              args=(key, method)))
+                                                    value=int(st.session_state[f"steps_{key}_{method}"]),
+                                                    key=f"steps_widget_{key}_{method}", on_change=update_steps,
+                                                    args=(key, method)))
 
-                                settingList[method] = (sensorPrecision_settings(st.session_state[f"additional_value_{key}_{method}"],
-                                                         st.session_state[f"steps_{key}_{method}"]))
+                                # st.session_state[f"additional_value_{key}_{method}"] = round(float(
+                                #     st.number_input("Sensor Precision", min_value=float(0.01), max_value=float(100),
+                                #               value=float(st.session_state[f"additional_value_{key}_{method}"]),
+                                #               key=f"additional_value_widget_{key}_{method}",#step=float(step)
+                                #               on_change=update_additional_value, args=(key, method))),2)
+
+                                st.write(
+                                    f"Sensor Precision: **{st.session_state.loaded_feature_sensor_precision_dict[key]}**")
+
+                                # st.session_state[f"steps_{key}_{method}"] = int(
+                                #     st.number_input("Steps", min_value=int(1), step=int(1),
+                                #               value=int(st.session_state[f"steps_{key}_{method}"]),
+                                #               key=f"steps_widget_{key}_{method}", on_change=update_steps,
+                                #               args=(key, method)))
+
+                                settingList[method] = (
+                                    sensorPrecision_settings(st.session_state[f"additional_value_{key}_{method}"],
+                                                             st.session_state[f"steps_{key}_{method}"]))
+
                             except Exception as e:
                                 st.write(e)
                             st.write("---------------")

@@ -29,9 +29,9 @@ st.markdown("#### In Order to continue please upload a dataset to the server or 
 
 
 if st.button('Load all datasets from Fuseki', type='primary'):
-    data = open('example_upload.ttl').read()
-    headers = {'Content-Type': 'text/turtle;charset=utf-8'}
-    r = requests.post('http://localhost:3030/databases/data?', data=data)
+    # data = open('example_upload.ttl').read()
+    # headers = {'Content-Type': 'text/turtle;charset=utf-8'}
+    # r = requests.post('http://localhost:3030/databases/data?', data=data)
     # Get all datasets from fuseki
     sparql = SPARQLWrapper(host)
     sparql.setReturnFormat(JSON)
