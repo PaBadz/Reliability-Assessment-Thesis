@@ -417,7 +417,7 @@ def uploadBinValues(sparqlupdate,host,dic, uuid_Determination, rprovName):
 
 def getBinValuesSeq(host):
     dictionary_BinValues = dict()
-    query = (f"""      SELECT ?DPA ?feature ?label ?containerMembershipProperty ?item WHERE {{
+    query = (f"""      SELECT ?DPA ?DPE ?feature ?label ?containerMembershipProperty ?item WHERE {{
     ?DPE rprov:RangeOfBinnedFeature ?container.
     ?DPE rprov:wasGeneratedByDPA ?DPA.
     ?DPE rprov:isValid true.
@@ -431,7 +431,7 @@ def getBinValuesSeq(host):
     results_feature_BinValues = get_connection_fuseki(host, (prefix+query))
     results_feature_BinValues = pd.json_normalize(results_feature_BinValues["results"]["bindings"])
     results_feature_BinValues_grouped= results_feature_BinValues.groupby(["label.value"])["item.value"].apply(list)
-    st.write(results_feature_BinValues)
+
     for _index, row in results_feature_BinValues_grouped.items():
         dictionary_BinValues[_index] = row
 

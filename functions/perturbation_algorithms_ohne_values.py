@@ -79,6 +79,11 @@ def perturbRange_settings(lowerBound, upperBound, steps):
     settings['steps'] = steps
     return settings
 
+def perturbBin_settings(steps):
+    settings = dict()
+    settings['steps'] = steps
+    return settings
+
 
 # ordinal perturbation
 def perturbInOrder(steps, value, values):

@@ -730,6 +730,7 @@ try:
                                     if k == column:
                                         for algorithm_keys in method.keys():
 
+
                                             if algorithm_keys == 'Percentage perturbation':
 
                                                 perturbedList[algorithm_keys] = (
@@ -772,6 +773,22 @@ try:
                                                                  method[algorithm_keys]["upperBound"],
                                                                  method[algorithm_keys]["steps"]))
 
+                                            elif algorithm_keys == "Bin perturbation":
+                                                try:
+                                                    for j in range(len(st.session_state.loaded_bin_dict[k])-1):
+                                                        if float(st.session_state.loaded_bin_dict[k][j]) <= float(selected_rows[i][k][0]) <= float(st.session_state.loaded_bin_dict[k][j + 1]):
+                                                            new_list = [float(st.session_state.loaded_bin_dict[k][j]), float(st.session_state.loaded_bin_dict[k][j + 1])]
+                                                            break
+
+                                                    perturbedList[algorithm_keys] = (
+                                                        perturbRange(new_list[0],
+                                                                     new_list[1],
+                                                                     method[algorithm_keys]["steps"]))
+                                                except Exception as e:
+                                                    st.error(e)
+                                                    pass
+
+
                                             elif algorithm_keys == 'Perturb in order':
                                                 try:
                                                     perturbedList[algorithm_keys] = (
@@ -780,8 +797,11 @@ try:
                                                                        st.session_state.data_restriction_final[
                                                                            column]))  # method[algorithm_keys]["values"]
 
+
+
                                                 except Exception as e:
                                                     st.write(e)
+
 
                                             elif algorithm_keys == 'Perturb all values':
                                                 perturbedList[algorithm_keys] = (
@@ -797,7 +817,7 @@ try:
                     # index perturb contains the different perturbation values for each case
                     index_perturb.append(perturbed_value_list.copy())
 
-
+                st.write("perturbedList", perturbedList)
 
                 try:
                     for i in range(0, len(selected_rows)):
