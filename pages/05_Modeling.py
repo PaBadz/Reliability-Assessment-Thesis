@@ -22,9 +22,12 @@ except:
     st.stop()
 
 
+
+
 if "data_restrictions_dict" not in st.session_state:
     st.session_state["data_restrictions_dict"] = dict()
-
+if st.session_state.dataframe_feature_names.empty:
+    st.stop()
 # horizontal menu
 selected2 = option_menu(None, ["Choose Algorithms", "Define Perturbation Options"],
                         icons=['house', 'gear'],

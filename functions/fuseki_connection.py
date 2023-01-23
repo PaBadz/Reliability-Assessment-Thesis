@@ -7,6 +7,8 @@ from datetime import datetime
 
 # sparqlupdate = SPARQLWrapper(f"http://localhost:3030/a/update")
 host_dataset_first_initialize = "http://localhost:3030/$/datasets"
+host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/upload")
+
 #sparqlupdate = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
 
 
@@ -53,7 +55,8 @@ def get_connection_fuseki_update(host, query):
 def upload_features(sparqlupdate, uuid_Feature, features, uuid_determinationFeature):
     query = (f"""INSERT DATA {{<urn:uuid:{uuid_Feature}> rdf:type rprov:Feature, owl:NamedIndividual;
                                         rdfs:label '{features}';
-                                        rprov:wasGeneratedByDUA <urn:uuid:{uuid_determinationFeature}>.}}""")
+                                        rprov:wasGeneratedByDUA <urn:uuid:{uuid_determinationFeature}>;
+                                        rprov:isValid true.}}""")
 
     sparqlupdate.setQuery(prefix + query)
     sparqlupdate.setMethod(POST)
@@ -93,7 +96,7 @@ def uploadApproach(sparqlupdate, uuid_activity, uuid_entity):
                           PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
                           PREFIX instance:<http://www.semanticweb.org/dke/ontologies#> 
                           INSERT DATA {{<urn:uuid:{uuid_entity}> rdf:type rprov:PerturbationApproach, owl:NamedIndividual;
-                          rprov:isValid True ;
+                          rprov:isValid true;
                           rprov:wasGeneratedByBUA <urn:uuid:{uuid_activity}>;
                           prov:generatedAtTime '{time}'^^xsd:dateTime.}}""")
     sparqlupdate.setQuery(prefix + query)
@@ -109,6 +112,7 @@ def get_feature_names(host):
     SELECT ?featureID ?featureName WHERE {{
       ?featureID rdf:type rprov:Feature .
       ?featureID rdfs:label ?featureName.
+      ?featureID rprov:isValid true.
     }}
     """)
 
@@ -218,7 +222,8 @@ def getUniqueValues(host):
     ?DataUnderstandingEntityID rdf:type owl:NamedIndividual.
     ?DataUnderstandingEntityID rprov:uniqueValues ?uniqueValues.
 	?DataUnderstandingEntityID rprov:toFeature ?featureID.
-    ?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.}}
+    ?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.
+    ?DataUnderstandingEntityID rprov:isValid true.}}
     GROUP BY ?featureID ?featureName ?DataUnderstandingEntityID ?DUA
     """)
 
@@ -242,6 +247,7 @@ def getUniqueValuesSeq(host):
     ?container ?containerMembershipProperty ?item.
     ?sub rprov:toFeature ?feature.
     ?feature rdfs:label ?label.
+    ?sub rprov:isValid true.
     FILTER(?containerMembershipProperty!= rdf:type)
   }}
     """)
@@ -401,6 +407,7 @@ def uploadUniqueValues(sparqlupdate,host,dic, level_measurement, uuid_Determinat
                               rprov:toFeature <{result_2["subject.value"][0]}>;
                               rprov:wasGeneratedByDUA  <urn:uuid:{uuid_DeterminationUniqueValues}>;
                               prov:generatedAtTime '{time}'^^xsd:dateTime;
+                              rprov:isValid true.
                             }}""")
             sparqlupdate.setQuery(prefix+query)
             sparqlupdate.setMethod(POST)
@@ -528,7 +535,7 @@ def deleteWasGeneratedByDPA(sparqlupdate,df):  # panda df
     query = (f"""
                 DELETE {{?DPA rprov:isValid  ?value }}
                 INSERT {{?DPA rprov:isValid false}}
-            WHERE  {{?DPA rprov:isValid  ?value. ?DUA rprov:wasGeneratedByDPA <{df["DPA.value"][0]}>}}""")
+            WHERE  {{?DPA rprov:isValid  ?value. ?DPA rprov:wasGeneratedByDPA <{df["DPA.value"][0]}>}}""")
 
 
     sparqlupdate.setQuery(prefix+query)

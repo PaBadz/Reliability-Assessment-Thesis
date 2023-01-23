@@ -30,9 +30,11 @@ st.markdown("###### In Order to continue please upload a dataset to the server o
 
 
 if st.button('Load all datasets from Fuseki', type='primary'):
-    # data = open('example_upload.ttl').read()
-    # headers = {'Content-Type': 'text/turtle;charset=utf-8'}
-    # r = requests.post('http://localhost:3030/databases/data?', data=data)
+    data = open('example_upload.ttl').read()
+    headers = {'Content-Type': 'text/turtle;charset=utf-8'}
+
+    r = requests.put("http://localhost:3030/BankingCredit?default", data, headers=headers)
+
     # Get all datasets from fuseki
     sparql = SPARQLWrapper(host_dataset_first_initialize)
     sparql.setReturnFormat(JSON)
@@ -107,7 +109,7 @@ if selected2 == 'Upload':
 
 
     data = st.file_uploader("Choose a CSV file", accept_multiple_files=True,on_change=set_database)
-    st.write(st.session_state)
+
     if not data:
         st.stop()
     starting_time = getTimestamp()
@@ -118,78 +120,83 @@ if selected2 == 'Upload':
     if 'dataset' not in st.session_state:
         st.session_state['dataset'] = 'None'
 
-    # Dataset will be split and saved in the database
-    # select target variable
-    y = st.selectbox('Choose target variable', uploaded_file_df.columns, index=len(uploaded_file_df.columns) - 1)
+    if "unique_values_dict" not in st.session_state:
+        with st.form(key="formUploadFeatures"):
+            # Dataset will be split and saved in the database
+            # select target variable
+            y = st.selectbox('Choose target variable', uploaded_file_df.columns, index=len(uploaded_file_df.columns) - 1)
 
-    X = uploaded_file_df.drop(y, axis=1)
+            X = uploaded_file_df.drop(y, axis=1)
 
-    y = uploaded_file_df[y]
-    df = pd.DataFrame(data=X, columns=X.columns)
+            y = uploaded_file_df[y]
+            df = pd.DataFrame(data=X, columns=X.columns)
 
-    if st.session_state.fuseki_database == 'None':
-        st.stop()
-    host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
-    host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
-
-
-
-    X = df
-    st.dataframe(df)
-
-
-    if uploaded_file_df is not None:
-        df = pd.DataFrame(data=X, columns=X.columns)
-        st.session_state['df'] = df
-        st.session_state['X'] = X
-
-        # y needed if model is generated in this webapp
-        st.session_state['y'] = y
-
-        # st.session_state.cardinal_val = {}
-        # st.session_state.ordinal_val = {}
-        # st.session_state.nominal_val = {}
-        # st.session_state.default = {}
-        # for columns in df.columns:
-        #     st.session_state.default[columns] = []
-    else:
-        st.write("No Data")
-        st.stop()
-
-
-    # TODO outsource to function
-    # Determination of feature
-    if st.button("Upload dataset to the server", type='primary', help="Determines the features of the dataset, in the next step you can determine the scale of the features"):
-        determinationNameUUID = 'DeterminationOfFeature'
-        determinationName = 'DeterminationOfFeature'
-        label = '"detOfFeature"@en'
-        dicName = 'volatility_of_features_dic'
-        name = 'Feature'
-        rprovName = 'Feature'
-
-        sparqlupdate = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
-        uuid_determinationFeature = uuid.uuid4()
-        ending_time = getTimestamp()
-
-        uuid_determinationFeature = determinationActivity(host_upload, determinationName, label,
-                                                        starting_time, ending_time)
-        unique_values_dict = {}
-
-        for features in df.columns:
-            # save unique_values of feature in dictionary
-            unique_values = sorted(df[f'{features}'].unique().tolist())
-
-            unique_values_dict[features] = unique_values
-
-            uuid_Feature = uuid.uuid4()
-
-            upload_features(host_upload,uuid_Feature, features, uuid_determinationFeature)
+            if st.session_state.fuseki_database == 'None':
+                st.stop()
+            host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
+            host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
 
 
 
-        if "unique_values_dict" not in st.session_state:
-            st.session_state['unique_values_dict'] = unique_values_dict
+            X = df
 
-        st.success("Features uploaded")
-        st.info("In the next step you can determine the scale of the features")
+
+
+            if uploaded_file_df is not None:
+                df = pd.DataFrame(data=X, columns=X.columns)
+                st.session_state['df'] = df
+                st.session_state['X'] = X
+
+                # y needed if model is generated in this webapp
+                st.session_state['y'] = y
+
+                # st.session_state.cardinal_val = {}
+                # st.session_state.ordinal_val = {}
+                # st.session_state.nominal_val = {}
+                # st.session_state.default = {}
+                # for columns in df.columns:
+                #     st.session_state.default[columns] = []
+            else:
+                st.write("No Data")
+                st.stop()
+
+
+        # TODO outsource to function
+        # Determination of feature
+
+
+        # if st.button("Upload dataset to the server", type='primary', help="Determines the features of the dataset, in the next step you can determine the scale of the features"):
+            determinationNameUUID = 'DeterminationOfFeature'
+            determinationName = 'DeterminationOfFeature'
+            label = '"detOfFeature"@en'
+            dicName = 'volatility_of_features_dic'
+            name = 'Feature'
+            rprovName = 'Feature'
+
+            if st.form_submit_button("Upload dataset to the server",type='primary'):
+                sparqlupdate = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
+                uuid_determinationFeature = uuid.uuid4()
+                ending_time = getTimestamp()
+
+                uuid_determinationFeature = determinationActivity(host_upload, determinationName, label,
+                                                                starting_time, ending_time)
+                unique_values_dict = {}
+
+                for features in df.columns:
+                    # save unique_values of feature in dictionary
+                    unique_values = sorted(df[f'{features}'].unique().tolist())
+
+                    unique_values_dict[features] = unique_values
+
+                    uuid_Feature = uuid.uuid4()
+
+                    upload_features(host_upload,uuid_Feature, features, uuid_determinationFeature)
+
+
+
+
+                st.session_state['unique_values_dict'] = unique_values_dict
+
+                st.success("Features uploaded")
+                st.info("In the next step you can determine the scale of the features")
 

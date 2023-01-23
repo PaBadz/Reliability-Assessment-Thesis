@@ -148,7 +148,8 @@ if menu_perturbation == 'Perturbation Option':
                                     st.session_state.perturbationOptions[feature_names])) & (savedPerturbationOptions[
                                                                                                  'FeatureName'] == feature_names)])
                             # st.write(chosen_perturbationOptions_feature)
-                            df_test=df_test.append(chosen_perturbationOptions_feature)
+                            #df_test=df_test.append(chosen_perturbationOptions_feature)
+                            df_test = pd.concat([df_test, chosen_perturbationOptions_feature])
                             st.table(chosen_perturbationOptions_feature[["FeatureName", "PerturbationOption", "Settings","label"]])
                             #st.write(df_test)
 

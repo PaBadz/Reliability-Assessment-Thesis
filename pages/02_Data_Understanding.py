@@ -14,6 +14,14 @@ except:
     st.info("Please select a database first")
     st.stop()
 
+try:
+    getAttributes(host)
+except:
+    st.error("Please select other Database")
+    st.stop()
+
+if st.session_state.dataframe_feature_names.empty:
+    st.stop()
 
 optionsDataUnderstanding = option_menu("Data Understanding Options", ["Scale", "Volatility", "Data Restrictions", "Feature Sensor Precision"],
                                        icons=['collection', 'arrow-down-up', 'slash-circle'],
@@ -26,11 +34,7 @@ optionsDataUnderstanding = option_menu("Data Understanding Options", ["Scale", "
 
 # if st.session_state.first_load is False:
 #     getAttributes(host)
-try:
-    getAttributes(host)
-except:
-    st.error("Please select other Database")
-    st.stop()
+
 # if not any(key.startswith('level_of_measurement_') for key in st.session_state):
 #     st.session_state["dataframe_feature_names"] = get_feature_names(host)
 #
@@ -64,7 +68,6 @@ except:
 
 
 
-
 # Hier kann die scale ausgewählt werden
 if optionsDataUnderstanding == "Scale":
 
@@ -73,6 +76,8 @@ if optionsDataUnderstanding == "Scale":
     dicName = 'level_of_measurement_dic'
     name = 'ScaleOfFeature'
     rprovName = 'scale'
+
+
 
     # wenn noch keine scale in fuseki bestimmt wurde, erstelle Form mit auswahl von scales
     if st.session_state["level_of_measurement_dic"] == {}:
