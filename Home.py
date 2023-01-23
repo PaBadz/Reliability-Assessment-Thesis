@@ -18,13 +18,14 @@ st.set_page_config(
     }
 )
 
-st.title('Masterthesis Reliability of Predictions')
+st.title('Masterthesis')
+st.subheader("Design and Implementation of a web-based User Interface for the guided Assessment of Reliability of Classification Results using the Perturbation Approach")
 
 
 selected2 = option_menu(None, ["Database", "Upload"],
                         icons=['database', 'cloud-upload'],
                         menu_icon="", default_index=0, orientation="horizontal")
-st.markdown("#### In Order to continue please upload a dataset to the server or choose a dataset from the database")
+st.markdown("###### In Order to continue please upload a dataset to the server or choose a dataset from the database")
 
 
 
@@ -33,7 +34,7 @@ if st.button('Load all datasets from Fuseki', type='primary'):
     # headers = {'Content-Type': 'text/turtle;charset=utf-8'}
     # r = requests.post('http://localhost:3030/databases/data?', data=data)
     # Get all datasets from fuseki
-    sparql = SPARQLWrapper(host)
+    sparql = SPARQLWrapper(host_dataset_first_initialize)
     sparql.setReturnFormat(JSON)
     fuseki_datasets = sparql.query().convert()
 

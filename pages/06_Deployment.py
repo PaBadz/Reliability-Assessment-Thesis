@@ -430,8 +430,9 @@ if menu_perturbation == 'Perturbation Option':
 
 
         except Exception as e:
-            st.write("Data Restriction", st.session_state.data_restriction_final)
-            #st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
+            st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
+
+
 
     with st.expander("Show Data Restriction values"):
         st.write("Data Restriction",st.session_state.data_restriction_final)
@@ -460,21 +461,27 @@ if menu_perturbation == 'Perturbation Mode':
 
     if "pertubation_mode" not in st.session_state:
         st.session_state.pertubation_mode = "Full"
-    ind = options.index(st.session_state.pertubation_mode)
+
+    def change(value):
+        st.session_state.pertubation_mode = value
+
+
+
 
     pertubation_mode = st.radio(
         "Which Perturbation Mode",
-        ('Full','Prioritized', 'Selected'),index=ind)
-
+        ('Full','Prioritized', 'Selected'),index=options.index(st.session_state.pertubation_mode), on_change=change, args=(st.session_state.pertubation_mode,))
     if pertubation_mode =="Full":
         st.session_state.perturb_mode_values = feature_names
+
+        st.session_state.pertubation_mode = "Full"
 
     if pertubation_mode =="Prioritized":
         st.session_state.pertubation_mode = "Prioritized"
 
 
 
-        st.session_state.perturb_mode_values = sort_items(feature_names)
+        st.session_state.perturb_mode_values = sort_items(st.session_state.df_test["FeatureName"].tolist())
 
     if pertubation_mode == "Selected":
         st.session_state.perturb_mode_values = "Selected Perturbation Mode"
@@ -483,10 +490,20 @@ if menu_perturbation == 'Perturbation Mode':
         st.error("maybe worthless, selected mode can be achieved otherwise")
         selected = st.multiselect("Select features which should be perturbed",
                                   options=st.session_state["dataframe_feature_names"]["featureName.value"],
-                                  default=st.session_state["dataframe_feature_names"]["featureName.value"])
+                                  default=st.session_state.df_test["FeatureName"].tolist())
         st.session_state.perturb_mode_values = selected
 
-    st.write(st.session_state.perturb_mode_values)
+        try:
+            for feature in st.session_state.perturb_mode_values:
+                st.session_state.pertubation_mode = "Selected"
+
+        except Exception as e:
+            st.error("Select only perturbation options for features selected")
+            st.info("Perturb mode is set to Full")
+            st.session_state.pertubation_mode = "Full"
+            st.session_state.perturb_mode_values = feature_names
+
+
 
 try:
     if menu_perturbation == 'Perturbation':
@@ -817,7 +834,6 @@ try:
                     # index perturb contains the different perturbation values for each case
                     index_perturb.append(perturbed_value_list.copy())
 
-                st.write("perturbedList", perturbedList)
 
                 try:
                     for i in range(0, len(selected_rows)):

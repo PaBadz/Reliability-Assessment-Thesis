@@ -4,6 +4,7 @@ import streamlit
 import numpy as np
 from functions.perturbation_algorithms_ohne_values import *
 from functions.functions_Reliability import *
+from functions.functions_DataPreparation import *
 
 try:
     host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
@@ -98,10 +99,7 @@ if selected2 == 'Choose Algorithms':
                             elif "Bin perturbation" in st.session_state.cardinal_val[columns]:
                                 if columns not in st.session_state.loaded_bin_dict.keys():
                                     st.error(
-                                        f"No Bin determined for feature {columns} in Data Understanding step determined. Go to Data Understanding and determine sensor precision for this feature.")
-                                    switch = st.button("Data Preparation", key=f"DataPreparation_{columns}")
-                                    if switch:
-                                        switch_page("Data Preparation")
+                                        f"No Bin determined for feature {columns} in Data Preparation step determined. Go to Data Preparation and determine sensor precision for this feature.")
 
                         except:
                             pass
@@ -273,9 +271,6 @@ if selected2 == 'Choose Algorithms':
 
 try:
     if selected2 == 'Define Perturbation Options':
-
-
-
 
         if "perturbed_value_list" not in st.session_state:
             st.session_state.perturbed_value_list = {}
@@ -682,6 +677,14 @@ try:
 
 
             if st.button("Save Modeling Activity to Database", type='primary', help="Modeling Activity + Generation of Perturbation Option with BUA, DUA, DPA as input and Perturbation Option. Save the Modeling Activity and Entity to the Database. Later this button will be replaced and done automatically."):
+                # check if choice of assessment is defined
+                try:
+                    getApproach(host)
+                except Exception as e:
+                    uuid_activity = uuid.uuid4()
+                    uuid_entity = uuid.uuid4()
+                    uploadApproach(host_upload, uuid_activity, uuid_entity)
+
                 # Modeling Phase
                 # KG DEVELOPMENT
                 # KG: DefinitionOfPertubartionOption
@@ -700,45 +703,24 @@ try:
 
                 name = 'PerturbationOption'
                 rprovName = 'PerturbationOption'
-                ending_time = getTimestamp()
+
+
+                # Get BUE PerturbationApproach
+                business_understanding_entity = getApproach(host)
+
+                # TODO ausgliedern
                 try:
-                    # st.write(st.session_state["flag_data_restriction"])
-                    # if st.session_state["flag_data_restriction"] == False:
-                    #
-                    #     query = (f"""
-                    #          SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?DUA {{
-                    #             ?featureID rdf:type rprov:Feature .
-                    #             ?featureID rdfs:label ?featureName.
-                    #             ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                    #             ?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.
-                    #              FILTER(?rprov!=rprov:SensorPrecisionOfFeature)}}""")
-                    #
-                    # else:
-
-                    # query = (f"""
-                    #                                   SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?DUA WHERE{{
-                    #         ?featureID rdf:type rprov:Feature .
-                    #         ?featureID rdfs:label ?featureName.
-                    #         ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-    				# 		?DataUnderstandingEntityID rdf:type ?rprov.
-                    #         ?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.
-                    #
-                    #         FILTER(      ?rprov!=owl:NamedIndividual)
-                    #         FILTER(?rprov!=rprov:DataRestriction)
-                    #         FILTER(?rprov!=rprov:SensorPrecisionOfFeature)""")
-
                     query = (f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?DUA WHERE{{
-    			?featureID rdf:type rprov:Feature .
+    			            ?featureID rdf:type rprov:Feature .
                             ?featureID rdfs:label ?featureName.
                             ?DataUnderstandingEntityID rprov:toFeature ?featureID.
     						?DataUnderstandingEntityID rdf:type ?rprov.
-                            ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA ?DUA.
+                            ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
                             ?DataUnderstandingEntityID rprov:isValid true.
-                        
-                          FILTER(      ?rprov!=owl:NamedIndividual)
+                            FILTER(?rprov!=owl:NamedIndividual)
                             FILTER(?rprov!=rprov:DataRestriction)
-    FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
-    FILTER(?rprov!=rprov:RangeOfBinnedFeature)  
+                            FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
+                            FILTER(?rprov!=rprov:RangeOfBinnedFeature)  
     
     }}""")
 
@@ -780,6 +762,7 @@ try:
 
                                 st.write(np.concatenate(uploaded_entities["DataUnderstandingEntityID.value"].values).tolist())
                                 liste = (np.concatenate(uploaded_entities["DataUnderstandingEntityID.value"].values).tolist())
+                                liste.append(business_understanding_entity)
                         except:
 
                             liste = list()
@@ -882,7 +865,7 @@ try:
                                 if method == "Perturb all values":
                                     query = (
                                         f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
-                                                                                                 rprov:perturbedFeature <urn:uuid:{featureID["featureID.value"].values[0]}>;
+                                                                                                 rprov:perturbedFeature <{featureID["featureID.value"].values[0]}>;
                                                                                                  rprov:generationAlgorithm "{method}";
                                                                                                  rprov:values "{perturbationOption}"@en;
                                                                                                  rprov:modelingEntityWasDerivedFrom <{entities}>;
