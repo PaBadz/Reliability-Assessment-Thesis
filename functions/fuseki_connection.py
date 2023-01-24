@@ -7,7 +7,7 @@ from datetime import datetime
 
 # sparqlupdate = SPARQLWrapper(f"http://localhost:3030/a/update")
 host_dataset_first_initialize = "http://localhost:3030/$/datasets"
-host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/upload")
+# host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/upload")
 
 #sparqlupdate = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
 
