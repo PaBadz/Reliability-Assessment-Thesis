@@ -3,6 +3,9 @@ import streamlit as st
 import uuid
 import pandas as pd
 from datetime import datetime
+from functions.functions_Reliability import *
+from functions.functions_Volatility import *
+from functions.functions_dataRestrictions import *
 
 
 # sparqlupdate = SPARQLWrapper(f"http://localhost:3030/a/update")
@@ -105,7 +108,25 @@ def uploadApproach(sparqlupdate, uuid_activity, uuid_entity):
 
 
 
+def getFeatureVolatility(host):
+    dictionary_volatility = dict()
+    query = (f"""
+    SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?volatility ?DUA {{
+    ?featureID rdf:type rprov:Feature .
+    ?featureID rdfs:label ?featureName.
+    ?DataUnderstandingEntityID rdf:type owl:NamedIndividual.
+    ?DataUnderstandingEntityID rprov:volatilityLevel ?volatility.
+	?DataUnderstandingEntityID rprov:toFeature ?featureID.
+  	?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.
+  	?DataUnderstandingEntityID rprov:isValid true.
+    }}""")
+    results_feature_volatility = get_connection_fuseki(host, (prefix+query))
+    results_feature_volatility = pd.json_normalize(results_feature_volatility["results"]["bindings"])
 
+    for _index, row in results_feature_volatility.iterrows():
+        dictionary_volatility[row["featureName.value"]] = row["volatility.value"]
+
+    return dictionary_volatility, results_feature_volatility
 
 def get_feature_names(host):
     query = (f"""
@@ -134,6 +155,7 @@ def getFeatureScale(host):
     ?DataUnderstandingEntityID rprov:scale ?scale.
 	?DataUnderstandingEntityID rprov:toFeature ?featureID.
   	?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.
+  	?DataUnderstandingEntityID rprov:isValid true.
     }}""")
     results_feature_scale = get_connection_fuseki(host, (prefix + query))
 
@@ -145,25 +167,7 @@ def getFeatureScale(host):
     return dictionary_scales, results_feature_scale
 
 
-def getFeatureVolatility(host):
-    dictionary_volatility = dict()
-    query = (f"""
-    SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?volatility ?DUA {{
-    ?featureID rdf:type rprov:Feature .
-    ?featureID rdfs:label ?featureName.
-    ?DataUnderstandingEntityID rdf:type owl:NamedIndividual.
-    ?DataUnderstandingEntityID rprov:volatilityLevel ?volatility.
-	?DataUnderstandingEntityID rprov:toFeature ?featureID.
-  	?DataUnderstandingEntityID rprov:wasGeneratedByDUA ?DUA.
-  	?DataUnderstandingEntityID rprov:isValid true.
-    }}""")
-    results_feature_volatility = get_connection_fuseki(host, (prefix+query))
-    results_feature_volatility = pd.json_normalize(results_feature_volatility["results"]["bindings"])
 
-    for _index, row in results_feature_volatility.iterrows():
-        dictionary_volatility[row["featureName.value"]] = row["volatility.value"]
-
-    return dictionary_volatility, results_feature_volatility
 
 
 def getSensorPrecision(host):
@@ -263,58 +267,58 @@ def getUniqueValuesSeq(host):
     return dictionary_uniqueValues
 
 # TODO TEST TEST TEST
-def getDataRestrictionSeq(data_restriction,host):
-    dictionary_DataRestriction = dict()
-    query = (f"""    SELECT ?label ?containerMembershipProperty ?item WHERE {{
-    ?sub rprov:DataRestriction ?container.
-    ?sub rprov:wasGeneratedByDUA <{data_restriction}>.
-    ?container a rdf:Seq .
-    ?container ?containerMembershipProperty ?item.
-    ?sub rprov:toFeature ?feature.
-    ?feature rdfs:label ?label.
-    FILTER(?containerMembershipProperty!= rdf:type)}}
-    """)
-
-    results_feature_DataRestriction = get_connection_fuseki(host, (prefix+query))
-    results_feature_DataRestriction = pd.json_normalize(results_feature_DataRestriction["results"]["bindings"])
-    results_feature_DataRestriction= results_feature_DataRestriction.groupby("label.value")["item.value"].apply(list)
-
-    for _index, row in results_feature_DataRestriction.items():
-        dictionary_DataRestriction[_index] = row
-
-    return dictionary_DataRestriction
-
-
-def getDataRestrictionSeqDeployment(data_restriction,feature,host):
-    dictionary_DataRestriction = dict()
-    query = (f"""
-
-    SELECT ?dataRestrictionEntity ?feature ?label ?seq ?item WHERE {{
-    <{data_restriction}> rprov:modelingEntityWasDerivedFrom ?dataRestrictionEntity.
-    ?dataRestrictionEntity rdf:type rprov:DataRestriction.
-    ?dataRestrictionEntity rprov:DataRestriction ?seq.
-    ?seq a rdf:Seq .
-    ?seq ?containerMembershipProperty ?item.
-    ?dataRestrictionEntity rprov:toFeature <{feature}>.
-    ?dataRestrictionEntity rprov:toFeature ?feature.
-    ?feature rdfs:label ?label.
-    FILTER(?containerMembershipProperty!= rdf:type)}}
-    """)
+# def getDataRestrictionSeq(data_restriction,host):
+#     dictionary_DataRestriction = dict()
+#     query = (f"""    SELECT ?label ?containerMembershipProperty ?item WHERE {{
+#     ?sub rprov:DataRestriction ?container.
+#     ?sub rprov:wasGeneratedByDUA <{data_restriction}>.
+#     ?container a rdf:Seq .
+#     ?container ?containerMembershipProperty ?item.
+#     ?sub rprov:toFeature ?feature.
+#     ?feature rdfs:label ?label.
+#     FILTER(?containerMembershipProperty!= rdf:type)}}
+#     """)
+#
+#     results_feature_DataRestriction = get_connection_fuseki(host, (prefix+query))
+#     results_feature_DataRestriction = pd.json_normalize(results_feature_DataRestriction["results"]["bindings"])
+#     results_feature_DataRestriction= results_feature_DataRestriction.groupby("label.value")["item.value"].apply(list)
+#
+#     for _index, row in results_feature_DataRestriction.items():
+#         dictionary_DataRestriction[_index] = row
+#
+#     return dictionary_DataRestriction
 
 
-    try:
-        results_feature_DataRestriction = get_connection_fuseki(host, (prefix+query))
-
-        results_feature_DataRestriction = pd.json_normalize(results_feature_DataRestriction["results"]["bindings"])
-
-        results_feature_DataRestriction= results_feature_DataRestriction.groupby("label.value")["item.value"].apply(list)
-
-        for _index, row in results_feature_DataRestriction.items():
-            dictionary_DataRestriction[_index] = row
-
-        return dictionary_DataRestriction
-    except:
-        return
+# def getDataRestrictionSeqDeployment(data_restriction,feature,host):
+#     dictionary_DataRestriction = dict()
+#     query = (f"""
+#
+#     SELECT ?dataRestrictionEntity ?feature ?label ?seq ?item WHERE {{
+#     <{data_restriction}> rprov:modelingEntityWasDerivedFrom ?dataRestrictionEntity.
+#     ?dataRestrictionEntity rdf:type rprov:DataRestriction.
+#     ?dataRestrictionEntity rprov:DataRestriction ?seq.
+#     ?seq a rdf:Seq .
+#     ?seq ?containerMembershipProperty ?item.
+#     ?dataRestrictionEntity rprov:toFeature <{feature}>.
+#     ?dataRestrictionEntity rprov:toFeature ?feature.
+#     ?feature rdfs:label ?label.
+#     FILTER(?containerMembershipProperty!= rdf:type)}}
+#     """)
+#
+#
+#     try:
+#         results_feature_DataRestriction = get_connection_fuseki(host, (prefix+query))
+#
+#         results_feature_DataRestriction = pd.json_normalize(results_feature_DataRestriction["results"]["bindings"])
+#
+#         results_feature_DataRestriction= results_feature_DataRestriction.groupby("label.value")["item.value"].apply(list)
+#
+#         for _index, row in results_feature_DataRestriction.items():
+#             dictionary_DataRestriction[_index] = row
+#
+#         return dictionary_DataRestriction
+#     except:
+#         return
 
 
 
@@ -388,8 +392,8 @@ def uploadUniqueValues(sparqlupdate,host,dic, level_measurement, uuid_Determinat
     time = getTimestamp()
     with st.spinner("Uploading unique values..."):
         for key, value in dic.items():
-            uuid_ScaleOfFeature = uuid.uuid4()
-            uuid_UniqueValues = uuid.uuid4()
+            uuid_UniqueValues_entity = uuid.uuid4()
+            uuid_UniqueValues_seq = uuid.uuid4()
 
             query = (f"""PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
                         PREFIx rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -401,8 +405,8 @@ def uploadUniqueValues(sparqlupdate,host,dic, level_measurement, uuid_Determinat
 
             #sparqlupdate = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
 
-            query = (f"""INSERT DATA {{<urn:uuid:{uuid_ScaleOfFeature}> rdf:type rprov:{name}, owl:NamedIndividual;
-                              rprov:{rprovName} <urn:uuid:{uuid_UniqueValues}>;
+            query = (f"""INSERT DATA {{<urn:uuid:{uuid_UniqueValues_entity}> rdf:type rprov:{name}, owl:NamedIndividual;
+                              rprov:{rprovName} <urn:uuid:{uuid_UniqueValues_seq}>;
                               rdfs:label "{rprovName} {key}";
                               rprov:toFeature <{result_2["subject.value"][0]}>;
                               rprov:wasGeneratedByDUA  <urn:uuid:{uuid_DeterminationUniqueValues}>;
@@ -416,7 +420,7 @@ def uploadUniqueValues(sparqlupdate,host,dic, level_measurement, uuid_Determinat
             if level_measurement[key] == "Nominal":
                 i = 0
                 for values in value:
-                    query = (f"""INSERT DATA {{<urn:uuid:{uuid_UniqueValues}> rdf:type rdf:Bag, owl:NamedIndividual;
+                    query = (f"""INSERT DATA {{<urn:uuid:{uuid_UniqueValues_seq}> rdf:type rdf:Bag, owl:NamedIndividual;
                                           rdf:_{i}  '{values}';}}""")
                     sparqlupdate.setQuery(prefix + query)
                     sparqlupdate.setMethod(POST)
@@ -425,7 +429,7 @@ def uploadUniqueValues(sparqlupdate,host,dic, level_measurement, uuid_Determinat
             else:
                 i = 0
                 for values in value:
-                    query = (f"""INSERT DATA {{<urn:uuid:{uuid_UniqueValues}> rdf:type rdf:Seq, owl:NamedIndividual;
+                    query = (f"""INSERT DATA {{<urn:uuid:{uuid_UniqueValues_seq}> rdf:type rdf:Seq, owl:NamedIndividual;
                                           rdf:_{i}  '{values}';}}""")
                     sparqlupdate.setQuery(prefix + query)
                     sparqlupdate.setMethod(POST)
@@ -498,39 +502,42 @@ def getBinValuesSeq(host):
 
 
 
-def uploadDataRestrictionSeq(sparqlupdate,host,dic , uuid_DeterminationOfScaleOfFeature, name, rprovName):
-    time = getTimestamp()
-    for key, value in dic.items():
-        uuid_ScaleOfFeature = uuid.uuid4()
-        uuid_DataRestriction = uuid.uuid4()
-
-        query = (f"""PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
-                    PREFIx rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-                    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                SELECT ?subject WHERE {{?subject rdf:type rprov:Feature. ?subject rdfs:label '{key}'}}""")
-        results_update = get_connection_fuseki(host, query)
-
-        result_2 = pd.json_normalize(results_update["results"]["bindings"])
-
-        query = (f"""INSERT DATA {{<urn:uuid:{uuid_ScaleOfFeature}> rdf:type rprov:{name}, owl:NamedIndividual;
-                          rprov:{rprovName} <urn:uuid:{uuid_DataRestriction}>;
-                          rdfs:label "{rprovName} {key}";
-                          rprov:toFeature <{result_2["subject.value"][0]}>;
-                          rprov:wasGeneratedByDUA  <urn:uuid:{uuid_DeterminationOfScaleOfFeature}>;
-                          prov:generatedAtTime '{time}'^^xsd:dateTime;
-                        }}""")
-        sparqlupdate.setQuery(prefix+query)
-        sparqlupdate.setMethod(POST)
-        sparqlupdate.query()
-
-        i = 0
-        for values in value:
-            query = (f"""INSERT DATA {{<urn:uuid:{uuid_DataRestriction}> rdf:type rdf:Seq, owl:NamedIndividual;
-                                  rdf:_{i}  '{values}';}}""")
-            sparqlupdate.setQuery(prefix + query)
-            sparqlupdate.setMethod(POST)
-            sparqlupdate.query()
-            i = i + 1
+# def uploadDataRestrictionSeq(sparqlupdate,host,dic , uuid_DeterminationOfScaleOfFeature, name, rprovName, comment_data_restriction):
+#     time = getTimestamp()
+#     for key, value in dic.items():
+#         uuid_ScaleOfFeature = uuid.uuid4()
+#         uuid_DataRestriction = uuid.uuid4()
+#
+#         query = (f"""PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
+#                     PREFIx rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+#                     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+#                 SELECT ?subject WHERE {{?subject rdf:type rprov:Feature. ?subject rdfs:label '{key}'}}""")
+#         results_update = get_connection_fuseki(host, query)
+#
+#         result_2 = pd.json_normalize(results_update["results"]["bindings"])
+#
+#         query = (f"""INSERT DATA {{<urn:uuid:{uuid_ScaleOfFeature}> rdf:type rprov:{name}, owl:NamedIndividual;
+#                           rprov:{rprovName} <urn:uuid:{uuid_DataRestriction}>;
+#                           rdfs:label "{rprovName} {key}";
+#                           rprov:toFeature <{result_2["subject.value"][0]}>;
+#                           rprov:wasGeneratedByDUA  <urn:uuid:{uuid_DeterminationOfScaleOfFeature}>;
+#                           prov:generatedAtTime '{time}'^^xsd:dateTime;
+#                           rdfs:comment '{comment_data_restriction}';
+#                         }}""")
+#         try:
+#             sparqlupdate.setQuery(prefix+query)
+#             sparqlupdate.setMethod(POST)
+#             sparqlupdate.query()
+#         except Exception as e:
+#             st.error(e)
+#         i = 0
+#         for values in value:
+#             query = (f"""INSERT DATA {{<urn:uuid:{uuid_DataRestriction}> rdf:type rdf:Seq, owl:NamedIndividual;
+#                                   rdf:_{i}  '{values}';}}""")
+#             sparqlupdate.setQuery(prefix + query)
+#             sparqlupdate.setMethod(POST)
+#             sparqlupdate.query()
+#             i = i + 1
 def deleteWasGeneratedByDPA(sparqlupdate,df):  # panda df
     query = (f"""
                 DELETE {{?DPA rprov:isValid  ?value }}
@@ -585,12 +592,14 @@ def getAttributes(host):
     try:
         st.session_state["volatility_of_features_dic"], st.session_state[
             "DF_feature_volatility_name"] = getFeatureVolatility(host)
-    except:
+    except Exception as e:
+        st.write(e)
         st.session_state["volatility_of_features_dic"] = dict()
 
     try:
         st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
     except Exception as e:
+        st.session_state["unique_values_dict"] = {}
         st.error(
             "No Unique Values in database. If this is the first time a new dataset is uploaded please define a scale for each feature and upload the unique values.")
     try:
@@ -616,10 +625,10 @@ def getAttributes(host):
 
 
 def uploadPerturbationAssessment(host_upload,uuid_PerturbationAssessment, label,
-                                 uuid_DefinitionOfPerturbationOption):
+                                 uuid_DefinitionOfPerturbationOption,perturbationOptions_settings,assessmentPerturbationOptions):
     time = getTimestamp()
-    for key in st.session_state.perturbationOptions_settings.keys():
-        for perturbationOption in st.session_state.assessmentPerturbationOptions[key][
+    for key in perturbationOptions_settings.keys():
+        for perturbationOption in assessmentPerturbationOptions[key][
             "DataUnderstandingEntity"]:
             # for perturbationOption in st.session_state.assessmentPerturbationOptions[key]["DataUnderstandingEntity"].values():
             query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationAssessment}> rdf:type rprov:PerturbationAssessment, owl:NamedIndividual;
@@ -649,3 +658,110 @@ def uploadClassificationCase(host_upload,uuid_ClassificationCase, label, uuid_Pe
     host_upload.setQuery(prefix + query)
     host_upload.setMethod(POST)
     host_upload.query()
+
+
+
+
+def uploadDataRestrictionSeq(sparqlupdate,host,dic , uuid_DeterminationOfScaleOfFeature, name, rprovName, comment_data_restriction):
+    time = getTimestamp()
+    for key, value in dic.items():
+        uuid_DataRestrictionEntity = uuid.uuid4()
+        uuid_DataRestrictionSeq = uuid.uuid4()
+
+        query = (f"""PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
+                    PREFIx rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                SELECT ?subject WHERE {{?subject rdf:type rprov:Feature. ?subject rdfs:label '{key}'}}""")
+        results_update = get_connection_fuseki(host, query)
+
+        result_2 = pd.json_normalize(results_update["results"]["bindings"])
+
+        query = (f"""INSERT DATA {{<urn:uuid:{uuid_DataRestrictionEntity}> rdf:type rprov:{name}, owl:NamedIndividual;
+                          rprov:{rprovName} <urn:uuid:{uuid_DataRestrictionSeq}>;
+                          rdfs:label "{rprovName} {key}";
+                          rprov:toFeature <{result_2["subject.value"][0]}>;
+                          rprov:wasGeneratedByDUA  <urn:uuid:{uuid_DeterminationOfScaleOfFeature}>;
+                          prov:generatedAtTime '{time}'^^xsd:dateTime;
+                          rdfs:comment '{comment_data_restriction}';
+                        }}""")
+        try:
+            sparqlupdate.setQuery(prefix+query)
+            sparqlupdate.setMethod(POST)
+            sparqlupdate.query()
+        except Exception as e:
+            st.error(e)
+        i = 0
+        for values in value:
+            query = (f"""INSERT DATA {{<urn:uuid:{uuid_DataRestrictionSeq}> rdf:type rdf:Seq, owl:NamedIndividual;
+                                  rdf:_{i}  '{values}';}}""")
+            sparqlupdate.setQuery(prefix + query)
+            sparqlupdate.setMethod(POST)
+            sparqlupdate.query()
+            i = i + 1
+
+def uploadDR(starting_time, host_upload, host, comment_data_restriction):
+    determinationNameUUID = 'DeterminationOfDataRestriction'
+    determinationName = 'DeterminationOfDataRestriction'
+    label = "detDataRestriction"
+    name = 'DataRestriction'
+    rprovName = 'restriction'
+    ending_time = getTimestamp()
+    uuid_determinationDataRestriction = determinationActivity(host_upload, determinationName, label,
+                                                              starting_time, ending_time)
+    uploadDataRestrictionSeq(host_upload, host, st.session_state['data_restrictions_dict'],
+                             uuid_determinationDataRestriction, name,
+                             rprovName, comment_data_restriction)
+
+def getDataRestrictionSeq(data_restriction,host):
+    dictionary_DataRestriction = dict()
+    query = (f"""    SELECT ?label ?containerMembershipProperty ?item WHERE {{
+    ?sub rprov:restriction ?container.
+    ?sub rprov:wasGeneratedByDUA <{data_restriction}>.
+    ?container a rdf:Seq .
+    ?container ?containerMembershipProperty ?item.
+    ?sub rprov:toFeature ?feature.
+    ?feature rdfs:label ?label.
+    FILTER(?containerMembershipProperty!= rdf:type)}}
+    """)
+
+    results_feature_DataRestriction = get_connection_fuseki(host, (prefix+query))
+    results_feature_DataRestriction = pd.json_normalize(results_feature_DataRestriction["results"]["bindings"])
+    results_feature_DataRestriction= results_feature_DataRestriction.groupby("label.value")["item.value"].apply(list)
+
+    for _index, row in results_feature_DataRestriction.items():
+        dictionary_DataRestriction[_index] = row
+
+    return dictionary_DataRestriction
+
+
+def getDataRestrictionSeqDeployment(data_restriction,feature,host):
+    dictionary_DataRestriction = dict()
+    query = (f"""
+
+    SELECT ?dataRestrictionEntity ?feature ?label ?seq ?item WHERE {{
+    <{data_restriction}> rprov:modelingEntityWasDerivedFrom ?dataRestrictionEntity.
+    ?dataRestrictionEntity rdf:type rprov:DataRestriction.
+    ?dataRestrictionEntity rprov:restriction ?seq.
+    ?seq a rdf:Seq .
+    ?seq ?containerMembershipProperty ?item.
+    ?dataRestrictionEntity rprov:toFeature <{feature}>.
+    ?dataRestrictionEntity rprov:toFeature ?feature.
+    ?feature rdfs:label ?label.
+    FILTER(?containerMembershipProperty!= rdf:type)}}
+    """)
+
+
+    try:
+        results_feature_DataRestriction = get_connection_fuseki(host, (prefix+query))
+
+        results_feature_DataRestriction = pd.json_normalize(results_feature_DataRestriction["results"]["bindings"])
+
+        results_feature_DataRestriction= results_feature_DataRestriction.groupby("label.value")["item.value"].apply(list)
+
+        for _index, row in results_feature_DataRestriction.items():
+            dictionary_DataRestriction[_index] = row
+
+        return dictionary_DataRestriction
+    except:
+        return
+

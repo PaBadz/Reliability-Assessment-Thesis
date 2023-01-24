@@ -6,6 +6,7 @@ from functions.perturbation_algorithms_ohne_values import *
 from functions.functions_Reliability import *
 from functions.functions_DataPreparation import *
 
+
 try:
     host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
     host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
@@ -183,11 +184,10 @@ if selected2 == 'Choose Algorithms':
     with t2:
         try:
             uploaded_DataRestriction = getRestriction(host)
-            if "flag_data_restriction" not in st.session_state:
-                st.session_state.flag_data_restriction = False
+            if "data_restriction_URN" not in st.session_state:
                 st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
             if st.session_state.data_restriction_URN.empty:
-                st.info("No Data Restriction selected")
+                st.error("No Data Restriction selected")
             else:
                 st.success("Data Restriction option selected")
 
@@ -200,25 +200,43 @@ if selected2 == 'Choose Algorithms':
                     description="",
                     color_name="red-50",
                 )
-                st.dataframe(st.session_state.data_restriction_URN[["Feature", "Value"]], use_container_width=True)
+                st.dataframe(st.session_state.data_restriction_URN[["Feature", "Value"]].reset_index(drop=True), use_container_width=True)
 
             try:
 
-                options_data_restriction = uploaded_DataRestriction["DataRestrictionActivity"].unique().tolist()
-                data_restriction = st.selectbox("Select Data Restriction", options=options_data_restriction)
+                # options_data_restriction = uploaded_DataRestriction["DataRestrictionActivity"].unique().tolist()
+                # data_restriction = st.selectbox("Select Data Restriction", options=options_data_restriction)
+                #
+                #
+                # selected_DataRestriction = uploaded_DataRestriction.loc[uploaded_DataRestriction["DataRestrictionActivity"] == data_restriction]
+                #
+                #
+                # st.dataframe(selected_DataRestriction[["Feature", "Value"]], use_container_width=True)
+                #
+                #
+                #
+                # if st.button("Get Restriction", type='primary'):
+                #
+                #     st.session_state.data_restriction_URN = selected_DataRestriction
+                #
+                #     try:
+                #         for key, value in st.session_state["level_of_measurement_dic"].items():
+                #             if value == "Cardinal":
+                #                 defaultValuesCardinalRestriction(key)
+                #             if value == "Ordinal":
+                #                 defaultValuesOrdinalRestriction(key)
+                #             if value == "Nominal":
+                #                 defaultValuesNominalRestriction(key)
+                #         st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(data_restriction, host)
+                uploaded_DataRestriction = getRestriction(host)
+                data_restriction = st.selectbox("Select Data Restriction",
+                                                options=uploaded_DataRestriction["Comment"].unique())
 
-
-                selected_DataRestriction = uploaded_DataRestriction.loc[uploaded_DataRestriction["DataRestrictionActivity"] == data_restriction]
-
-
-                st.dataframe(selected_DataRestriction[["Feature", "Value"]], use_container_width=True)
-
-
-
-                if st.button("Get Restriction", type='primary'):
-
-                    st.session_state.data_restriction_URN = selected_DataRestriction
-
+                data_restriction_activity = uploaded_DataRestriction.loc[
+                    uploaded_DataRestriction["Comment"] == data_restriction]
+                st.dataframe(data_restriction_activity[["Label", "Feature", "Comment", "Value"]].reset_index(drop=True), use_container_width=True)
+                if st.button("Select Restriction", type="primary"):
+                    st.session_state.data_restriction_URN = data_restriction_activity
                     try:
                         for key, value in st.session_state["level_of_measurement_dic"].items():
                             if value == "Cardinal":
@@ -227,11 +245,14 @@ if selected2 == 'Choose Algorithms':
                                 defaultValuesOrdinalRestriction(key)
                             if value == "Nominal":
                                 defaultValuesNominalRestriction(key)
-                        st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(data_restriction, host)
+                        st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(
+                            data_restriction_activity["DataRestrictionActivity"][0], host)
+
+
                         st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
 
                         st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
-                        st.session_state["flag_data_restriction"] = True
+                        # st.session_state["flag_data_restriction"] = True
 
                         st.experimental_rerun()
 
@@ -250,7 +271,7 @@ if selected2 == 'Choose Algorithms':
                         st.session_state["data_restrictions_dict"] = getUniqueValuesSeq(host)
                         st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
                         st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
-                        st.session_state["flag_data_restriction"] = False
+                        # st.session_state["flag_data_restriction"] = False
                         st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
                         st.experimental_rerun()
                     except Exception as e:
@@ -264,6 +285,7 @@ if selected2 == 'Choose Algorithms':
 
 
         except Exception as e:
+            st.write(e)
             st.info("No Data Restrictions available.")
             st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
             st.session_state.data_restriction_URN = pd.DataFrame(columns=['DataRestrictionActivity', 'DataRestrictionEntity', 'Label', 'Feature', 'Value'])
@@ -677,7 +699,8 @@ try:
                             raise ValueError(f"{labelPerturbation} found in column {row.name}")
 
 
-
+            if labelPerturbation =="":
+                st.stop()
 
             if st.button("Save Modeling Activity to Database", type='primary', help="Modeling Activity + Generation of Perturbation Option with BUA, DUA, DPA as input and Perturbation Option. Save the Modeling Activity and Entity to the Database. Later this button will be replaced and done automatically."):
                 # check if choice of assessment is defined
@@ -776,8 +799,6 @@ try:
                             st.session_state.DF_feature_scale_name["featureName.value"] == key]
                         st.write(featureID["featureID.value"].values[0])
 
-
-                            # insert URN if flag is true and also look if feature is in data restrictions
                         try:
                             if key in st.session_state.data_restriction_URN["Feature"].values:
 

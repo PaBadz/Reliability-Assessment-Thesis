@@ -57,3 +57,5 @@ def defaultValuesNominal(key):
     except:
         st.info("Default values already selected")
     # st.session_state["data_restrictions_dict"][key] = st.session_state.unique_values_dict[key]
+
+

@@ -9,6 +9,7 @@ from functions.perturbation_algorithms_ohne_values import *
 from functions.functions_Reliability import *
 import regex as re
 import streamlit_ext as ste
+from functions.functions_dataRestrictions import *
 import streamlit_nested_layout
 
 try:
@@ -63,7 +64,7 @@ if menu_perturbation == 'Perturbation Option':
             st.info("There are no recommendations at the moment.")
 
         with st.expander("Show all perturbation options"):
-            st.write(savedPerturbationOptions)
+            st.dataframe(savedPerturbationOptions[["FeatureName", "PerturbationOption", "label"]].reset_index(drop=True),use_container_width=True)
 
 
 
@@ -100,6 +101,10 @@ if menu_perturbation == 'Perturbation Option':
 
 
                     with st.expander(label=f"Algorithms for ***{feature_names}***"):
+                        with st.expander("Show all available Perturbation Options"):
+                            st.dataframe(
+                                savedPerturbationOptions.query('FeatureName == "%s"' % feature_names)[["FeatureName", "PerturbationOption", "label", "Settings"]],use_container_width=True)
+
                         settingList = {}
 
                         settings = {}
@@ -384,6 +389,7 @@ if menu_perturbation == 'Perturbation Option':
 
 
 
+
         # Select and Deselect Data Restriction
     with t2:
 
@@ -660,6 +666,39 @@ try:
         checkbox_upload =  st.checkbox("Upload")
 
         if st.button("Predict", type="primary"):
+
+            def uploadPerturbationMode():
+                st.session_state.pertubation_mode = "Full"
+                st.session_state.perturb_mode_values = feature_names
+                """ACTIVITY
+                <http://www.semanticweb.org/dke/ontologies/2021/6/25_7273>
+                rdf:type            rprov:DefinitionOfPerturbationMode , owl:NamedIndividual ;
+                rdfs:label          "defPertMode"@en ;
+                prov:endedAtTime    "0000-00-00T00:00:00Z" ;
+                prov:startedAtTime  "0000-00-00T00:00:00Z" .
+                """
+
+                """ENTITY
+                <http://www.semanticweb.org/dke/ontologies/2021/6/25_7283>
+                rdf:type                rprov:PerturbationMode , owl:NamedIndividual ;
+                rprov:pertModeValue           "{st.session_state.pertubation_mode}"@en ;
+                rprov:pertModeValueSeq  <urn:uuid:{uuid_PerturbationModeSeq}>
+                rprov:wasGeneratedByMA  <http://www.semanticweb.org/dke/ontologies/2021/6/25_7273> ;
+                prov:generatedAtTime    "0000-00-00T00:00:00Z" .
+                """
+
+                '''
+                i = 0
+                for values in value:
+                    query = ((f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationModeSeq}> rdf:type rdf:Seq, owl:NamedIndividual;
+                                          rdf:_{i}  '{values}';}}"""))
+                    sparqlupdate.setQuery(prefix + query)
+                    sparqlupdate.setMethod(POST)
+                    sparqlupdate.query()
+                    i = i + 1
+                '''
+
+
             try:
                 if "perturbedList" not in st.session_state:
                     st.session_state.perturbedList = dict()
@@ -714,10 +753,6 @@ try:
 
             except Exception as e:
                 st.error(f"ERROR! Please change! {e}")
-
-
-
-
 
 
             try:
@@ -836,6 +871,7 @@ try:
                     index_perturb.append(perturbed_value_list.copy())
 
 
+
                 try:
                     for i in range(0, len(selected_rows)):
                         for column, method in index_perturb[i].items():
@@ -860,22 +896,22 @@ try:
                     st.empty(e)
 
 
+
                 # insert predictions of case into perturbed cases
                 result_df["prediction"] = result["prediction"]
 
 
                 try:
+                    # prio and selected
                     for x in st.session_state.perturb_mode_values[::-1]:
                         result_df = result_df.explode(x)
-                        # result_df = result_df.explode(x["name"])
+
+                    # all values in order to have values and not a list
+                    for x in st.session_state["dataframe_feature_names"]["featureName.value"].values.tolist():
+                        result_df = result_df.explode(x)
+
                 except Exception as e:
                     st.write(e)
-
-
-
-
-
-
 
 
                 # delete duplicate rows in order to prevent multiple same perturbations
@@ -958,7 +994,7 @@ try:
                                                                                    starting_time, ending_time)
 
                             uploadPerturbationAssessment(host_upload, uuid_PerturbationAssessment, label_list[i],
-                                                         uuid_DefinitionOfPerturbationOption)
+                                                         uuid_DefinitionOfPerturbationOption,st.session_state.perturbationOptions_settings, st.session_state.assessmentPerturbationOptions)
                             uuid_ClassificationCase = uuid.uuid4()
 
                             rows = selected_rows_DF.iloc[i].to_dict()

@@ -30,13 +30,9 @@ st.markdown("###### In Order to continue please upload a dataset to the server o
 
 
 if st.button('Load all datasets from Fuseki', type='primary'):
-    data = open('example_upload.ttl').read()
-    headers = {'Content-Type': 'text/turtle;charset=utf-8'}
-
-    r = requests.put("http://localhost:3030/BankingCredit?default", data, headers=headers)
-
     # Get all datasets from fuseki
     sparql = SPARQLWrapper(host_dataset_first_initialize)
+    # sparql.setCredentials("admin", "vesB24jhOU4zxNy")
     sparql.setReturnFormat(JSON)
     fuseki_datasets = sparql.query().convert()
 
@@ -174,6 +170,12 @@ if selected2 == 'Upload':
             rprovName = 'Feature'
 
             if st.form_submit_button("Upload dataset to the server",type='primary'):
+                # insert first RDF into graph
+                data = open('example_upload.ttl').read()
+                headers = {'Content-Type': 'text/turtle;charset=utf-8'}
+
+                r = requests.put("http://localhost:3030/BankingCredit?default", data, headers=headers)
+
                 sparqlupdate = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
                 uuid_determinationFeature = uuid.uuid4()
                 ending_time = getTimestamp()
@@ -195,8 +197,21 @@ if selected2 == 'Upload':
 
 
 
-                st.session_state['unique_values_dict'] = unique_values_dict
+                st.session_state['first_unique_values_dict'] = unique_values_dict
 
                 st.success("Features uploaded")
                 st.info("In the next step you can determine the scale of the features")
+
+                want_to_contribute = st.button("Business Understanding")
+                if want_to_contribute:
+                    switch_page("Data Understanding")
+
+                want_to_contribute = st.button("Data Understanding")
+                if want_to_contribute:
+                    switch_page("Data Understanding")
+
+                want_to_contribute = st.button("Data Preparation")
+                if want_to_contribute:
+                    switch_page("Data Preparation")
+
 
