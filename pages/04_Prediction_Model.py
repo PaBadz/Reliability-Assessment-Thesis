@@ -1,7 +1,7 @@
 import streamlit as st
 from functions.functions_Reliability import *
 from functions.fuseki_connection import *
-
+from streamlit_extras.colored_header import colored_header
 
 from sklearn.model_selection import train_test_split
 from functions.functions import *

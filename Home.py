@@ -11,7 +11,7 @@ import streamlit_authenticator as stauth
 import os.path
 import yaml
 from yaml.loader import SafeLoader
-
+from streamlit_extras.colored_header import colored_header
 import pickle
 from pathlib import Path
 
