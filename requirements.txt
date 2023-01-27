@@ -1,5 +1,4 @@
 altair==4.2.0
-altgraph @ file:///System/Volumes/Data/SWE/Apps/DT/BuildRoots/BuildRoot2/ActiveBuildRoot/Library/Caches/com.apple.xbs/Sources/python3/python3-124/altgraph-0.17.2-py2.py3-none-any.whl
 attrs==22.1.0
 beautifulsoup4==4.11.1
 blinker==1.5
@@ -17,7 +16,6 @@ entrypoints==0.4
 Faker==15.3.4
 favicon==0.7.0
 fonttools==4.38.0
-future @ file:///System/Volumes/Data/SWE/Apps/DT/BuildRoots/BuildRoot2/ActiveBuildRoot/Library/Caches/com.apple.xbs/Sources/python3/python3-124/future-0.18.2-py3-none-any.whl
 gitdb==4.0.10
 GitPython==3.1.29
 htbuilder==0.6.1
@@ -29,7 +27,6 @@ joblib==1.2.0
 jsonschema==4.17.3
 kiwisolver==1.4.4
 lxml==4.9.2
-macholib @ file:///System/Volumes/Data/SWE/Apps/DT/BuildRoots/BuildRoot2/ActiveBuildRoot/Library/Caches/com.apple.xbs/Sources/python3/python3-124/macholib-1.15.2-py2.py3-none-any.whl
 Markdown==3.4.1
 markdownlit==0.0.5
 MarkupSafe==2.1.1
