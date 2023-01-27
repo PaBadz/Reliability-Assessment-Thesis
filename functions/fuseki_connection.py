@@ -25,15 +25,25 @@ prefix = """PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             PREFIX instance:<http://www.semanticweb.org/dke/ontologies#>"""
 
 def set_database():
+    keep = ["fuseki_database", "name_fuseki_database", "fueski_dataset_options", "name", "authentication_status", "username"]
     for key in st.session_state.keys():
-        if key == "fuseki_database" or key == "name_fuseki_database" or key == "fueski_dataset_options":
+        if key in keep:#key == "fuseki_database" or key == "name_fuseki_database" or key == "fueski_dataset_options" or key =="username":
             pass
         else:
             del st.session_state[key]
 
     st.session_state.fuseki_database = st.session_state.name_fuseki_database
 
-
+def login():
+    try:
+        if st.session_state["authentication_status"] == False:
+            st.error('Username/password is incorrect')
+            st.stop()
+        elif st.session_state["authentication_status"] == None:
+            st.warning('Please enter your username and password')
+            st.stop()
+    except Exception as e:
+        pass
 
 
 def getTimestamp():

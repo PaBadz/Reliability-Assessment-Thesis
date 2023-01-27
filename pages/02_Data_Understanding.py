@@ -8,6 +8,13 @@ from functions.functions_dataRestrictions import *
 import streamlit_nested_layout
 from streamlit_sortables import sort_items
 
+
+login()
+if st.session_state.username == "user":
+    page = st.button("Deployment")
+    if page:
+        switch_page("Deployment")
+    st.stop()
 try:
     host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
     host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
@@ -188,7 +195,7 @@ if optionsDataUnderstanding == "Scale":
                     st.experimental_rerun()
                 except Exception as e:
                     st.write(e)
-        if "first_unique_values_dict" in st.session_state:
+        if st.session_state.unique_values_dict != {}:
             st.success("Unique values uploaded")
         if st.button("Show ordered unique values"):
             st.write(st.session_state['unique_values_dict'])
@@ -441,7 +448,7 @@ if optionsDataUnderstanding == "Data Restrictions":
 
 
 
-    is_unique = False
+    is_unique = True
     with st.form("Insert additional label for the defined Data Restriction"):
         st.info(
             "This label should be chosen wisely. It will be shown in the options for the Data Restrictions. Therefore it is advised to add as much information as possible.")
@@ -508,7 +515,7 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
         """)
 
         # TODO muss noch in fuseki gespeichert werden
-        st.info("Sensor precision for feature will be uploaded if bigger 0.00")
+
         for key, values in st.session_state.level_of_measurement_dic.items():
 
             if values == 'Cardinal':
@@ -532,9 +539,11 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
                                                                                           key=f'feature_sensor_precision_{key}_widget',
                                                                                           on_change=update_feature_sensor_precision,
                                                                                           args=(key,))
-
-        st.write(st.session_state["feature_sensor_precision_dict"])
-
+        try:
+            st.write(st.session_state["feature_sensor_precision_dict"])
+            st.info("Sensor precision for feature will be uploaded if bigger 0.00")
+        except:
+            st.info("No Cardinal values determined in this dataset")
         if st.button("Submit", type="primary"):
             uuid_determinationSensorPrecision = determinationActivity(host_upload, determinationName,
                                                                  label,

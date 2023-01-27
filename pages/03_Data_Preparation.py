@@ -6,6 +6,15 @@ from functions.functions_DataPreparation import *
 from streamlit_option_menu import option_menu
 from streamlit_tags import st_tags
 
+
+
+login()
+if st.session_state.username == "user":
+    page = st.button("Deployment")
+    if page:
+        switch_page("Deployment")
+    st.stop()
+
 try:
     host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
     host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
@@ -59,11 +68,12 @@ data_preparation_options = option_menu("Data Preparation Options", ["Binned Feat
 
 
 if data_preparation_options == "Binned Features":
-
+    if "Cardinal" not in set(st.session_state.DF_feature_scale_name["scale.value"].to_list()):
+        st.info("No Cardinal values determined in this dataset, therefore no binning can be performed")
 
     # if "bin_dict" not in st.session_state:
     #     st.session_state["bin_dict"] = dict()
-    st.markdown("""## Binning of cardinal features
+    st.write("""## Binning of cardinal features
                 Only Binning by distance is impplemented as of now""")
     # for key, values in st.session_state.level_of_measurement_dic.items():
     #     if "bin_dic" not in st.session_state:

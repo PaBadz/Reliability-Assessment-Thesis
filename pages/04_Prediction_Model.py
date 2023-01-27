@@ -1,5 +1,6 @@
 import streamlit as st
 from functions.functions_Reliability import *
+from functions.fuseki_connection import *
 
 
 from sklearn.model_selection import train_test_split
@@ -7,12 +8,21 @@ from functions.functions import *
 from sklearn.metrics import accuracy_score
 import pickle
 
-try:
-    host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
-    host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
-except:
-    st.info("Please select a database first")
-    st.stop()
+
+#
+# login()
+# if st.session_state.username == "user":
+#     page = st.button("Deployment")
+#     if page:
+#         switch_page("Deployment")
+#     st.stop()
+#
+# try:
+#     host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
+#     host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
+# except:
+#     st.info("Please select a database first")
+#     st.stop()
 
 tab1, tab2 = st.tabs(["Data", "Model"])
 
@@ -33,6 +43,12 @@ with tab2:
                                              ("Ordinal", OrdinalEncoder(handle_unknown='error'), ordinal),
                                              ("Cardinal", SimpleImputer(strategy='median'), cardinal)],
                                remainder='drop', verbose_feature_names_out=False)
+
+        st.write(st.session_state['X'])
+        st.write(nominal)
+        neu = ct.fit_transform(st.session_state['X'])
+        st.write(ct.get_feature_names_out())
+        st.write(pd.DataFrame(ct.fit_transform(st.session_state['X'])))
 
         x_trans_df = pd.DataFrame(ct.fit_transform(st.session_state['X']), columns=ct.get_feature_names_out())
 
@@ -84,6 +100,7 @@ with tab2:
     except Exception as e:
         st.write(e)
         pass
+
 
 
 with tab1:

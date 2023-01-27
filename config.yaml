@@ -1,0 +1,26 @@
+cookie:
+  expiry_days: 2
+  key: avcdef
+  name: some_cookie_name
+credentials:
+  usernames:
+    admin:
+      email: Admin
+      name: Admin
+      password: $2b$12$xz8StMRUS3e7wUM7G0raYuk6vapX6AnOi9aAVWUghfwfx./zPXfTu
+    mel:
+      email: melsby@gmail.com
+      name: Mel
+      password: $2b$12$DfnrBaYRnH43mjjbLBigHOo3rTlj8rB.sHdWfjJeF4./nQS7MOzyK
+    user:
+      email: User
+      name: User
+      password: $2b$12$2S7eTDjJSIa7ZSsSowPxCO20YmaXX/kTyFx5laEpKWRRdxTMkGi0O
+preauthorized:
+  emails:
+  - rainhard.schwarz
+  - tobias.meier
+  - emma.dorn
+  - christoph.bold
+  - leon.
+  -

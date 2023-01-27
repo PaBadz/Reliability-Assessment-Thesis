@@ -9,8 +9,14 @@ from functions.perturbation_algorithms_ohne_values import *
 from functions.functions_Reliability import *
 import regex as re
 import streamlit_ext as ste
-from functions.functions_dataRestrictions import *
+from functions.fuseki_connection import *
 import streamlit_nested_layout
+
+
+
+login()
+
+
 
 try:
     host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
@@ -23,7 +29,8 @@ except:
 try:
     getDefault(host)
     getAttributes(host)
-except:
+except Exception as e:
+    st.write(e)
     st.error("Please select other dataset")
     st.stop()
 
