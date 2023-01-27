@@ -1,0 +1,253 @@
+@prefix : <http://www.semanticweb.org/owl/owlapi/turtle#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix tele: <http://www.dke.at/example/telemarketing#> .
+@prefix rprov: <http://www.dke.uni-linz.ac.at/rprov#> .
+@base <http://www.semanticweb.org/dke/ontologies/2021/6/untitled-ontology-2> .
+
+<http://www.semanticweb.org/dke/ontologies/2021/6/untitled-ontology-2> rdf:type owl:Ontology .
+
+
+#################################################################
+#    Unique Values
+#################################################################
+rprov:minValue
+        rdf:type     owl:DatatypeProperty ;
+        rdfs:domain  rprov:MinValueOfCardinalFeature ;
+        rdfs:range   xsd:string .
+
+rprov:maxValue
+        rdf:type     owl:DatatypeProperty ;
+        rdfs:domain  rprov:MaxValueOfCardinalFeature ;
+        rdfs:range   xsd:string .
+		
+rprov:minValueOfCardinalFeature rdf:type owl:Class;
+		rdfs:subClassOf			rprov:DataUnderstandingEntity;
+		rprov:wasGeneratedByDUA	rprov:DeterminationOfMinValueOfCardinalFeature.
+
+rprov:maxValueOfCardinalFeature rdf:type owl:Class;
+		rdfs:subClassOf			rprov:DataUnderstandingEntity;
+		rprov:wasGeneratedByDUA	rprov:DeterminationOfMaxValueOfCardinalFeature.
+
+rprov:DeterminationOfMinValueOfCardinalFeature
+		rdf:type         owl:Class ;
+        rdfs:subClassOf  rprov:DataUnderstandingActivity .
+
+rprov:DeterminationOfMaxValueOfFeature
+		rdf:type         owl:Class ;
+        rdfs:subClassOf  rprov:DataUnderstandingActivity .
+
+rprov:DeterminationOfUniqueValuesOfFeature
+		rdf:type         owl:Class ;
+        rdfs:subClassOf  rprov:DataUnderstandingActivity .
+
+rprov:uniqueValues
+        rdf:type     owl:DatatypeProperty ;
+        rdfs:domain  rprov:UniqueValuesOfFeature ;
+        rdfs:range   xsd:string .
+
+rprov:UniqueValuesOfFeature rdf:type owl:Class;
+		rdfs:subClassOf rdf:Seq;
+		rdfs:subClassOf			rprov:DataUnderstandingEntity;
+		rprov:wasGeneratedByDUA	rprov:DeterminationOfUniqueValuesOfFeature.
+
+rprov:Seq rdf:type owl:Class, rdfs:Container.
+#################################################################
+#    Object Properties
+#################################################################
+
+###  http://www.dke.uni-linz.ac.at/rprov#deploymentEntityWasDerievedFrom
+rprov:deploymentEntityWasDerievedFrom rdf:type owl:ObjectProperty ;
+                                      rdfs:subPropertyOf prov:wasDerivedFrom ;
+                                      rdfs:domain rprov:DeploymentEntity ;
+                                      rdfs:range rprov:EvaluationEntity ,
+                                                 rprov:ModelingEntity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#modelingEntityWasDerivedFrom
+rprov:modelingEntityWasDerivedFrom rdf:type owl:ObjectProperty ;
+                                   rdfs:subPropertyOf prov:wasDerivedFrom ;
+                                   rdfs:domain rprov:ModelingEntity ;
+                                   rdfs:range rprov:BusinessUnderstandingEntity ,
+                                              rprov:DataPreparationEntity ,
+                                              rprov:DataUnderstandingEntity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#wasAssignedToDeploymentEntity
+rprov:wasAssignedToDeploymentEntity rdf:type owl:ObjectProperty ;
+                                    rdfs:subPropertyOf prov:wasDerivedFrom ;
+                                    rdfs:domain rprov:Case ;
+                                    rdfs:range rprov:DeploymentEntity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#wasBasedOn
+rprov:wasBasedOn rdf:type owl:ObjectProperty ;
+                 rdfs:subPropertyOf prov:wasDerivedFrom ;
+                 rdfs:domain rprov:EvaluationEntity ;
+                 rdfs:range rprov:EvaluationEntity ,
+                            rprov:ModelingEntity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#wasGeneratedByBUA
+rprov:wasGeneratedByBUA rdf:type owl:ObjectProperty ;
+                        rdfs:subPropertyOf prov:wasGeneratedBy ;
+                        rdfs:domain rprov:BusinessUnderstandingEntity ;
+                        rdfs:range rprov:BusinessUnderstandingActicty .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#wasGeneratedByDA
+rprov:wasGeneratedByDA rdf:type owl:ObjectProperty ;
+                       rdfs:subPropertyOf prov:wasGeneratedBy ;
+                       rdfs:domain rprov:DeploymentEntity ;
+                       rdfs:range rprov:DeploymentActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#wasGeneratedByDPA
+rprov:wasGeneratedByDPA rdf:type owl:ObjectProperty ;
+                        rdfs:subPropertyOf prov:wasGeneratedBy ;
+                        rdfs:domain rprov:DataPreparationEntity ;
+                        rdfs:range rprov:DataPreparationActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#wasGeneratedByDUA
+rprov:wasGeneratedByDUA rdf:type owl:ObjectProperty ;
+                        rdfs:subPropertyOf prov:wasGeneratedBy ;
+                        rdfs:domain rprov:DataUnderstandingEntity ;
+                        rdfs:range rprov:DataUnderstandingActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#wasGeneratedByEA
+rprov:wasGeneratedByEA rdf:type owl:ObjectProperty ;
+                       rdfs:subPropertyOf prov:wasGeneratedBy ;
+                       rdfs:domain rprov:EvaluationEntity ;
+                       rdfs:range rprov:EvaluationActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#wasGeneratedByMA
+rprov:wasGeneratedByMA rdf:type owl:ObjectProperty ;
+                       rdfs:subPropertyOf prov:wasGeneratedBy ;
+                       rdfs:domain rprov:ModelingEntity ;
+                       rdfs:range rprov:ModelingActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#wasInformedByModelingActivity
+rprov:wasInformedByModelingActivity rdf:type owl:ObjectProperty ;
+                                    rdfs:subPropertyOf prov:wasInformedBy ;
+                                    rdfs:domain rprov:EvaluationActivity ;
+                                    rdfs:range rprov:ModelingActivity .
+
+
+###  http://www.w3.org/ns/prov#wasDerivedFrom
+prov:wasDerivedFrom rdf:type owl:ObjectProperty .
+
+
+###  http://www.w3.org/ns/prov#wasGeneratedBy
+prov:wasGeneratedBy rdf:type owl:ObjectProperty .
+
+
+###  http://www.w3.org/ns/prov#wasInformedBy
+prov:wasInformedBy rdf:type owl:ObjectProperty .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  http://www.dke.uni-linz.ac.at/rprov#BusinessUnderstandingActicty
+rprov:BusinessUnderstandingActicty rdf:type owl:Class ;
+                                   rdfs:subClassOf prov:Actitvty .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#BusinessUnderstandingEntity
+rprov:BusinessUnderstandingEntity rdf:type owl:Class ;
+                                  rdfs:subClassOf prov:Entity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#Cardinal
+rprov:Cardinal rdf:type owl:Class ;
+               rdfs:subClassOf rprov:Scale .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#Case
+rprov:Case rdf:type owl:Class ;
+           rdfs:subClassOf prov:Entity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DataPreparationActivity
+rprov:DataPreparationActivity rdf:type owl:Class ;
+                              rdfs:subClassOf prov:Actitvty .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DataPreparationEntity
+rprov:DataPreparationEntity rdf:type owl:Class ;
+                            rdfs:subClassOf prov:Entity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DataUnderstandingActivity
+rprov:DataUnderstandingActivity rdf:type owl:Class ;
+                                rdfs:subClassOf prov:Actitvty .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DataUnderstandingEntity
+rprov:DataUnderstandingEntity rdf:type owl:Class ;
+                              rdfs:subClassOf prov:Entity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DeploymentActivity
+rprov:DeploymentActivity rdf:type owl:Class ;
+                         rdfs:subClassOf prov:Actitvty .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DeploymentEntity
+rprov:DeploymentEntity rdf:type owl:Class ;
+                       rdfs:subClassOf prov:Entity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#EvaluationActivity
+rprov:EvaluationActivity rdf:type owl:Class ;
+                         rdfs:subClassOf prov:Actitvty .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#EvaluationEntity
+rprov:EvaluationEntity rdf:type owl:Class ;
+                       rdfs:subClassOf prov:Entity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#ModelingActivity
+rprov:ModelingActivity rdf:type owl:Class ;
+                       rdfs:subClassOf prov:Actitvty .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#ModelingEntity
+rprov:ModelingEntity rdf:type owl:Class ;
+                     rdfs:subClassOf prov:Entity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#Nominal
+rprov:Nominal rdf:type owl:Class ;
+              rdfs:subClassOf rprov:Scale .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#Ordinal
+rprov:Ordinal rdf:type owl:Class ;
+              rdfs:subClassOf rprov:Scale .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#Scale
+rprov:Scale rdf:type owl:Class ;
+            rdfs:subClassOf prov:Entity .
+
+
+###  http://www.w3.org/ns/prov#Actitvty
+prov:Actitvty rdf:type owl:Class .
+
+
+###  http://www.w3.org/ns/prov#Entity
+prov:Entity rdf:type owl:Class .
+
+
+

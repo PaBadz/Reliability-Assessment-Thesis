@@ -1,0 +1,245 @@
+@prefix : <http://www.semanticweb.org/owl/owlapi/turtle#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix tele: <http://www.dke.at/example/telemarketing#> .
+@prefix rprov: <http://www.dke.uni-linz.ac.at/rprov#> .
+@base <http://www.semanticweb.org/dke/ontologies/2021/6/untitled-ontology-2> .
+
+<http://www.semanticweb.org/dke/ontologies/2021/6/untitled-ontology-2> rdf:type owl:Ontology .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  http://www.dke.uni-linz.ac.at/rprov#scale
+rprov:scale rdf:type owl:ObjectProperty ;
+            rdfs:subPropertyOf prov:wasDerivedFrom ;
+            rdfs:domain rprov:ScaleOfFeature ;
+            rdfs:range rprov:Scale .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#perturbedFeature
+rprov:perturbedFeature rdf:type owl:ObjectProperty ;
+                rdfs:domain rprov:DataPreparationEntity ,
+							rprov:DataUnderstandingEntity ;
+                rdfs:range rprov:Feature .
+				
+				
+###  http://www.dke.uni-linz.ac.at/rprov#toFeature
+rprov:toFeature rdf:type owl:ObjectProperty ;
+                rdfs:domain rprov:PerturbationOption ;
+                rdfs:range rprov:Feature .
+				
+				
+###  http://www.dke.uni-linz.ac.at/rprov#assignedPerturbationLevel
+rprov:assignedPerturbationLevel rdf:type owl:ObjectProperty ;
+                rdfs:domain rprov:PerturbationOption ;
+                rdfs:range rprov:PerturbationLevel .
+
+
+#################################################################
+#    Data properties
+#################################################################
+
+###  http://www.dke.uni-linz.ac.at/rprov#generationAlgorithm
+rprov:generationAlgorithm rdf:type owl:DatatypeProperty ;
+                          rdfs:domain rprov:PerturbationOption ;
+                          rdfs:range xsd:string .
+						  
+						
+###  http://www.dke.uni-linz.ac.at/rprov#values
+rprov:values rdf:type owl:DatatypeProperty ;
+                          rdfs:domain rprov:ClassificationCase ;
+                          rdfs:range xsd:string .
+						  
+						  
+###  http://www.dke.uni-linz.ac.at/rprov#restriction
+rprov:restriction rdf:type owl:DatatypeProperty ;
+                          rdfs:domain rprov:DataRestriction ;
+                          rdfs:range xsd:string .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#volatilityLevel
+rprov:volatilityLevel rdf:type owl:DatatypeProperty ;
+                          rdfs:domain rprov:VolatilityOfFeature ;
+                          rdfs:range xsd:string .
+						  
+
+###  http://www.dke.uni-linz.ac.at/rprov#perturbedTestcase
+rprov:perturbedTestcase rdf:type owl:DatatypeProperty ;
+                          rdfs:domain rprov:PerturbationAssessment ;
+                          rdfs:range xsd:string .
+						  
+#################################################################
+#    Classes
+#################################################################
+
+###  http://www.dke.uni-linz.ac.at/rprov#Assessment
+rprov:Assessment rdf:type owl:Class ;
+                 rdfs:subClassOf rprov:DeploymentEntity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#AssessmentApproach
+rprov:AssessmentApproach rdf:type owl:Class ;
+                         rdfs:subClassOf rprov:BusinessUnderstandingEntity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#ChoiceOfAssessmentApproach
+rprov:ChoiceOfAssessmentApproach rdf:type owl:Class ;
+                                 rdfs:subClassOf rprov:BusinessUnderstandingActicty .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#ClassificationCase
+rprov:ClassificationCase rdf:type owl:Class ;
+						 rprov:wasAssignedToDeploymentEntity rprov:PerturbationAssessment ;
+                         rdfs:subClassOf rprov:Case .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DataRestriction
+rprov:DataRestriction rdf:type owl:Class ;
+					  rprov:wasGeneratedByDA rprov:DeterminationOfDataRestriction ;
+                      rdfs:subClassOf rprov:DataUnderstandingEntity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DefinitionOfPerturbationMode
+rprov:DefinitionOfPerturbationMode rdf:type owl:Class ;
+                                   rdfs:subClassOf rprov:ModelingActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DefinitionOfPerturbationOption
+rprov:DefinitionOfPerturbationOption rdf:type owl:Class ;
+                                     rdfs:subClassOf rprov:ModelingActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DeterminationOfDataRestriction
+rprov:DeterminationOfDataRestriction rdf:type owl:Class ;
+                                     rdfs:subClassOf rprov:DataUnderstandingActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DeterminationOfScaleOfFeature
+rprov:DeterminationOfScaleOfFeature rdf:type owl:Class ;
+                                    rdfs:subClassOf rprov:DataUnderstandingActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DeterminationOfVolatilityOfFeature
+rprov:DeterminationOfVolatilityOfFeature rdf:type owl:Class ;
+                                         rdfs:subClassOf rprov:DataUnderstandingActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DocumentationOfHandlingOfMissingValues
+rprov:DocumentationOfHandlingOfMissingValues rdf:type owl:Class ;
+                                             rdfs:subClassOf rprov:DataPreparationActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DocumentationOfRangeOfBinnedFeatures
+rprov:DocumentationOfRangeOfBinnedFeatures rdf:type owl:Class ;
+                                           rdfs:subClassOf rprov:DataPreparationActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#DocumentationOfRegressionFunctionMetrics
+rprov:DocumentationOfRegressionFunctionMetrics rdf:type owl:Class ;
+                                               rdfs:subClassOf rprov:DataPreparationActivity .
+											   
+
+###  http://www.dke.uni-linz.ac.at/rprov#EvaluationOfPerturbationMode
+rprov:EvaluationOfPerturbationMode rdf:type owl:Class ;
+								   rprov:wasInformedByModelingActivity rprov:DefinitionOfPerturbationMode ;
+                                   rdfs:subClassOf rprov:EvaluationActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#EvaluationOfPerturbationOption
+rprov:EvaluationOfPerturbationOption rdf:type owl:Class ;
+									 rprov:wasInformedByModelingActivity rprov:DefinitionOfPerturbationOption ;
+                                     rdfs:subClassOf rprov:EvaluationActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#Feature
+rprov:Feature rdf:type owl:Class .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#HandlingOfMissingValue
+rprov:HandlingOfMissingValue rdf:type owl:Class ;
+							 rprov:wasGeneratedByDPA rprov:DocumentationOfHandlingOfMissingValues ;
+                             rdfs:subClassOf rprov:DataPreparationEntity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#PerturbationApproach
+rprov:PerturbationApproach rdf:type owl:Class ;
+						   rprov:wasGeneratedByBUA rprov:ChoiceOfAssessmentApproach ;
+                           rdfs:subClassOf rprov:AssessmentApproach .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#PerturbationAssessment
+rprov:PerturbationAssessment rdf:type owl:Class ;
+							 rprov:wasGeneratedByDA rprov:PerturbationOfClassificationCase ;
+							 rprov:deploymentEntityWasDerievedFrom rprov:PerturbationMode ,
+																   rprov:PerturbationOption ;
+                             rdfs:subClassOf rprov:Assessment .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#PerturbationMode
+rprov:PerturbationMode rdf:type owl:Class ;
+					   rprov:wasGeneratedByMA rprov:DefinitionOfPerturbationMode ;
+					   rprov:wasGeneratedByEA rprov:EvaluationOfPerturbationMode ;
+                       rdfs:subClassOf rprov:EvaluationEntity ,
+                                       rprov:ModelingEntity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#PerturbationOfClassificationCase
+rprov:PerturbationOfClassificationCase rdf:type owl:Class ;
+                                       rdfs:subClassOf rprov:DeploymentActivity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#PerturbationOption
+rprov:PerturbationOption rdf:type owl:Class ;
+					     rprov:wasGeneratedByMA rprov:DefinitionOfPerturbationOption ;
+						 rprov:modelingEntityWasDerivedFrom rprov:DataRestriction ,
+															rprov:HandlingOfMissingValue ,
+															rprov:PerturbationApproach ,
+															rprov:RangeOfBinnedFeature ,
+															rprov:RegressionFunctionMetric ,
+															rprov:ScaleOfFeature ,
+															rprov:VolatilityOfFeature ;
+                         rdfs:subClassOf rprov:ModelingEntity .
+										 
+###  http://www.dke.uni-linz.ac.at/rprov#EvaluatedPerturbationOption
+rprov:EvaluatedPerturbationOption rdf:type owl:Class ;
+					     rprov:wasGeneratedByEA rprov:EvaluationOfPerturbationOption ;
+						 rprov:wasBasedOn rprov:EvaluatedPerturbationOption, 
+									      rprov:PerturbationOption ;
+                         rdfs:subClassOf rprov:EvaluationEntity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#RangeOfBinnedFeature
+rprov:RangeOfBinnedFeature rdf:type owl:Class ;
+						   rprov:wasGeneratedByDPA rprov:DocumentationOfRangeOfBinnedFeatures ;
+                           rdfs:subClassOf rprov:DataPreparationEntity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#RegressionFunctionMetric
+rprov:RegressionFunctionMetric rdf:type owl:Class ;
+							   rprov:wasGeneratedByDPA rprov:DocumentationOfRegressionFunctionMetrics ;
+                               rdfs:subClassOf rprov:DataPreparationEntity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#ScaleOfFeature
+rprov:ScaleOfFeature rdf:type owl:Class ;
+					 rprov:wasGeneratedByDUA rprov:DeterminationOfScaleOfFeature ;
+                     rdfs:subClassOf rprov:DataUnderstandingEntity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#VolatilityOfFeature
+rprov:VolatilityOfFeature rdf:type owl:Class ;
+						  rprov:wasGeneratedByDUA rprov:DeterminationOfVolatilityOfFeature ;
+                          rdfs:subClassOf rprov:DataUnderstandingEntity .
+
+
+###  http://www.dke.uni-linz.ac.at/rprov#PerturbAllValues
+rprov:PerturbAllValues rdf:type owl:Class ;
+                  rdfs:subClassOf rprov:PerturbationOption ;
+				  rprov:generationAlgorithm "index = values.FindIndexOf(origValue) size = values.getSize() for(i = 1; i <= size ; i++){ if(i != index) nextPertVal(values[i]) }" .
+

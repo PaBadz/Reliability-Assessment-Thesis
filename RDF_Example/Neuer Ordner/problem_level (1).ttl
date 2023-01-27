@@ -1,0 +1,120 @@
+@prefix : <http://www.semanticweb.org/owl/owlapi/turtle#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix tele: <http://www.dke.at/example/telemarketing#> .
+@prefix rprov: <http://www.dke.uni-linz.ac.at/rprov#> .
+@base <http://www.semanticweb.org/dke/ontologies/2021/6/untitled-ontology-2> .
+
+<http://www.semanticweb.org/dke/ontologies/2021/6/untitled-ontology-2> rdf:type owl:Ontology .
+
+#################################################################
+#    Individuals
+#################################################################
+
+###  urn:uuid:a37b6ded-2551-4a28-bf09-fb4d8edc9a9b
+<urn:uuid:a37b6ded-2551-4a28-bf09-fb4d8edc9a9b> rdf:type owl:NamedIndividual ,
+                                                         rprov:DeterminationOfScaleOfFeature ;
+                                                rdfs:label "Determine the scale of the features in telemarketing"@en .
+
+
+###  urn:uuid:bc6c7ddc-ae4f-403a-9cc5-644f0d359808
+<urn:uuid:bc6c7ddc-ae4f-403a-9cc5-644f0d359808> rdf:type owl:NamedIndividual ,
+                                                         rprov:PerturbationOfClassificationCase ;
+                                                rdfs:label "Perturbation of John Doe's Case"@en .
+
+
+###  urn:uuid:c00ed0fc-8aa0-4f48-8af2-ac9a0415f717
+<urn:uuid:c00ed0fc-8aa0-4f48-8af2-ac9a0415f717> rdf:type owl:NamedIndividual ,
+                                                         rprov:PerturbationLevel ;
+                                                rdfs:label "Orange"@en .
+
+
+###  urn:uuid:dcba6a62-1745-4943-9bc0-7b7fd47f6f34
+<urn:uuid:dcba6a62-1745-4943-9bc0-7b7fd47f6f34> rdf:type owl:NamedIndividual ,
+                                                         rprov:Feature ;
+                                                rdfs:label "Balance feature"@en .
+
+
+###  urn:uuid:e429ccd9-d2d1-4ccf-923e-470094fda6d1
+<urn:uuid:e429ccd9-d2d1-4ccf-923e-470094fda6d1> rdf:type owl:NamedIndividual ,
+                                                         rprov:ClassificationCase ;
+                                                rprov:values "20,technician, single, secondary, no, 2143.00, yes, …, no" ;
+                                                rprov:wasAssignedToDeploymentEntity <urn:uuid:4f935a54-32bd-48bb-b7ee-c41a55dae014> ;
+                                                rdfs:label "John Doe"@en .
+
+
+###  urn:uuid:e58b1790-f6b1-4d48-ac83-614310b4cfc2
+<urn:uuid:e58b1790-f6b1-4d48-ac83-614310b4cfc2> rdf:type owl:NamedIndividual ,
+                                                         rprov:ScaleOfFeature ;
+                                                rprov:scale rprov:Cardinal ;
+                                                rprov:toFeature <urn:uuid:dcba6a62-1745-4943-9bc0-7b7fd47f6f34> ;
+                                                rdfs:label "Scale of balance feature"@en .
+
+
+###  urn:uuid:e63c9800-59c5-43c6-8970-f69cdc32097f
+<urn:uuid:e63c9800-59c5-43c6-8970-f69cdc32097f> rdf:type owl:NamedIndividual ,
+                                                         rprov:DefinitionOfPerturbationOption ;
+                                                rdfs:label "Definition of Perturbation Options for telemarketing"@en .
+
+
+###  urn:uuid:ed0c3592-3352-4a17-80c7-85c9aa6edc16
+<urn:uuid:ed0c3592-3352-4a17-80c7-85c9aa6edc16> rdf:type owl:NamedIndividual ,
+                                                         rprov:DeterminationOfDataRestriction ;
+                                                rdfs:label "Determine the restrictions for the feature values"@en .
+
+
+###  urn:uuid:f2a38829-5222-42ea-ab8e-d5f8871e3f6f
+<urn:uuid:f2a38829-5222-42ea-ab8e-d5f8871e3f6f> rdf:type owl:NamedIndividual ,
+                                                         rprov:DataRestriction ;
+                                                rprov:restriction "value > 0" ;
+                                                rprov:wasGeneratedByDUA <urn:uuid:ed0c3592-3352-4a17-80c7-85c9aa6edc16> ;
+						rprov:toFeature <urn:uuid:dcba6a62-1745-4943-9bc0-7b7fd47f6f34> ;
+                                                rdfs:label "Balance feature restriction"@en .
+
+
+###  urn:uuid:0cb1b1ca-d4b1-41df-99ea-6393e84bfc98
+<urn:uuid:0cb1b1ca-d4b1-41df-99ea-6393e84bfc98> rdf:type owl:NamedIndividual ,
+                                                         rprov:VolatilityOfFeature ;
+                                                rprov:volatilityLevel "Medium volatility" ;
+                                                rprov:toFeature <urn:uuid:dcba6a62-1745-4943-9bc0-7b7fd47f6f34> ;
+                                                rdfs:label "Volatility of the feature balance"@en .
+
+
+###  urn:uuid:09feb1e5-e5c3-4bbf-ac91-fd25368f8b76
+<urn:uuid:09feb1e5-e5c3-4bbf-ac91-fd25368f8b76> rdf:type owl:NamedIndividual ,
+                                                         rprov:PerturbationOption ;
+                                                rprov:assignedPerturbationLevel <urn:uuid:c00ed0fc-8aa0-4f48-8af2-ac9a0415f717> ;
+                                                rprov:perturbedFeature <urn:uuid:dcba6a62-1745-4943-9bc0-7b7fd47f6f34> ;
+                                                rprov:modelingEntityWasDerivedFrom <urn:uuid:e58b1790-f6b1-4d48-ac83-614310b4cfc2> ,
+                                                                                   <urn:uuid:f2a38829-5222-42ea-ab8e-d5f8871e3f6f> ,
+                                                                                   <urn:uuid:0cb1b1ca-d4b1-41df-99ea-6393e84bfc98> ;
+												rprov:generationAlgorithm """for(i = 1; i<=10 ; i++){
+nextPertVal(origValue * (1 + i/100)
+nextPertVal(origValue * (1 - i/100)};""" ;
+                                                rprov:wasGeneratedByMA <urn:uuid:e63c9800-59c5-43c6-8970-f69cdc32097f> ;
+                                                rdfs:label "Perturb 10 Percent of feature balance"@en .
+
+
+###  urn:uuid:1a7afa41-2079-4a6d-ad28-563f26bf289d
+<urn:uuid:1a7afa41-2079-4a6d-ad28-563f26bf289d> rdf:type owl:NamedIndividual ,
+                                                         rprov:Feature ;
+                                                rdfs:label "Marital feature"@en .
+
+
+###  urn:uuid:4f935a54-32bd-48bb-b7ee-c41a55dae014
+<urn:uuid:4f935a54-32bd-48bb-b7ee-c41a55dae014> rdf:type owl:NamedIndividual ,
+                                                         rprov:PerturbationAssessment ;
+                                                rprov:perturbedTestcase "20,technician, single, secondary, no, 2100.14, yes, …, no" ,
+                                                                        "20,technician, single, secondary, no, 2121.57, yes, …, no" ,
+                                                                        "20,technician, single, secondary, no, 2164.43, yes, …, no" ,
+                                                                        "20,technician, single, secondary, no, 2185.86, yes, …, no" ;
+                                                rprov:deploymentEntityWasDerievedFrom <urn:uuid:09feb1e5-e5c3-4bbf-ac91-fd25368f8b76> ;
+                                                rprov:wasGeneratedByDA <urn:uuid:bc6c7ddc-ae4f-403a-9cc5-644f0d359808> ;
+                                                rdfs:label "Assessment of John Doe's Case"@en .
+
+
+###  Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi

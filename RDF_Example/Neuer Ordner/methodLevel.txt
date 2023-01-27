@@ -1,0 +1,413 @@
+@prefix : <http://www.semanticweb.org/owl/owlapi/turtle#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix tele: <http://www.dke.at/example/telemarketing#> .
+@prefix rprov: <http://www.dke.uni-linz.ac.at/rprov#> .
+@base <http://www.semanticweb.org/dke/ontologies/2021/6/untitled-ontology-2> .
+
+<http://www.semanticweb.org/dke/ontologies/2021/6/untitled-ontology-2> rdf:type owl:Ontology .
+#########
+#Classes
+#########
+rprov:ChoiceOfAssessmentApproach rdf:type owl:Class.
+rprov:ChoiceOfAssessmentApproach rdfs:subClassOf prov:Activity.
+rprov:ChoiceOfAssessmentApproach rdfs:subClassOf rprov:BusinessUnderstandingActivity.
+
+rprov:ClassificationCase rdf:type owl:Class.
+rprov:ClassificationCase rdfs:subClassOf prov:Entity.
+rprov:ClassificationCase rdfs:subClassOf rprov:Case.
+
+rprov:ClassificationCase rdf:type owl:Class.
+rprov:ClassificationCase rdfs:subClassOf prov:Entity.
+rprov:ClassificationCase rdfs:subClassOf rprov:Case.
+
+rprov:DataRestriction rdf:type owl:Class.
+rprov:DataRestriction rdfs:subClassOf prov:Entity.
+rprov:DataRestriction rdfs:subClassOf rprov:DataUnderstandingEntity.
+
+rprov:DefinitionOfLocalQualityMeasure rdf:type owl:Class.
+rprov:DefinitionOfLocalQualityMeasure rdfs:subClassOf prov:Activity.
+rprov:DefinitionOfLocalQualityMeasure rdfs:subClassOf rprov:ModelingActivity.
+
+rprov:DefinitionOfPerturbationMode rdf:type owl:Class.
+rprov:DefinitionOfPerturbationMode rdfs:subClassOf prov:Activity.
+rprov:DefinitionOfPerturbationMode rdfs:subClassOf rprov:ModelingActivity.
+
+rprov:DefinitionOfPerturbationOption rdf:type owl:Class.
+rprov:DefinitionOfPerturbationOption rdfs:subClassOf prov:Activity.
+rprov:DefinitionOfPerturbationOption rdfs:subClassOf rprov:ModelingActivity.
+
+rprov:DeterminationOfDataRestriction rdf:type owl:Class.
+rprov:DeterminationOfDataRestriction rdfs:subClassOf prov:Activity.
+rprov:DeterminationOfDataRestriction rdfs:subClassOf rprov:DataUnderstandingActivity.
+
+rprov:DeterminationOfFeature rdf:type owl:Class.
+rprov:DeterminationOfFeature rdfs:subClassOf prov:Activity.
+rprov:DeterminationOfFeature rdfs:subClassOf rprov:DataUnderstandingActivity.
+
+rprov:DeterminationOfScaleOfFeature rdf:type owl:Class.
+rprov:DeterminationOfScaleOfFeature rdfs:subClassOf prov:Activity.
+rprov:DeterminationOfScaleOfFeature rdfs:subClassOf rprov:DataUnderstandingActivity.
+
+rprov:DeterminationOfVolatilityOfFeature rdf:type owl:Class.
+rprov:DeterminationOfVolatilityOfFeature rdfs:subClassOf prov:Activity.
+rprov:DeterminationOfVolatilityOfFeature rdfs:subClassOf rprov:DataUnderstandingActivity.
+
+rprov:DocuOfHandlingOfMissingValues rdf:type owl:Class.
+rprov:DocuOfHandlingOfMissingValues rdfs:subClassOf prov:Activity.
+rprov:DocuOfHandlingOfMissingValues rdfs:subClassOf rprov:DataPreparationActivity.
+
+rprov:DocuOfRangeOfBinnedFeature rdf:type owl:Class.
+rprov:DocuOfRangeOfBinnedFeature rdfs:subClassOf prov:Activity.
+rprov:DocuOfRangeOfBinnedFeature rdfs:subClassOf rprov:DataPreparationActivity.
+
+rprov:DocuOfRegressionFunctionMetric rdf:type owl:Class.
+rprov:DocuOfRegressionFunctionMetric rdfs:subClassOf prov:Activity.
+rprov:DocuOfRegressionFunctionMetric rdfs:subClassOf rprov:DataPreparationActivity.
+
+rprov:EvaluatedLocalQualityMeasure rdf:type owl:Class.
+rprov:EvaluatedLocalQualityMeasure rdfs:subClassOf prov:Entity.
+rprov:EvaluatedLocalQualityMeasure rdfs:subClassOf rprov:EvaluationEntity.
+
+rprov:EvaluatedPerturbationMode rdf:type owl:Class.
+rprov:EvaluatedPerturbationMode rdfs:subClassOf prov:Entity.
+rprov:EvaluatedPerturbationMode rdfs:subClassOf rprov:EvaluationEntity.
+
+rprov:EvaluatedPerturbationOption rdf:type owl:Class.
+rprov:EvaluatedPerturbationOption rdfs:subClassOf prov:Entity.
+rprov:EvaluatedPerturbationOption rdfs:subClassOf rprov:EvaluationEntity.
+
+rprov:EvaluatedPerturbationOption rdf:type owl:Class.
+rprov:EvaluatedPerturbationOption rdfs:subClassOf prov:Entity.
+rprov:EvaluatedPerturbationOption rdfs:subClassOf rprov:EvaluationEntity.
+
+rprov:EvaluationOfLocalQualityMeasure rdf:type owl:Class.
+rprov:EvaluationOfLocalQualityMeasure rdfs:subClassOf prov:Activity.
+rprov:EvaluationOfLocalQualityMeasure rdfs:subClassOf rprov:EvaluationActivity.
+
+rprov:EvaluationOfPerturbationMode rdf:type owl:Class.
+rprov:EvaluationOfPerturbationMode rdfs:subClassOf prov:Activity.
+rprov:EvaluationOfPerturbationMode rdfs:subClassOf rprov:EvaluationActivity.
+
+rprov:EvaluationOfPerturbationOption rdf:type owl:Class.
+rprov:EvaluationOfPerturbationOption rdfs:subClassOf prov:Activity.
+rprov:EvaluationOfPerturbationOption rdfs:subClassOf rprov:EvaluationActivity.
+
+rprov:EvaluationOfPerturbationOption rdf:type owl:Class.
+rprov:EvaluationOfPerturbationOption rdfs:subClassOf prov:Activity.
+rprov:EvaluationOfPerturbationOption rdfs:subClassOf rprov:EvaluationActivity.
+
+rprov:Feature rdf:type owl:Class.
+rprov:Feature rdfs:subClassOf prov:Entity.
+rprov:Feature rdfs:subClassOf rprov:DataUnderstandingEntity.
+
+rprov:HandlingOfMissingValues rdf:type owl:Class.
+rprov:HandlingOfMissingValues rdfs:subClassOf prov:Entity.
+rprov:HandlingOfMissingValues rdfs:subClassOf rprov:DataPreparationEntity.
+
+rprov:LocalMeasureApproach rdf:type owl:Class.
+rprov:LocalMeasureApproach rdfs:subClassOf prov:Entity.
+rprov:LocalMeasureApproach rdfs:subClassOf rprov:BusinessUnderstandingEntity.
+rprov:LocalMeasureApproach rdfs:subClassOf rprov:AssessmentApproach.
+
+rprov:LocalQualityMeasure rdf:type owl:Class.
+rprov:LocalQualityMeasure rdfs:subClassOf prov:Entity.
+rprov:LocalQualityMeasure rdfs:subClassOf rprov:ModelingEntity.
+
+rprov:LocalQualityMeasureAssessment rdf:type owl:Class.
+rprov:LocalQualityMeasureAssessment rdfs:subClassOf prov:Entity.
+rprov:LocalQualityMeasureAssessment rdfs:subClassOf rprov:DeploymentEntity.
+rprov:LocalQualityMeasureAssessment rdfs:subClassOf rprov:Assessment.
+
+rprov:MeasurementOfLocalQualityMeasure rdf:type owl:Class.
+rprov:MeasurementOfLocalQualityMeasure rdfs:subClassOf prov:Activity.
+rprov:MeasurementOfLocalQualityMeasure rdfs:subClassOf rprov:DeploymentActivity.
+
+rprov:PerturbAllValues rdf:type owl:Class.
+rprov:PerturbAllValues rdfs:subClassOf prov:Entity.
+rprov:PerturbAllValues rdfs:subClassOf rprov:PerturbationOption.
+rprov:PerturbAllValues rprov:generationAlgorithm '''index = values.findIndexOf(origValue)
+size = values.getSize()
+for(i = 1; i <= size ; i++){
+   if(i != index)
+      nextPertVal(values[i])
+}'''.
+
+rprov:PerturbationApproach rdf:type owl:Class.
+rprov:PerturbationApproach rdfs:subClassOf prov:Entity.
+rprov:PerturbationApproach rdfs:subClassOf rprov:BusinessUnderstandingEntity.
+rprov:PerturbationApproach rdfs:subClassOf rprov:AssessmentApproach.
+
+rprov:PerturbationAssessment rdf:type owl:Class.
+rprov:PerturbationAssessment rdfs:subClassOf prov:Entity.
+rprov:PerturbationAssessment rdfs:subClassOf rprov:DeploymentEntity.
+rprov:PerturbationAssessment rdfs:subClassOf rprov:Assessment.
+
+rprov:PerturbationAssessment rdf:type owl:Class.
+rprov:PerturbationAssessment rdfs:subClassOf prov:Entity.
+rprov:PerturbationAssessment rdfs:subClassOf rprov:DeploymentEntity.
+rprov:PerturbationAssessment rdfs:subClassOf rprov:Assessment.
+
+rprov:PerturbationMode rdf:type owl:Class.
+rprov:PerturbationMode rdfs:subClassOf prov:Entity.
+rprov:PerturbationMode rdfs:subClassOf rprov:ModelingEntity.
+
+rprov:PerturbationOfClassificationCase rdf:type owl:Class.
+rprov:PerturbationOfClassificationCase rdfs:subClassOf prov:Activity.
+rprov:PerturbationOfClassificationCase rdfs:subClassOf rprov:DeploymentActivity.
+
+rprov:PerturbationOfClassificationCase rdf:type owl:Class.
+rprov:PerturbationOfClassificationCase rdfs:subClassOf prov:Activity.
+rprov:PerturbationOfClassificationCase rdfs:subClassOf rprov:DeploymentActivity.
+
+rprov:PerturbationOption rdf:type owl:Class.
+rprov:PerturbationOption rdfs:subClassOf prov:Entity.
+rprov:PerturbationOption rdfs:subClassOf rprov:ModelingEntity.
+
+rprov:PerturbedTestCase rdf:type owl:Class.
+rprov:PerturbedTestCase rdfs:subClassOf prov:Entity.
+rprov:PerturbedTestCase rdfs:subClassOf rprov:Case.
+
+rprov:PerturbedTestCase rdf:type owl:Class.
+rprov:PerturbedTestCase rdfs:subClassOf prov:Entity.
+rprov:PerturbedTestCase rdfs:subClassOf rprov:Case.
+
+rprov:RangeOfBinnedFeature rdf:type owl:Class.
+rprov:RangeOfBinnedFeature rdfs:subClassOf prov:Entity.
+rprov:RangeOfBinnedFeature rdfs:subClassOf rprov:DataPreparationEntity.
+
+rprov:RegressionFunctionMetric rdf:type owl:Class.
+rprov:RegressionFunctionMetric rdfs:subClassOf prov:Entity.
+rprov:RegressionFunctionMetric rdfs:subClassOf rprov:DataPreparationEntity.
+
+rprov:ScaleOfFeature rdf:type owl:Class.
+rprov:ScaleOfFeature rdfs:subClassOf prov:Entity.
+rprov:ScaleOfFeature rdfs:subClassOf rprov:DataUnderstandingEntity.
+
+rprov:VolatilityOfFeature rdf:type owl:Class.
+rprov:VolatilityOfFeature rdfs:subClassOf prov:Entity.
+rprov:VolatilityOfFeature rdfs:subClassOf rprov:DataUnderstandingEntity.
+
+rprov:AssessmentApproach rdf:type owl:Class.
+rprov:AssessmentApproach rdfs:subClassOf prov:Entity.
+rprov:AssessmentApproach rdfs:subClassOf rprov:BusinessUnderstandingEntity.
+rprov:Assessment rdf:type owl:Class.
+rprov:Assessment rdfs:subClassOf prov:Entity.
+rprov:Assessment rdfs:subClassOf rprov:BusinessUnderstandingEntity.
+###################
+#Object Properties#
+###################
+rprov:deploymentEntityWasDerivedFrom rdf:type owl:ObjectProperty.
+rprov:deploymentEntityWasDerivedFrom rdfs:subPropertyOf prov:wasDerivedFrom.
+rprov:deploymentEntityWasDerivedFrom rdfs:domain rprov:PerturbationAssessment.
+rprov:deploymentEntityWasDerivedFrom rdfs:domain rprov:PerturbationAssessment.
+rprov:deploymentEntityWasDerivedFrom rdfs:range rprov:PerturbationOption.
+rprov:deploymentEntityWasDerivedFrom rdfs:range rprov:PerturbationOption.
+
+
+rprov:modelingEntityWasDerivedFrom rdf:type owl:ObjectProperty.
+rprov:modelingEntityWasDerivedFrom rdfs:subPropertyOf prov:wasDerivedFrom.
+rprov:modelingEntityWasDerivedFrom rdfs:domain rprov:LocalQualityMeasure.
+rprov:modelingEntityWasDerivedFrom rdfs:domain rprov:PerturbationOption.
+rprov:modelingEntityWasDerivedFrom rdfs:domain rprov:PerturbationOption.
+rprov:modelingEntityWasDerivedFrom rdfs:domain rprov:PerturbationOption.
+rprov:modelingEntityWasDerivedFrom rdfs:domain rprov:PerturbationOption.
+rprov:modelingEntityWasDerivedFrom rdfs:domain rprov:PerturbationOption.
+rprov:modelingEntityWasDerivedFrom rdfs:domain rprov:PerturbationOption.
+rprov:modelingEntityWasDerivedFrom rdfs:domain rprov:LocalQualityMeasure.
+rprov:modelingEntityWasDerivedFrom rdfs:domain rprov:PerturbAllValues.
+rprov:modelingEntityWasDerivedFrom rdfs:domain rprov:LocalQualityMeasure.
+rprov:modelingEntityWasDerivedFrom rdfs:domain rprov:LocalQualityMeasure.
+rprov:modelingEntityWasDerivedFrom rdfs:domain rprov:LocalQualityMeasure.
+rprov:modelingEntityWasDerivedFrom rdfs:domain rprov:LocalQualityMeasure.
+rprov:modelingEntityWasDerivedFrom rdfs:range rprov:RangeOfBinnedFeature.
+rprov:modelingEntityWasDerivedFrom rdfs:range rprov:HandlingOfMissingValues.
+rprov:modelingEntityWasDerivedFrom rdfs:range rprov:RegressionFunctionMetric.
+rprov:modelingEntityWasDerivedFrom rdfs:range rprov:RangeOfBinnedFeature.
+rprov:modelingEntityWasDerivedFrom rdfs:range rprov:VolatilityOfFeature.
+rprov:modelingEntityWasDerivedFrom rdfs:range rprov:DataRestriction.
+rprov:modelingEntityWasDerivedFrom rdfs:range rprov:ScaleOfFeature.
+rprov:modelingEntityWasDerivedFrom rdfs:range rprov:HandlingOfMissingValues.
+rprov:modelingEntityWasDerivedFrom rdfs:range rprov:PerturbationApproach.
+rprov:modelingEntityWasDerivedFrom rdfs:range rprov:RegressionFunctionMetric.
+rprov:modelingEntityWasDerivedFrom rdfs:range rprov:VolatilityOfFeature.
+rprov:modelingEntityWasDerivedFrom rdfs:range rprov:DataRestriction.
+rprov:modelingEntityWasDerivedFrom rdfs:range rprov:ScaleOfFeature.
+
+
+rprov:perturbedTestcase rdf:type owl:ObjectProperty.
+rprov:perturbedTestcase rdfs:subPropertyOf rprov:wasRelatedTo.
+rprov:perturbedTestcase rdfs:domain rprov:PerturbationAssessment.
+rprov:perturbedTestcase rdfs:domain rprov:PerturbationAssessment.
+rprov:perturbedTestcase rdfs:range rprov:PerturbedTestCase.
+rprov:perturbedTestcase rdfs:range rprov:PerturbedTestCase.
+
+
+rprov:toFeature rdf:type owl:ObjectProperty.
+rprov:toFeature rdfs:subPropertyOf rprov:wasRelatedTo.
+rprov:toFeature rdfs:domain rprov:VolatilityOfFeature.
+rprov:toFeature rdfs:domain rprov:RangeOfBinnedFeature.
+rprov:toFeature rdfs:domain rprov:RegressionFunctionMetric.
+rprov:toFeature rdfs:domain rprov:HandlingOfMissingValues.
+rprov:toFeature rdfs:domain rprov:PerturbationOption.
+rprov:toFeature rdfs:domain rprov:ScaleOfFeature.
+rprov:toFeature rdfs:domain rprov:DataRestriction.
+rprov:toFeature rdfs:domain rprov:PerturbAllValues.
+rprov:toFeature rdfs:range rprov:Feature.
+rprov:toFeature rdfs:range rprov:Feature.
+rprov:toFeature rdfs:range rprov:Feature.
+rprov:toFeature rdfs:range rprov:Feature.
+rprov:toFeature rdfs:range rprov:Feature.
+rprov:toFeature rdfs:range rprov:Feature.
+rprov:toFeature rdfs:range rprov:Feature.
+rprov:toFeature rdfs:range rprov:Feature.
+
+
+rprov:values rdf:type owl:ObjectProperty.
+rprov:values rdfs:subPropertyOf rprov:wasRelatedTo.
+rprov:values rdfs:domain rprov:ClassificationCase.
+rprov:values rdfs:domain rprov:ClassificationCase.
+rprov:values rdfs:range rprov:PerturbedTestCase.
+rprov:values rdfs:range rprov:PerturbedTestCase.
+
+
+rprov:wasAssignedToDeploymentEntity rdf:type owl:ObjectProperty.
+rprov:wasAssignedToDeploymentEntity rdfs:subPropertyOf rprov:wasRelatedTo.
+rprov:wasAssignedToDeploymentEntity rdfs:domain rprov:ClassificationCase.
+rprov:wasAssignedToDeploymentEntity rdfs:domain rprov:ClassificationCase.
+rprov:wasAssignedToDeploymentEntity rdfs:domain rprov:ClassificationCase.
+rprov:wasAssignedToDeploymentEntity rdfs:range rprov:PerturbationAssessment.
+rprov:wasAssignedToDeploymentEntity rdfs:range rprov:PerturbationAssessment.
+rprov:wasAssignedToDeploymentEntity rdfs:range rprov:LocalQualityMeasureAssessment.
+
+
+rprov:wasBasedOn rdf:type owl:ObjectProperty.
+rprov:wasBasedOn rdfs:subPropertyOf prov:wasDerivedFrom.
+rprov:wasBasedOn rdfs:domain rprov:EvaluatedPerturbationOption.
+rprov:wasBasedOn rdfs:domain rprov:EvaluatedPerturbationMode.
+rprov:wasBasedOn rdfs:domain rprov:EvaluatedLocalQualityMeasure.
+rprov:wasBasedOn rdfs:domain rprov:EvaluatedPerturbationOption.
+rprov:wasBasedOn rdfs:range rprov:PerturbationOption.
+rprov:wasBasedOn rdfs:range rprov:PerturbationMode.
+rprov:wasBasedOn rdfs:range rprov:LocalQualityMeasure.
+rprov:wasBasedOn rdfs:range rprov:EvaluatedPerturbationOption.
+
+
+rprov:wasInformedByMA rdf:type owl:ObjectProperty.
+rprov:wasInformedByMA rdfs:subPropertyOf prov:wasInformedBy.
+rprov:wasInformedByMA rdfs:domain rprov:EvaluationOfPerturbationOption.
+rprov:wasInformedByMA rdfs:domain rprov:EvaluationOfLocalQualityMeasure.
+rprov:wasInformedByMA rdfs:domain rprov:EvaluationOfPerturbationMode.
+rprov:wasInformedByMA rdfs:range rprov:DefinitionOfPerturbationOption.
+rprov:wasInformedByMA rdfs:range rprov:DefinitionOfLocalQualityMeasure.
+rprov:wasInformedByMA rdfs:range rprov:DefinitionOfPerturbationMode.
+
+
+rprov:toFeature rdf:type owl:ObjectProperty.
+rprov:toFeature rdfs:subPropertyOf rprov:wasRelatedTo.
+rprov:toFeature rdfs:domain rprov:DataRestriction.
+rprov:toFeature rdfs:domain rprov:EvaluatedPerturbationOption.
+rprov:toFeature rdfs:domain rprov:EvaluatedPerturbationOption.
+rprov:toFeature rdfs:domain rprov:HandlingOfMissingValues.
+rprov:toFeature rdfs:domain rprov:PerturbAllValues.
+rprov:toFeature rdfs:domain rprov:PerturbationOption.
+rprov:toFeature rdfs:domain rprov:RangeOfBinnedFeature.
+rprov:toFeature rdfs:domain rprov:RegressionFunctionMetric.
+rprov:toFeature rdfs:domain rprov:ScaleOfFeature.
+rprov:toFeature rdfs:domain rprov:VolatilityOfFeature.
+rprov:toFeature rdfs:range rprov:Feature.
+
+#################
+#Data Properties#
+#################
+rprov:attributedActor rdfs:domain rprov:ChoiceOfAssessmentApproach.
+rprov:attributedActor rdfs:domain rprov:DataRestriction.
+rprov:attributedActor rdfs:domain rprov:DefinitionOfLocalQualityMeasure.
+rprov:attributedActor rdfs:domain rprov:DefinitionOfPerturbationMode.
+rprov:attributedActor rdfs:domain rprov:DefinitionOfPerturbationOption.
+rprov:attributedActor rdfs:domain rprov:DeterminationOfDataRestriction.
+rprov:attributedActor rdfs:domain rprov:DeterminationOfFeature.
+rprov:attributedActor rdfs:domain rprov:DeterminationOfScaleOfFeature.
+rprov:attributedActor rdfs:domain rprov:DeterminationOfVolatilityOfFeature.
+rprov:attributedActor rdfs:domain rprov:DocuOfHandlingOfMissingValues.
+rprov:attributedActor rdfs:domain rprov:DocuOfRangeOfBinnedFeature.
+rprov:attributedActor rdfs:domain rprov:DocuOfRegressionFunctionMetric.
+rprov:attributedActor rdfs:domain rprov:EvaluatedLocalQualityMeasure.
+rprov:attributedActor rdfs:domain rprov:EvaluatedPerturbationMode.
+rprov:attributedActor rdfs:domain rprov:EvaluatedPerturbationOption.
+rprov:attributedActor rdfs:domain rprov:EvaluationOfLocalQualityMeasure.
+rprov:attributedActor rdfs:domain rprov:EvaluationOfPerturbationMode.
+rprov:attributedActor rdfs:domain rprov:EvaluationOfPerturbationOption.
+rprov:attributedActor rdfs:domain rprov:Feature.
+rprov:attributedActor rdfs:domain rprov:HandlingOfMissingValues.
+rprov:attributedActor rdfs:domain rprov:LocalMeasureApproach.
+rprov:attributedActor rdfs:domain rprov:LocalQualityMeasure.
+rprov:attributedActor rdfs:domain rprov:LocalQualityMeasureAssessment.
+rprov:attributedActor rdfs:domain rprov:MeasurementOfLocalQualityMeasure.
+rprov:attributedActor rdfs:domain rprov:PerturbAllValues.
+rprov:attributedActor rdfs:domain rprov:PerturbationApproach.
+rprov:attributedActor rdfs:domain rprov:PerturbationAssessment.
+rprov:attributedActor rdfs:domain rprov:PerturbationMode.
+rprov:attributedActor rdfs:domain rprov:PerturbationOfClassificationCase.
+rprov:attributedActor rdfs:domain rprov:PerturbationOption.
+rprov:attributedActor rdfs:domain rprov:RangeOfBinnedFeature.
+rprov:attributedActor rdfs:domain rprov:RegressionFunctionMetric.
+rprov:attributedActor rdfs:domain rprov:ScaleOfFeature.
+rprov:attributedActor rdfs:domain rprov:VolatilityOfFeature.
+rprov:attributedActor rdfs:range xsd:string.
+
+rprov:attributedSubject rdfs:domain rprov:ClassificationCase.
+rprov:attributedSubject rdfs:domain rprov:PerturbedTestCase.
+rprov:attributedSubject rdfs:range xsd:string.
+
+rprov:classCaseValue rdfs:domain rprov:ClassificationCase.
+rprov:classCaseValue rdfs:domain rprov:PerturbedTestCase.
+rprov:classCaseValue rdfs:range xsd:string.
+
+rprov:dataRestrValue rdfs:domain rprov:DataRestriction.
+rprov:dataRestrValue rdfs:range xsd:string.
+
+rprov:LQMValue rdfs:domain rprov:EvaluatedLocalQualityMeasure.
+rprov:LQMValue rdfs:domain rprov:LocalQualityMeasure.
+rprov:LQMValue rdfs:range xsd:string.
+
+rprov:pertModeValue rdfs:domain rprov:EvaluatedPerturbationMode.
+rprov:pertModeValue rdfs:domain rprov:PerturbationMode.
+rprov:pertModeValue rdfs:range xsd:string.
+
+rprov:assignedPerturbationLevel rdfs:domain rprov:EvaluatedPerturbationOption.
+rprov:assignedPerturbationLevel rdfs:domain rprov:PerturbAllValues.
+rprov:assignedPerturbationLevel rdfs:domain rprov:PerturbationOption.
+rprov:assignedPerturbationLevel rdfs:range xsd:string.
+
+rprov:handlingValue rdfs:domain rprov:HandlingOfMissingValues.
+rprov:handlingValue rdfs:range xsd:string.
+
+rprov:needAccessTrainingData rdfs:domain rprov:LocalMeasureApproach.
+rprov:needAccessTrainingData rdfs:range xsd:string.
+
+rprov:approachValue rdfs:domain rprov:LocalMeasureApproach.
+rprov:approachValue rdfs:domain rprov:PerturbationApproach.
+rprov:approachValue rdfs:range xsd:string.
+
+rprov:binRangeValue rdfs:domain rprov:RangeOfBinnedFeature.
+rprov:binRangeValue rdfs:range xsd:string.
+
+rprov:regFuncMetricValue rdfs:domain rprov:RegressionFunctionMetric.
+rprov:regFuncMetricValue rdfs:range xsd:string.
+
+rprov:scale rdfs:domain rprov:ScaleOfFeature.
+rprov:scale rdfs:range xsd:string.
+
+rprov:volatilityValue rdfs:domain rprov:VolatilityOfFeature.
+rprov:volatilityValue rdfs:range xsd:string.
+
+rprov:generationAlgorithm rdfs:domain rprov:EvaluatedPerturbationOption.
+rprov:generationAlgorithm rdfs:domain rprov:EvaluatedPerturbationOption.
+rprov:generationAlgorithm rdfs:domain rprov:PerturbAllValues.
+rprov:generationAlgorithm rdfs:domain rprov:PerturbationOption.
+rprov:generationAlgorithm rdfs:range xsd:string.
