@@ -44,7 +44,7 @@ menu_perturbation = option_menu(None, ["Perturbation Option",'Perturbation Mode'
 
 try:
     savedPerturbationOptions = getPerturbationOptions(host)
-except:
+except Exception as e:
     st.info("There are no Perturbation Options to select at the moment.")
     st.stop()
 
