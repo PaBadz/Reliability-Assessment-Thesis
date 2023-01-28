@@ -1,13 +1,19 @@
-import statistics
-from streamlit_extras.colored_header import colored_header
 import pandas as pd
-from functions.functions_Reliability import *
-from functions.functions_DataUnderstanding import *
-from functions.fuseki_connection import *
-from functions.functions_dataRestrictions import *
-import streamlit_nested_layout
+import streamlit as st
+from SPARQLWrapper import SPARQLWrapper
+from streamlit_extras.colored_header import colored_header
+from streamlit_option_menu import option_menu
 from streamlit_sortables import sort_items
 
+from functions.functions import switch_page
+from functions.functions_DataUnderstanding import update_feature_sensor_precision, defaultValuesCardinal, \
+    update_data_restrictions_cardinal, defaultValuesOrdinal, update_data_restrictions_ordinal, defaultValuesNominal, \
+    update_data_restrictions_nominal
+from functions.functions_Reliability import defaultValuesCardinalRestriction, defaultValuesOrdinalRestriction, \
+    defaultValuesNominalRestriction, getRestriction
+from functions.functions_Reliability import getDefault
+from functions.fuseki_connection import login, getAttributes, getTimestamp, determinationActivity, uploadDUE, \
+    deleteWasGeneratedByDUA, getUniqueValuesSeq, uploadDR, getSensorPrecision, uploadUniqueValues, getDataRestrictionSeq
 
 login()
 if st.session_state.username == "user":
@@ -16,16 +22,18 @@ if st.session_state.username == "user":
         switch_page("Deployment")
     st.stop()
 try:
-    host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
+    host = f"http://localhost:3030{st.session_state.fuseki_database}/sparql"
     host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
-except:
-    st.info("Please select a database first")
+except Exception as e:
+    st.info(e,"Please select a database first")
     st.stop()
 
 try:
     getAttributes(host)
-except:
-    st.error("Please select other Database")
+except Exception as e:
+    st.error(e)
+    # st.error("Please select other Database")
+    # st.experimental_rerun()
     st.stop()
 
 if st.session_state.dataframe_feature_names.empty:
@@ -34,50 +42,11 @@ if st.session_state.dataframe_feature_names.empty:
 optionsDataUnderstanding = option_menu("Data Understanding Options", ["Scale", "Volatility", "Data Restrictions", "Feature Sensor Precision"],
                                        icons=['collection', 'arrow-down-up', 'slash-circle'],
                                        menu_icon="None", default_index=0, orientation="horizontal")
-# if "first_load" not in st.session_state:
-#     st.session_state.first_load = True
-#     getAttributes(host)
-# else:
-#     st.session_state.first_load = False
-
-# if st.session_state.first_load is False:
-#     getAttributes(host)
-
-# if not any(key.startswith('level_of_measurement_') for key in st.session_state):
-#     st.session_state["dataframe_feature_names"] = get_feature_names(host)
-#
-# try:
-#     st.session_state["level_of_measurement_dic"], st.session_state["DF_feature_scale_name"] = getFeatureScale(host)
-#     for key, value in st.session_state["level_of_measurement_dic"].items():
-#         st.session_state[f'level_of_measurement_{key}'] = value
-# except:
-#     st.session_state["DF_feature_scale_name"] = pd.DataFrame()
-#     #st.session_state["level_of_measurement_dic"] = dict()
-#
-#
-# try:
-#     st.session_state["volatility_of_features_dic"], st.session_state["DF_feature_volatility_name"] = getFeatureVolatility(host)
-# except:
-#     st.session_state["volatility_of_features_dic"] = dict()
-#
-# try:
-#     st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
-# except Exception as e:
-#     st.error("No Unique Values in database. If this is the first time a new dataset is uploaded please define a scale for each feature and upload the unique values.")
-#
-# # if "loaded_feature_sensor_precision_dict" not in st.session_state:
-# try:
-#     st.session_state["loaded_feature_sensor_precision_dict"], st.session_state[
-#         "DF_feature_sensor_precision"] = getSensorPrecision(host)
-# except:
-#     st.session_state["loaded_feature_sensor_precision_dict"] = dict()
-#     st.session_state["DF_feature_sensor_precision"] = pd.DataFrame()
-
-
 
 
 # Hier kann die scale ausgewählt werden
 if optionsDataUnderstanding == "Scale":
+
 
     determinationName = 'DeterminationOfScaleOfFeature'
     label = '"detScaleOfFeature"@en'
@@ -89,12 +58,14 @@ if optionsDataUnderstanding == "Scale":
 
     # wenn noch keine scale in fuseki bestimmt wurde, erstelle Form mit auswahl von scales
     if st.session_state["level_of_measurement_dic"] == {}:
+        st.warning("Please insert level of scale and upload unique values! If this step is not done properly this application will not work")
         with st.expander("Click here to changes scale of features"):
-            st.info("Please make sure that the right level of measurement is chosen per feature.")
-            st.write("This is an important steps because:"
-                     "Cardinal values: minimum and maximum values are saved"
-                     "Ordinal values: the order of all values are saved, the order can be arranged in the next step"
-                     "Nominal values: all values are saved with no further ordering"
+            st.info("Please make sure that the right level of measurement is chosen per feature because it can't be changed later")
+            st.markdown(
+                     """
+                     - **Cardinal**: only minimum and maximum values are saved
+                     - **Ordinal**: the order of all values are saved, order can be arranged in the next step
+                     - **Nominal**: all values are saved with no further ordering"""
                      )
             starting_time = getTimestamp()
 
@@ -102,7 +73,7 @@ if optionsDataUnderstanding == "Scale":
                 options = ['Ordinal', 'Cardinal', 'Nominal']
 
                 for index, row in st.session_state.dataframe_feature_names["featureName.value"].items():
-                    if (f'level_of_measurement_{row}') not in st.session_state:
+                    if f'level_of_measurement_{row}' not in st.session_state:
                         st.session_state[f'level_of_measurement_{row}'] = "Nominal"
                     # wenn level of measurement dictionary nicht leer ist gibt es die level of measurement an
                     st.session_state.level_of_measurement_dic[row] = st.selectbox(f"**{row}**", options=options, index=2,key=f'level_of_measurement_{row}_widget')
@@ -126,12 +97,12 @@ if optionsDataUnderstanding == "Scale":
         with st.expander("Show level of measurement for features"):
             st.write(st.session_state.level_of_measurement_dic)
 
-        if st.session_state.unique_values_dict == {}:
-            if st.button("Change level of measurement", type="primary"):
+            if st.session_state.unique_values_dict == {}:
+                if st.button("Change level of measurement", type="primary"):
 
-                del st.session_state["level_of_measurement_dic"]
-                deleteWasGeneratedByDUA(host_upload,st.session_state["DF_feature_scale_name"])
-                st.experimental_rerun()
+                    del st.session_state["level_of_measurement_dic"]
+                    deleteWasGeneratedByDUA(host_upload,st.session_state["DF_feature_scale_name"])
+                    st.experimental_rerun()
 
         colored_header(
             label="Order of ordinal features",
@@ -229,7 +200,7 @@ if optionsDataUnderstanding == "Volatility":
             with st.form("Change level of volatility for features"):
 
                 for index, row in st.session_state.dataframe_feature_names["featureName.value"].items():
-                    if (f'volatility_of_feature_{row}') not in st.session_state:
+                    if f'volatility_of_feature_{row}' not in st.session_state:
                         st.session_state[f'volatility_of_feature_{row}'] = "Low Volatility"
                     try:
                         _index = options.index(st.session_state[f'volatility_of_feature_{row}'])
@@ -243,6 +214,8 @@ if optionsDataUnderstanding == "Volatility":
                     uuid_determinationVolatility = determinationActivity(host_upload, determinationName, label,starting_time, ending_time)
                     uploadDUE(host_upload,host,st.session_state["volatility_of_features_dic"], uuid_determinationVolatility, name,
                               rprovName)
+
+
     else:
         st.markdown("""
         **Here you can see which volatility levels are chosen for each feature**
@@ -250,10 +223,8 @@ if optionsDataUnderstanding == "Volatility":
         If you want to change the volatility levels click on the button below.
         """)
         st.write(st.session_state["volatility_of_features_dic"])
-        if st.button("Change Volatility"):
-            deleteWasGeneratedByDUA(host_upload,st.session_state["DF_feature_volatility_name"])
-            st.experimental_rerun()
-
+        if st.button("Change Volatility",on_click=deleteWasGeneratedByDUA,args=(host_upload,st.session_state["DF_feature_volatility_name"])):
+            pass
 if optionsDataUnderstanding == "Data Restrictions":
 
     # TODO insert option for ordinal data to be selected with slider
@@ -274,6 +245,52 @@ if optionsDataUnderstanding == "Data Restrictions":
         st.session_state["data_restrictions_dict"] = dict()
 
 
+    # try:
+    #     uploaded_DataRestriction = getRestriction(host)
+    #     data_restriction = st.selectbox("Select Data Restriction",
+    #                                     options=uploaded_DataRestriction["Comment"].unique())
+    #
+    #     data_restriction_activity = uploaded_DataRestriction.loc[
+    #         uploaded_DataRestriction["Comment"] == data_restriction]
+    #     st.dataframe(data_restriction_activity[["Label", "Feature", "Comment", "Value"]].reset_index(drop=True), use_container_width=True)
+    #     if st.button("Select Restriction", type="primary"):
+    #         try:
+    #             for key, value in st.session_state["level_of_measurement_dic"].items():
+    #                 if value == "Cardinal":
+    #                     defaultValuesCardinalRestriction(key)
+    #                 if value == "Ordinal":
+    #                     defaultValuesOrdinalRestriction(key)
+    #                 if value == "Nominal":
+    #                     defaultValuesNominalRestriction(key)
+    #             st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(
+    #                 data_restriction_activity["DataRestrictionActivity"][0], host)
+    #
+    #
+    #
+    #
+    #         except Exception as e:
+    #             st.write(e)
+    #             st.info("Dont forget to upload unique values")
+    #
+    #     if st.button("Deselect Restriction"):
+    #         try:
+    #             st.session_state["data_restrictions_dict"] = getUniqueValuesSeq(host)
+    #             st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
+    #             st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
+    #             st.session_state["flag_data_restriction"] = False
+    #             st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
+    #             # st.experimental_rerun()
+    #         except Exception as e:
+    #             st.write(e)
+    #             st.write("Didnt work")
+    #
+    #     st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
+    #     st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
+    #
+    # except:
+    #     st.info("Define Data Restriction.")
+    #
+
     try:
         uploaded_DataRestriction = getRestriction(host)
         data_restriction = st.selectbox("Select Data Restriction",
@@ -281,8 +298,11 @@ if optionsDataUnderstanding == "Data Restrictions":
 
         data_restriction_activity = uploaded_DataRestriction.loc[
             uploaded_DataRestriction["Comment"] == data_restriction]
-        st.dataframe(data_restriction_activity[["Label", "Feature", "Comment", "Value"]].reset_index(drop=True), use_container_width=True)
+        st.dataframe(data_restriction_activity[["Label", "Feature", "Comment", "Value"]].reset_index(drop=True),
+                     use_container_width=True)
+
         if st.button("Select Restriction", type="primary"):
+            st.session_state.data_restriction_URN = data_restriction_activity
             try:
                 for key, value in st.session_state["level_of_measurement_dic"].items():
                     if value == "Cardinal":
@@ -293,6 +313,13 @@ if optionsDataUnderstanding == "Data Restrictions":
                         defaultValuesNominalRestriction(key)
                 st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(
                     data_restriction_activity["DataRestrictionActivity"][0], host)
+
+                st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
+
+                st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
+                st.experimental_rerun()
+
+
 
 
 
@@ -306,21 +333,17 @@ if optionsDataUnderstanding == "Data Restrictions":
                 st.session_state["data_restrictions_dict"] = getUniqueValuesSeq(host)
                 st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
                 st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
-                st.session_state["flag_data_restriction"] = False
+                # st.session_state["flag_data_restriction"] = False
                 st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
-                # st.experimental_rerun()
+                st.experimental_rerun()
             except Exception as e:
                 st.write(e)
                 st.write("Didnt work")
 
-        st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-        st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
-
-    except:
-        st.info("Define Data Restriction.")
 
 
-
+    except Exception as e:
+        st.write(e)
     starting_time = getTimestamp()
 
 
@@ -367,18 +390,21 @@ if optionsDataUnderstanding == "Data Restrictions":
                         #     args=(key,))
 
                         with st.expander("Number input"):
-                            lower = st.number_input("Input value", min_value=float(
-                                st.session_state.unique_values_dict[key][0]),value =float(st.session_state[f'data_restrictions_{key}_cardinal'][0]))
-                            upper = st.number_input("Input upper value",min_value=lower, max_value=float(
-                                    st.session_state.unique_values_dict[key][-1]), value =float(st.session_state[f'data_restrictions_{key}_cardinal'][-1]) )
+                            try:
+                                lower = st.number_input("Input value", min_value=float(
+                                    st.session_state.unique_values_dict[key][0]),key=f"lower_{key}",value =float(st.session_state[f'data_restrictions_{key}_cardinal'][0]))
+                                upper = st.number_input("Input upper value",key=f"upper_{key}",min_value=lower, max_value=float(
+                                        st.session_state.unique_values_dict[key][-1]), value =float(st.session_state[f'data_restrictions_{key}_cardinal'][-1]) )
 
-                            if lower >= upper:
+                                if st.session_state[f"lower_{key}"] >= st.session_state[f"upper_{key}"]:
+                                    st.error("Lower bound range must be smaller than upper bound.")
+                                elif st.button("Upload", key = f"button_dataRestriction_{key}", type="primary"):
+                                    st.session_state[f'data_restrictions_{key}_cardinal'] = [lower,
+                                                                                             upper]  # st.session_state[f'data_restrictions_{key}']
+                                    st.session_state['data_restrictions_dict'][key] = [lower,
+                                                                                upper]  # st.session_state[f'data_restrictions_{key}']
+                            except:
                                 st.error("Lower bound range must be smaller than upper bound.")
-                            elif st.button("Upload", key = f"button_dataRestriction_{key}", type="primary"):
-                                st.session_state[f'data_restrictions_{key}_cardinal'] = [lower,
-                                                                                         upper]  # st.session_state[f'data_restrictions_{key}']
-                                st.session_state['data_restrictions_dict'][key] = [lower,
-                                                                                   upper]  # st.session_state[f'data_restrictions_{key}']
 
                             # update_data_restrictions_cardinal(key, lower, upper )
                             # st.session_state[f'data_restrictions_{key}_cardinal'] = [lower, upper]
@@ -448,46 +474,52 @@ if optionsDataUnderstanding == "Data Restrictions":
 
 
 
-    is_unique = True
-    with st.form("Insert additional label for the defined Data Restriction"):
-        st.info(
-            "This label should be chosen wisely. It will be shown in the options for the Data Restrictions. Therefore it is advised to add as much information as possible.")
-        comment_data_restriction = st.text_input("Insert additional label for the defined Data Restrictions",
-                                          help="Name your Data Restrictions in order to find it easier later. Only unique labels allowed.")
-
-        if st.form_submit_button("Define Label for Data Restriction"):
-            query = (f""" SELECT  ?DataRestrictionsLabel WHERE{{
-                            ?DataUnderstandingEntityID rdf:type rprov:DataRestriction.
-                            ?DataUnderstandingEntityID rdfs:comment ?DataRestrictionsLabel.
-                      }}""")
-
-            results = get_connection_fuseki(host, (prefix + query))
-            results = pd.json_normalize(results["results"]["bindings"])
-
-            # Iterate over the rows of the DataFrame
-            for index, row in results.iterrows():
-                # Get the part of the string before the first '-'
-                value = row["DataRestrictionsLabel.value"]
-
-                # Check if the searched value is present
-                if value == comment_data_restriction:
-                    comment_data_restriction=""
-                    st.error(f"{comment_data_restriction} already found in database. Please define unique label.")
-                    st.stop()
-                else:
-                    is_unique=True
-
-    if not is_unique:
+    is_unique = False
+    if st.session_state['data_restrictions_dict'] == {}:
         st.stop()
-    st.write(st.session_state['data_restrictions_dict'])
+    else:
+        st.write("Defined Data Restriction:", st.session_state['data_restrictions_dict'])
+        with st.form("Insert additional label for the defined Data Restriction"):
+            st.info(
+                "This label should be chosen wisely. It will be shown in the options for the Data Restrictions. Therefore it is advised to add as much information as possible.")
+            comment_data_restriction = st.text_input("Insert additional label for the defined Data Restrictions",
+                                              help="Name your Data Restrictions in order to find it easier later. Only unique labels allowed.")
 
+            if st.form_submit_button("Upload"):
+                uploadDR(starting_time, host_upload, host, comment_data_restriction)
+                st.success("Data Restriction uploaded")
+            # query = (f""" SELECT  ?DataRestrictionsLabel WHERE{{
+            #                 ?DataUnderstandingEntityID rdf:type rprov:DataRestriction.
+            #                 ?DataUnderstandingEntityID rdfs:comment ?DataRestrictionsLabel.
+            #           }}""")
+            #
+            # results = get_connection_fuseki(host, (prefix + query))
+            # results = pd.json_normalize(results["results"]["bindings"])
+            #
+            # # Iterate over the rows of the DataFrame
+            # for index, row in results.iterrows():
+            #     # Get the part of the string before the first '-'
+            #     value = row["DataRestrictionsLabel.value"]
+            #
+            #     # Check if the searched value is present
+            #     if value == comment_data_restriction:
+            #         comment_data_restriction=""
+            #         st.error(f"{comment_data_restriction} already found in database. Please define unique label.")
+            #         st.stop()
+            #     else:
+            #         is_unique=True
 
-
-    try:
-        if st.button("Upload Data Restrictions", on_click=uploadDR, args=(starting_time, host_upload, host, comment_data_restriction)):
-            pass
-    except Exception as e:
-        st.error(e)
+    # if not is_unique:
+    #     st.stop()
+    # st.write(st.session_state['data_restrictions_dict'])
+    #
+    #
+    #
+    # try:
+    #     if st.button("Upload Data Restrictions", on_click=uploadDR, args=(starting_time, host_upload, host, comment_data_restriction)):
+    #         pass
+    # except Exception as e:
+    #     st.error(e)
 
 
 if optionsDataUnderstanding == "Feature Sensor Precision":

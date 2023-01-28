@@ -1,12 +1,11 @@
-import struct
-from streamlit_extras.colored_header import colored_header
-from functions.fuseki_connection import *
-from functions.functions_Reliability import *
-from functions.functions_DataPreparation import *
+import streamlit as st
+from SPARQLWrapper import SPARQLWrapper
+from streamlit_extras.switch_page_button import switch_page
 from streamlit_option_menu import option_menu
-from streamlit_tags import st_tags
 
-
+from functions.functions_Reliability import getDefault
+from functions.fuseki_connection import login, getAttributes, getTimestamp, uploadBinValues, determinationActivity, \
+    deleteWasGeneratedByDPA, uploadMissingValues
 
 login()
 if st.session_state.username == "user":
@@ -38,75 +37,14 @@ data_preparation_options = option_menu("Data Preparation Options", ["Binned Feat
                                        menu_icon="None", default_index=0, orientation="horizontal")
 
 
-#
-# if not any(key.startswith('level_of_measurement_') for key in st.session_state):
-#     st.session_state["dataframe_feature_names"] = get_feature_names(host)
-#
-# try:
-#     st.session_state["level_of_measurement_dic"], st.session_state["DF_feature_scale_name"] = getFeatureScale(host)
-#     for key, value in st.session_state["level_of_measurement_dic"].items():
-#         st.session_state[f'level_of_measurement_{key}'] = value
-# except:
-#     st.session_state["DF_feature_scale_name"] = pd.DataFrame()
-#     st.session_state["level_of_measurement_dic"] = dict()
-#
-# try:
-#     st.session_state["volatility_of_features_dic"], st.session_state[
-#         "DF_feature_volatility_name"] = getFeatureVolatility(host)
-# except:
-#     st.session_state["volatility_of_features_dic"] = dict()
-#
-# try:
-#     st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
-# except Exception as e:
-#     st.error("No Unique Values in database. If this is the first time a new dataset is uploaded please define a scale for each feature and upload the unique values.")
-
-# def update_bin(key):
-#     st.session_state[f'data_restrictions_{key}_cardinal'] = st.session_state[f'data_restrictions_{key}']
-#     st.session_state['bin_dict'][key] = st.session_state[f'data_restrictions_{key}']
-
-
-
 if data_preparation_options == "Binned Features":
     if "Cardinal" not in set(st.session_state.DF_feature_scale_name["scale.value"].to_list()):
         st.info("No Cardinal values determined in this dataset, therefore no binning can be performed")
 
-    # if "bin_dict" not in st.session_state:
-    #     st.session_state["bin_dict"] = dict()
+
     st.write("""## Binning of cardinal features
                 Only Binning by distance is impplemented as of now""")
-    # for key, values in st.session_state.level_of_measurement_dic.items():
-    #     if "bin_dic" not in st.session_state:
-    #         st.session_state.bin_dic = dict()
-    #     data = list()
-    #     if values == 'Cardinal':
-    #         old_list = st_tags(
-    #             label=f'Enter Keywords: {key}',
-    #             text='Press enter to add more',
-    #             key=f'binnedValues_{key}')
-    #
-    #         old_list = [float(x) for x in old_list]
-    #
-    #         st.markdown("""---""")
-    #
-    #         if all(isinstance(i, float) for i in old_list) and len(old_list) % 2 == 0:
-    #             new_list = [old_list[n:n + 2] for n in range(0, len(old_list), 2)]
-    #             for i in range(1, len(new_list)):
-    #                 if new_list[i][0] >= new_list[i][1]:
-    #                     st.write("Der erste Wert in Liste", i + 1, "ist nicht kleiner als der zweite Wert.")
-    #                     break
-    #                 if i > 0 and new_list[i][0] <= new_list[i - 1][1]:
-    #                     st.write("Der erste Wert in Liste", i + 1, "ist nicht größer als der vorangegangene zweite Wert.")
-    #                     break
-    #             else:
-    #                 st.write(new_list)
-    #         else:
-    #             st.write("Die alte Liste enthält entweder nicht nur float-Werte oder eine ungerade Anzahl von Werten.")
-    #
-    #
-    #     else:
-    #         pass
-    st.write(st.session_state["loaded_bin_dict"])
+
     if "bin_dict" not in st.session_state:
         st.session_state.bin_dict = dict()
     if st.session_state["loaded_bin_dict"] == {}:
@@ -115,26 +53,39 @@ if data_preparation_options == "Binned Features":
                 if f"bin_{key}" not in st.session_state:
                     st.session_state[f"bin_{key}"] = list()
                 with st.expander(f"Bin {key}"):
-                    lower_border = st.number_input("Select lower border",value =float(st.session_state.unique_values_dict[key][0]), min_value=float(st.session_state.unique_values_dict[key][0]), key = f"lower_border_{key}")
-                    upper_border = st.number_input("Select upper border",value =float(st.session_state.unique_values_dict[key][-1]),  max_value = float(st.session_state.unique_values_dict[key][-1]),key = f"upper_border_{key}")
-                    bins = st.number_input("Select amount of bins", min_value=int(1), key = f"amount_bin_{key}")
-                    step = (upper_border - lower_border) / (bins)
 
+                    try:
+                        lower_border = st.number_input("Select lower border",value =float(st.session_state.unique_values_dict[key][0]), min_value=float(st.session_state.unique_values_dict[key][0]), max_value=float(st.session_state.unique_values_dict[key][-1]), key = f"lower_border_{key}")
+                        upper_border = st.number_input("Select upper border",value =float(st.session_state.unique_values_dict[key][-1]),  max_value = float(st.session_state.unique_values_dict[key][-1]),key = f"upper_border_{key}")
 
-
-
-                    if st.button("Save", key =f"bin_{key}_button"):
-                        if bins > 1:
-                            st.session_state[f"bin_{key}"] = [
-                                round(lower_border + n * step, 1) for n in
-                                range(bins+1)]
-                            st.session_state["bin_dict"][key] = st.session_state[f"bin_{key}"]
-
+                        if st.session_state[f"lower_border_{key}"] >= st.session_state[f"upper_border_{key}"]:
+                            st.error("Lower bound range must be smaller than upper bound.")
                         else:
-                            try:
-                                del st.session_state["bin_dict"][key]
-                            except:
-                                pass
+                            bins = st.number_input("Select amount of bins", min_value=int(1), key=f"amount_bin_{key}")
+                            step = (upper_border - lower_border) / (bins)
+
+                            if st.button("Save", key=f"bin_{key}_button"):
+                                if bins > 1:
+                                    st.session_state[f"bin_{key}"] = [
+                                        round(lower_border + n * step, 1) for n in
+                                        range(bins + 1)]
+                                    st.session_state["bin_dict"][key] = st.session_state[f"bin_{key}"]
+
+                                else:
+                                    try:
+                                        del st.session_state["bin_dict"][key]
+                                    except:
+                                        pass
+
+
+
+                    except:
+                        st.error("Lower bound range must be smaller than upper bound.")
+
+
+
+
+
 
 
 
@@ -155,7 +106,7 @@ if data_preparation_options == "Binned Features":
             uploadBinValues(host_upload, host, st.session_state["bin_dict"], uuid_determinationBin, rprovName)
             st.experimental_rerun()
     else:
-        st.write(st.session_state["DF_bin_dict"])
+        # st.write(st.session_state["DF_bin_dict"])
         st.markdown("""
                        **Here you can see how what bins were generatedfor each feature**
 
@@ -226,7 +177,7 @@ elif data_preparation_options == "Missing Values":
 
             name = "HandlingOfMissingValues"
 
-            uploadDPE(host_upload, host, st.session_state["missingValues_of_features_dic"],
+            uploadMissingValues(host_upload, host, st.session_state["missingValues_of_features_dic"],
                       uuid_DocuOfHandlingOfMissingValues, name)
             st.session_state.loaded_missingValues_of_features_dic = st.session_state["missingValues_of_features_dic"]
             st.experimental_rerun()

@@ -1,9 +1,8 @@
-import uuid
+import streamlit as st
+from SPARQLWrapper import SPARQLWrapper
+from streamlit_extras.switch_page_button import switch_page
 
-from SPARQLWrapper import SPARQLWrapper, POST
-from functions.functions import *
-from functions.functions_DataPreparation import *
-
+from functions.fuseki_connection import login
 
 login()
 if st.session_state.username == "user":

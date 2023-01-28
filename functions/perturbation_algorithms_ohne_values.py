@@ -19,9 +19,10 @@ def percentage_perturbation(percentage_steps, value, data_restriction):
             # print(new_value)
     return perturbedList
 
-def percentage_perturbation_settings(percentage_steps):
+def percentage_perturbation_settings(percentage_steps, perturbation_level):
     settings = dict()
     settings['steps'] = percentage_steps
+    settings['PerturbationLevel'] = perturbation_level
     return settings
 
 def sensorPrecision(sensorPrecision: float, steps: int, value, data_restriction):
@@ -37,10 +38,11 @@ def sensorPrecision(sensorPrecision: float, steps: int, value, data_restriction)
 
     return perturbedList
 
-def sensorPrecision_settings(sensorPrecision, steps):
+def sensorPrecision_settings(sensorPrecision, steps, perturbation_level):
     settings = dict()
     settings['sensorPrecision'] = sensorPrecision
     settings['steps'] = steps
+    settings['PerturbationLevel'] = perturbation_level
     return settings
 
 def fixedAmountSteps(amount, steps, value, data_restriction):
@@ -56,10 +58,11 @@ def fixedAmountSteps(amount, steps, value, data_restriction):
             # print(perturbed_value)
     return perturbedList
 
-def fixedAmountSteps_settings(amount, steps):
+def fixedAmountSteps_settings(amount, steps, perturbation_level):
     settings = dict()
     settings['amount'] = amount
     settings['steps'] = steps
+    settings['PerturbationLevel'] = perturbation_level
     return settings
 
 def perturbRange(lowerBound, upperBound, steps):
@@ -72,16 +75,18 @@ def perturbRange(lowerBound, upperBound, steps):
         # print(perturbed_value)
     return perturbedList
 
-def perturbRange_settings(lowerBound, upperBound, steps):
+def perturbRange_settings(lowerBound, upperBound, steps, perturbation_level):
     settings = dict()
     settings['lowerBound'] = lowerBound
     settings['upperBound'] = upperBound
     settings['steps'] = steps
+    settings['PerturbationLevel'] = perturbation_level
     return settings
 
-def perturbBin_settings(steps):
+def perturbBin_settings(steps,perturbation_level):
     settings = dict()
     settings['steps'] = steps
+    settings['PerturbationLevel'] = perturbation_level
     return settings
 
 
@@ -104,9 +109,10 @@ def perturbInOrder(steps, value, values):
 
     return perturbedList
 
-def perturbInOrder_settings(steps):#values
+def perturbInOrder_settings(steps,perturbation_level):
     settings = dict()
     settings['steps'] = steps
+    settings['PerturbationLevel'] = perturbation_level
     #settings['values'] = values
     return settings
 
@@ -130,8 +136,9 @@ def perturbAllValues(value, values):
 
     return perturbedList
 
-def perturbAllValues_settings(value):#values
+def perturbAllValues_settings(value,perturbation_level):#values
     settings = dict()
     settings['value'] = value
+    settings['PerturbationLevel'] = perturbation_level
     # settings['values'] = values
     return settings

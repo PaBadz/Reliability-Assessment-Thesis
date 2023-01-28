@@ -18,9 +18,4 @@ credentials:
       password: $2b$12$2S7eTDjJSIa7ZSsSowPxCO20YmaXX/kTyFx5laEpKWRRdxTMkGi0O
 preauthorized:
   emails:
-  - rainhard.schwarz
-  - tobias.meier
-  - emma.dorn
-  - christoph.bold
-  - leon.
-  -
+

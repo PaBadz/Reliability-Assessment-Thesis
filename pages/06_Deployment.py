@@ -1,22 +1,29 @@
-import distutils.command.build_ext
-from streamlit_extras.colored_header import colored_header
+import uuid
+
 import pandas as pd
-import streamlit
-from SPARQLWrapper import SPARQLWrapper
-from streamlit_sortables import sort_items
-from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode, JsCode
-from functions.perturbation_algorithms_ohne_values import *
-from functions.functions_Reliability import *
 import regex as re
+import streamlit as st
 import streamlit_ext as ste
-from functions.fuseki_connection import *
-import streamlit_nested_layout
+from SPARQLWrapper import SPARQLWrapper
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode, ColumnsAutoSizeMode
+from streamlit_extras.colored_header import colored_header
+from streamlit_option_menu import option_menu
+from streamlit_sortables import sort_items
 
-
+from functions.functions_Reliability import getDefault, getPerturbationOptions, getPerturbationRecommendations, \
+    changePerturbationOption, getRestriction, defaultValuesCardinalRestriction, defaultValuesOrdinalRestriction, \
+    defaultValuesNominalRestriction, deleteTable
+from functions.functions_deployment import get_perturbation_level, color_map
+from functions.fuseki_connection import login, getAttributes, getDataRestrictionSeqDeployment, \
+    getFeatureVolatilityDeployment, getMissingValuesDeployment, getTimestamp, determinationActivity, \
+    uploadPerturbationAssessment, uploadClassificationCase
+from functions.perturbation_algorithms_ohne_values import percentage_perturbation, sensorPrecision, fixedAmountSteps, \
+    perturbRange, perturbInOrder, perturbAllValues
 
 login()
-
-
 
 try:
     host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
@@ -38,7 +45,7 @@ except Exception as e:
 #     st.session_state["data_restrictions_dict"] = dict()
 #
 # # horizontal menu
-menu_perturbation = option_menu(None, ["Perturbation Option",'Perturbation Mode', "Perturbation"],
+menu_perturbation = option_menu(None, ["Perturbation Option", 'Perturbation Mode', "Perturbation"],
                                 icons=['house', 'gear'],
                                 orientation="horizontal")
 
@@ -47,11 +54,6 @@ try:
 except Exception as e:
     st.info("There are no Perturbation Options to select at the moment.")
     st.stop()
-
-# options_cardinal = ['5% perturbation', '10% perturbation','Percentage perturbation',  'Sensor Precision', 'Fixed amount', 'Range perturbation']
-options_ordinal = ['Perturb in order', 'Perturb all values']
-options_nominal = ['Perturb all values']
-
 
 
 if menu_perturbation == 'Perturbation Option':
@@ -71,9 +73,9 @@ if menu_perturbation == 'Perturbation Option':
             st.info("There are no recommendations at the moment.")
 
         with st.expander("Show all perturbation options"):
-            st.dataframe(savedPerturbationOptions[["FeatureName", "PerturbationOption", "label"]].reset_index(drop=True),use_container_width=True)
-
-
+            st.dataframe(
+                savedPerturbationOptions[["FeatureName", "PerturbationOption", "label"]].reset_index(drop=True),
+                use_container_width=True)
 
         if "perturbationOptions" not in st.session_state:
 
@@ -81,7 +83,7 @@ if menu_perturbation == 'Perturbation Option':
             st.session_state.perturbationOptions_settings = {}
 
             # save all information for the selected perturbation options in a dictionary
-            st.session_state.assessmentPerturbationOptions = {} #pd.DataFrame(columns=savedPerturbationOptions.columns)
+            st.session_state.assessmentPerturbationOptions = {}  # pd.DataFrame(columns=savedPerturbationOptions.columns)
             st.session_state.df_test = pd.DataFrame()
             # save default values for each feature
             st.session_state.perturbationOptions = {}
@@ -106,11 +108,12 @@ if menu_perturbation == 'Perturbation Option':
 
                 with tab1:
 
-
                     with st.expander(label=f"Algorithms for ***{feature_names}***"):
                         with st.expander("Show all available Perturbation Options"):
                             st.dataframe(
-                                savedPerturbationOptions.query('FeatureName == "%s"' % feature_names)[["FeatureName", "PerturbationOption", "label", "Settings"]],use_container_width=True)
+                                savedPerturbationOptions.query('FeatureName == "%s"' % feature_names)[
+                                    ["FeatureName", "PerturbationOption", "label", "Settings"]],
+                                use_container_width=True)
 
                         settingList = {}
 
@@ -121,25 +124,12 @@ if menu_perturbation == 'Perturbation Option':
                             try:
                                 if recommendations[recommendations["featureName.value"] == feature_names].empty:
                                     st.info("No recommendations available")
-                                    st.markdown(":information_source: :green[This means this feature was never perturbed before].")
+                                    st.markdown(
+                                        ":information_source: :green[This means this feature was never perturbed before].")
                                 else:
                                     recommendations[recommendations["featureName.value"] == feature_names]
                             except:
                                 pass
-
-                        try:
-                            if st.session_state.volatility_of_features_dic[feature_names] == 'High Volatility':
-                                st.warning("Feature has high volatility!")
-
-                            elif st.session_state.volatility_of_features_dic[feature_names] == 'Medium Volatility':
-                                st.info(
-                                    "Feature has medium volatility!  \nSwitch to perturbation Recommendations to see which algrorithms were used in the past.")
-
-
-
-
-                        except:
-                            st.info("No level of volatility determined")
 
                         try:
                             options = (
@@ -153,22 +143,18 @@ if menu_perturbation == 'Perturbation Option':
                                                                                                  key=f"perturbationOption_{feature_names}",
                                                                                                  on_change=changePerturbationOption,
                                                                                                  args=(
-                                                                                                     feature_names,),max_selections=1)  # ,
+                                                                                                     feature_names,),
+                                                                                                 max_selections=1)  # ,
 
                             chosen_perturbationOptions_feature = (
                                 savedPerturbationOptions.loc[(savedPerturbationOptions['label'].isin(
                                     st.session_state.perturbationOptions[feature_names])) & (savedPerturbationOptions[
                                                                                                  'FeatureName'] == feature_names)])
-                            # st.write(chosen_perturbationOptions_feature)
-                            #df_test=df_test.append(chosen_perturbationOptions_feature)
+
                             df_test = pd.concat([df_test, chosen_perturbationOptions_feature])
-                            st.table(chosen_perturbationOptions_feature[["FeatureName", "PerturbationOption", "Settings","label"]])
-                            #st.write(df_test)
 
-                            # st.session_state.assessmentPerturbationOptions[feature_names] = chosen_perturbationOptions_feature()
-                            st.session_state.assessmentPerturbationOptions[feature_names] = chosen_perturbationOptions_feature.to_dict("list")
-                            #st.write(st.session_state.assessmentPerturbationOptions[feature_names])
-
+                            st.session_state.assessmentPerturbationOptions[
+                                feature_names] = chosen_perturbationOptions_feature.to_dict("list")
 
 
                             for index, row in chosen_perturbationOptions_feature.iterrows():
@@ -176,21 +162,79 @@ if menu_perturbation == 'Perturbation Option':
                                 values = re.findall(': (.*?)(?:,|})', row["Settings"])
 
                                 # create nested dictionary with column name as key and keys as second key and values as values
-                                settings = (dict(zip(keys, values)))
+                                settings_ = (dict(zip(keys, values)))
                                 # convert values to float except if the key is step
-                                for feature_name, level_of_scale in settings.items():
-                                    if feature_name == "steps":
-                                        settings[feature_name] = int(level_of_scale)
+                                for key, value in settings_.items():
+                                    if key == "steps":
+                                        settings[key] = int(value)
+                                    elif key == "PerturbationLevel":
+                                        index = keys.index(key)
                                     else:
-                                        settings[feature_name] = float(level_of_scale)
+                                        settings[key] = float(value)
 
+                                settings["PerturbationLevel"] = keys[index + 1]
                                 settingList[row["PerturbationOption"]] = settings
-
 
                             st.session_state.perturbationOptions_settings[feature_names] = settingList
 
+                            if feature_names in st.session_state.assessmentPerturbationOptions.keys() and \
+                                    st.session_state.perturbationOptions[feature_names] != []:
+                                st.table(chosen_perturbationOptions_feature[
+                                             ["FeatureName", "PerturbationOption", "Settings", "label"]])
+                                data_understanding_entity = \
+                                    st.session_state.assessmentPerturbationOptions[feature_names][
+                                        "DataUnderstandingEntity"][
+                                        0]
 
-                            # st.write(st.session_state.perturbationOptions_settings[feature_names])
+                                featureID = st.session_state.assessmentPerturbationOptions[feature_names]["FeatureID"][
+                                    0]
+                                data_restriction_entity = getDataRestrictionSeqDeployment(data_understanding_entity,
+                                                                                          featureID, host)
+                                if data_restriction_entity:
+
+                                    st.write("Data Restriction:", data_restriction_entity)
+                                else:
+                                    st.info("No Data Restriction selected for this perturbation option")
+
+
+                                volatility_entity = getFeatureVolatilityDeployment(data_understanding_entity,
+                                                                                   featureID, host)
+
+                                try:
+                                    if volatility_entity["volatilityLevel.value"][0] == 'High Volatility':
+                                        st.error("Feature has high volatility!")
+
+                                    elif volatility_entity["volatilityLevel.value"][0] == 'Medium Volatility':
+                                        st.warning(
+                                            "Feature has medium volatility!")
+                                    elif volatility_entity["volatilityLevel.value"][0] == 'Low Volatility':
+                                        st.info("Feature has medium volatility!")
+
+
+
+
+                                except Exception as e:
+                                    st.error(e)
+                                    st.info("Perturbation Option has no level of volatility saved")
+
+                                missing_values_entity = getMissingValuesDeployment(data_understanding_entity,
+                                                                                   featureID, host)
+
+                                try:
+                                    st.write("Missing values were replaced with: ",missing_values_entity["MissingValues.value"][0])
+
+
+
+                                except Exception as e:
+                                    st.info("Perturbation Option has no no replacement for missing values determined")
+
+
+
+                            if "Bin perturbation" in st.session_state.perturbationOptions_settings[feature_names]:
+                                st.write("Bins determined for this Perturbation Option:",
+                                         [[st.session_state.loaded_bin_dict[feature_names][i],
+                                           st.session_state.loaded_bin_dict[feature_names][i + 1]] for i in
+                                          range(len(st.session_state.loaded_bin_dict[feature_names]) - 1)])
 
                             # TODO connect to
                         except Exception as e:
@@ -208,22 +252,23 @@ if menu_perturbation == 'Perturbation Option':
                             try:
                                 if recommendations[recommendations["featureName.value"] == feature_names].empty:
                                     st.info("No recommendations available")
-                                    st.markdown(":information_source: :green[This means this feature was never perturbed before].")
+                                    st.markdown(
+                                        ":information_source: :green[This means this feature was never perturbed before].")
                                 else:
                                     recommendations[recommendations["featureName.value"] == feature_names]
                             except:
                                 pass
 
-                        try:
-                            if st.session_state.volatility_of_features_dic[feature_names] == 'High Volatility':
-                                st.warning("Feature has high volatility!")
-                                st.info(
-                                    "Switch to perturbation Recommendations to see which algrorithms were used in the past.")
-                            elif st.session_state.volatility_of_features_dic[feature_names] == 'Medium Volatility':
-                                st.info(
-                                    "Feature has medium volatility!  \nSwitch to perturbation Recommendations to see which algrorithms were used in the past.")
-                        except:
-                            st.info("No level of volatility determined")
+                        # try:
+                        #     if st.session_state.volatility_of_features_dic[feature_names] == 'High Volatility':
+                        #         st.warning("Feature has high volatility!")
+                        #         st.info(
+                        #             "Switch to perturbation Recommendations to see which algrorithms were used in the past.")
+                        #     elif st.session_state.volatility_of_features_dic[feature_names] == 'Medium Volatility':
+                        #         st.info(
+                        #             "Feature has medium volatility!  \nSwitch to perturbation Recommendations to see which algrorithms were used in the past.")
+                        # except:
+                        #     st.info("Currently no level of volatility saved")
 
                         try:
                             options = (
@@ -245,16 +290,13 @@ if menu_perturbation == 'Perturbation Option':
                                     st.session_state.perturbationOptions[feature_names])) & (savedPerturbationOptions[
                                                                                                  'FeatureName'] == feature_names)])
                             # st.write(chosen_perturbationOptions_feature)
-                            df_test = df_test.append(chosen_perturbationOptions_feature)
-                            st.table(chosen_perturbationOptions_feature[["FeatureName", "PerturbationOption","Settings", "label"]])
+                            df_test = pd.concat([df_test, chosen_perturbationOptions_feature])
 
 
                             # st.session_state.assessmentPerturbationOptions[feature_names] = chosen_perturbationOptions_feature()
                             st.session_state.assessmentPerturbationOptions[
                                 feature_names] = chosen_perturbationOptions_feature.to_dict("list")
                             # st.write(st.session_state.assessmentPerturbationOptions[feature_names])
-
-
 
                             #
                             # st.session_state.perturbationOptions[feature_names] = st.selectbox(f'{feature_names}',
@@ -273,18 +315,63 @@ if menu_perturbation == 'Perturbation Option':
                                 values = re.findall(': (.*?)(?:,|})', row["Settings"])
 
                                 # create nested dictionary with column name as key and keys as second key and values as values
-                                settings = (dict(zip(keys, values)))
+                                settings_ = (dict(zip(keys, values)))
 
                                 # convert values to float except if the key is step
-                                for feature_name, level_of_scale in settings.items():
-                                    if feature_name == "steps":
-                                        settings[feature_name] = int(level_of_scale)
+                                for key, value in settings_.items():
+                                    if key == "steps":
+                                        settings[key] = int(value)
+                                    elif key == "PerturbationLevel":
+                                        index = keys.index(key)
+                                settings["PerturbationLevel"] = keys[index + 1]
 
-
+                                st.write(settings)
                                 # if settings != {}:
                                 settingList[row["PerturbationOption"]] = settings
 
                             st.session_state.perturbationOptions_settings[feature_names] = (settingList)
+
+                            if feature_names in st.session_state.assessmentPerturbationOptions.keys() and \
+                                    st.session_state.perturbationOptions[feature_names] != []:
+                                st.table(chosen_perturbationOptions_feature[
+                                             ["FeatureName", "PerturbationOption", "Settings", "label"]])
+                                data_understanding_entity = \
+                                    st.session_state.assessmentPerturbationOptions[feature_names][
+                                        "DataUnderstandingEntity"][
+                                        0]
+
+                                featureID = st.session_state.assessmentPerturbationOptions[feature_names]["FeatureID"][
+                                    0]
+                                data_restriction_entity = getDataRestrictionSeqDeployment(data_understanding_entity,
+                                                                                          featureID, host)
+                                if data_restriction_entity:
+
+                                    st.write("Data Restriction:", data_restriction_entity)
+                                else:
+                                    st.info("No Data Restriction selected for this perturbation option")
+
+                                volatility_entity = getFeatureVolatilityDeployment(data_understanding_entity,
+                                                                               featureID, host)
+
+                                try:
+                                    if volatility_entity["volatilityLevel.value"][0] == 'High Volatility':
+                                        st.error("Feature has high volatility!")
+
+                                    elif volatility_entity["volatilityLevel.value"][0] == 'Medium Volatility':
+                                        st.warning(
+                                            "Feature has medium volatility!")
+                                    elif volatility_entity["volatilityLevel.value"][0] == 'Low Volatility':
+                                        st.info("Feature has medium volatility!")
+
+                                except Exception as e:
+                                    st.error(e)
+                                    st.info("Perturbation Option has no level of volatility saved")
+
+                                try:
+                                    st.write("Currently missing values are replaced with: ")
+                                    st.session_state["loaded_missingValues_of_features_dic"][feature_names]
+                                except:
+                                    st.info("Currently no replacement for missing values determined")
 
                             # st.write(st.session_state.perturbationOptions_settings[feature_names])
 
@@ -305,45 +392,48 @@ if menu_perturbation == 'Perturbation Option':
                             try:
                                 if recommendations[recommendations["featureName.value"] == feature_names].empty:
                                     st.info("No recommendations available")
-                                    st.markdown(":information_source: :green[This means this feature was never perturbed before].")
+                                    st.markdown(
+                                        ":information_source: :green[This means this feature was never perturbed before].")
                                 else:
                                     recommendations[recommendations["featureName.value"] == feature_names]
                             except:
                                 pass
 
-                        try:
-
-                            if st.session_state.volatility_of_features_dic[feature_names] == 'High Volatility':
-                                st.warning("Feature has high volatility!")
-                                st.info(
-                                    "Switch to perturbation Recommendations to see which algrorithms were used in the past.")
-                            elif st.session_state.volatility_of_features_dic[feature_names] == 'Medium Volatility':
-                                st.info(
-                                    "Feature has medium volatility!  \nSwitch to perturbation Recommendations to see which algrorithms were used in the past.")
-                        except:
-                            st.info("   No level of volatility determined")
+                        # try:
+                        #
+                        #     if st.session_state.volatility_of_features_dic[feature_names] == 'High Volatility':
+                        #         st.warning("Feature has high volatility!")
+                        #         st.info(
+                        #             "Switch to perturbation Recommendations to see which algrorithms were used in the past.")
+                        #     elif st.session_state.volatility_of_features_dic[feature_names] == 'Medium Volatility':
+                        #         st.info(
+                        #             "Feature has medium volatility!  \nSwitch to perturbation Recommendations to see which algrorithms were used in the past.")
+                        # except:
+                        #     st.info("   Currently no level of volatility saved")
 
                         try:
                             options = (
-                            savedPerturbationOptions.loc[savedPerturbationOptions['FeatureName'] == feature_names]["label"])
+                                savedPerturbationOptions.loc[savedPerturbationOptions['FeatureName'] == feature_names][
+                                    "label"])
                             st.session_state.perturbationOptions[feature_names] = st.multiselect(f'{feature_names}',
-                                                                                           options=options, default=
-                                                                                           st.session_state.perturbationOptions[
-                                                                                               feature_names],
-                                                                                           key=f"perturbationOption_{feature_names}",
-                                                                                           on_change=changePerturbationOption,
-                                                                                           args=(feature_names,),max_selections=1)
+                                                                                                 options=options,
+                                                                                                 default=
+                                                                                                 st.session_state.perturbationOptions[
+                                                                                                     feature_names],
+                                                                                                 key=f"perturbationOption_{feature_names}",
+                                                                                                 on_change=changePerturbationOption,
+                                                                                                 args=(feature_names,),
+                                                                                                 max_selections=1)
 
-                            chosen_perturbationOptions_feature = (savedPerturbationOptions.loc[(savedPerturbationOptions['label'].isin(
+                            chosen_perturbationOptions_feature = (
+                            savedPerturbationOptions.loc[(savedPerturbationOptions['label'].isin(
                                 st.session_state.perturbationOptions[feature_names])) & (
-                                                                             savedPerturbationOptions[
-                                                                                 'FeatureName'] == feature_names)])
-                            df_test=df_test.append(chosen_perturbationOptions_feature)
+                                                                 savedPerturbationOptions[
+                                                                     'FeatureName'] == feature_names)])
+
+                            df_test = pd.concat([df_test, chosen_perturbationOptions_feature])
 
 
-
-                            # Display a static table
-                            st.table(chosen_perturbationOptions_feature[["FeatureName", "PerturbationOption", "label"]])
                             # a = chosen_perturbationOptions_feature[["FeatureName", "PerturbationOption", "label"]].reset_index(drop=True)
                             # st.write(a,use_container_width=True)
 
@@ -357,16 +447,74 @@ if menu_perturbation == 'Perturbation Option':
                                 keys = re.findall("'(.*?)'", row["Settings"])
                                 values = re.findall(': \[(.*?)\]', row["Settings"])
 
+                                keys = re.findall("'(.*?)'", row["Settings"])
+                                values = re.findall(': (.*?)(?:,|})', row["Settings"])
 
                                 # create nested dictionary with column name as key and keys as second key and values as values
-                                settings = (dict(zip(keys, values)))
+                                settings_ = (dict(zip(keys, values)))
+
+                                # convert values to float except if the key is step
+                                for key, value in settings_.items():
+                                    if key == "steps":
+                                        settings[key] = int(value)
+                                    elif key == "PerturbationLevel":
+                                        index = keys.index(key)
+                                settings["PerturbationLevel"] = keys[index + 1]
+
+                                # # create nested dictionary with column name as key and keys as second key and values as values
+                                # settings = (dict(zip(keys, values)))
+                                # settings["PerturbationLevel"]=keys[-1]
+
                                 # st.write("settings",settings)
-                            # convert values to float except if the key is step
+                                # convert values to float except if the key is step
 
                                 settingList[row["PerturbationOption"]] = settings
+                                st.write(settingList)
                                 # st.write(settingList)
 
                             st.session_state.perturbationOptions_settings[feature_names] = (settingList)
+
+                            if feature_names in st.session_state.assessmentPerturbationOptions.keys() and \
+                                    st.session_state.perturbationOptions[feature_names] != []:
+                                st.table(chosen_perturbationOptions_feature[
+                                             ["FeatureName", "PerturbationOption", "Settings", "label"]])
+                                data_understanding_entity = \
+                                    st.session_state.assessmentPerturbationOptions[feature_names][
+                                        "DataUnderstandingEntity"][
+                                        0]
+
+                                featureID = st.session_state.assessmentPerturbationOptions[feature_names]["FeatureID"][
+                                    0]
+                                data_restriction_entity = getDataRestrictionSeqDeployment(data_understanding_entity,
+                                                                                          featureID, host)
+                                if data_restriction_entity:
+
+                                    st.write("Data Restriction:", data_restriction_entity)
+                                else:
+                                    st.info("No Data Restriction selected for this perturbation option")
+
+                                volatility_entity = getFeatureVolatilityDeployment(data_understanding_entity,
+                                                                                   featureID, host)
+
+                                try:
+                                    if volatility_entity["volatilityLevel.value"][0] == 'High Volatility':
+                                        st.error("Feature has high volatility!")
+
+                                    elif volatility_entity["volatilityLevel.value"][0] == 'Medium Volatility':
+                                        st.warning(
+                                            "Feature has medium volatility!")
+                                    elif volatility_entity["volatilityLevel.value"][0] == 'Low Volatility':
+                                        st.info("Feature has medium volatility!")
+
+                                except Exception as e:
+                                    st.error(e)
+                                    st.info("Perturbation Option has no level of volatility saved")
+
+                                try:
+                                    st.write("Currently missing values are replaced with:")
+                                    st.session_state["loaded_missingValues_of_features_dic"][feature_names]
+                                except:
+                                    st.info("Currently no replacement for missing values determined")
                             # st.write(st.session_state.perturbationOptions_settings[feature_names])
                         except Exception as e:
                             st.error(e)
@@ -390,12 +538,8 @@ if menu_perturbation == 'Perturbation Option':
                 if not st.session_state.perturbationOptions_settings[feature]:
                     del st.session_state.perturbationOptions_settings[feature]
 
-
             st.write(st.session_state.assessmentPerturbationOptions)
             st.write(st.session_state.perturbationOptions_settings)
-
-
-
 
         # Select and Deselect Data Restriction
     with t2:
@@ -404,10 +548,10 @@ if menu_perturbation == 'Perturbation Option':
             savedRestrictions = getRestriction(host)
             st.write(savedRestrictions)
 
-            #data_restriction = st.selectbox("Select Data Restriction", options=savedRestrictions["DataRestrictionActivity"].unique())
+            # data_restriction = st.selectbox("Select Data Restriction", options=savedRestrictions["DataRestrictionActivity"].unique())
             st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
 
-            #st.write(savedRestrictions.loc[savedRestrictions["DataRestrictionActivity"] == data_restriction])
+            # st.write(savedRestrictions.loc[savedRestrictions["DataRestrictionActivity"] == data_restriction])
             # if st.button("Get Restriction", type='primary'):
 
             for feature_name, level_of_scale in st.session_state["level_of_measurement_dic"].items():
@@ -423,11 +567,15 @@ if menu_perturbation == 'Perturbation Option':
 
             for feature_name in st.session_state.assessmentPerturbationOptions.keys():
 
-                data_restriction_entity = st.session_state.assessmentPerturbationOptions[feature_name]["DataUnderstandingEntity"][0]
+                data_restriction_entity = \
+                st.session_state.assessmentPerturbationOptions[feature_name]["DataUnderstandingEntity"][0]
 
                 featureID = st.session_state.assessmentPerturbationOptions[feature_name]["FeatureID"][0]
+                st.latex(featureID)
+                st.latex(data_restriction_entity)
 
-                st.session_state["data_restrictions_dict"] = getDataRestrictionSeqDeployment(data_restriction_entity,featureID, host)
+                st.session_state["data_restrictions_dict"] = getDataRestrictionSeqDeployment(data_restriction_entity,
+                                                                                             featureID, host)
 
                 try:
                     st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
@@ -446,12 +594,10 @@ if menu_perturbation == 'Perturbation Option':
         except Exception as e:
             st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
 
-
-
     with st.expander("Show Data Restriction values"):
-        st.write("Data Restriction",st.session_state.data_restriction_final)
+        st.write("Data Restriction", st.session_state.data_restriction_final)
 
-            # st.write(st.session_state["data_restrictions_dict"])
+        # st.write(st.session_state["data_restrictions_dict"])
 
     with t3:
         # TODO recommencation system
@@ -468,32 +614,29 @@ if menu_perturbation == 'Perturbation Mode':
              "in the development view it is neccessary to connect the chosen data restriction with the perturbation option and not any")
     st.info("If you want to change the order of perturbation execution drag an drop accordingly")
 
-
-    options = ['Full','Prioritized', 'Selected']
+    options = ['Full', 'Prioritized', 'Selected']
 
     feature_names = st.session_state["dataframe_feature_names"]["featureName.value"].values.tolist()
 
     if "pertubation_mode" not in st.session_state:
         st.session_state.pertubation_mode = "Full"
 
+
     def change(value):
         st.session_state.pertubation_mode = value
 
 
-
-
     pertubation_mode = st.radio(
         "Which Perturbation Mode",
-        ('Full','Prioritized', 'Selected'),index=options.index(st.session_state.pertubation_mode), on_change=change, args=(st.session_state.pertubation_mode,))
-    if pertubation_mode =="Full":
+        ('Full', 'Prioritized', 'Selected'), index=options.index(st.session_state.pertubation_mode), on_change=change,
+        args=(st.session_state.pertubation_mode,))
+    if pertubation_mode == "Full":
         st.session_state.perturb_mode_values = feature_names
 
         st.session_state.pertubation_mode = "Full"
 
-    if pertubation_mode =="Prioritized":
+    if pertubation_mode == "Prioritized":
         st.session_state.pertubation_mode = "Prioritized"
-
-
 
         st.session_state.perturb_mode_values = sort_items(st.session_state.df_test["FeatureName"].tolist())
 
@@ -517,12 +660,9 @@ if menu_perturbation == 'Perturbation Mode':
             st.session_state.pertubation_mode = "Full"
             st.session_state.perturb_mode_values = feature_names
 
-
-
 try:
     if menu_perturbation == 'Perturbation':
         st.write(st.session_state.perturb_mode_values)
-
 
         perturbed_value_list = dict()
 
@@ -550,7 +690,6 @@ try:
 
                     for feature_name, level_of_scale in st.session_state.level_of_measurement_dic.items():
                         if level_of_scale == "Cardinal":
-
                             with col_cardinal:
                                 dic[feature_name] = st.number_input(f"Select Value for {feature_name}",
                                                                     min_value=float(
@@ -574,28 +713,28 @@ try:
                                                                      feature_name],
                                                                  key=f"add_data_{feature_name}")
                     if st.form_submit_button("Submit Data", type='primary'):
-                        st.session_state.df_aggrid_beginning = st.session_state.df_aggrid_beginning.append(dic, ignore_index=True)
+                        st.session_state.df_aggrid_beginning = st.session_state.df_aggrid_beginning.append(dic,
+                                                                                                           ignore_index=True)
                         st.experimental_rerun()
                         st.success("Data added")
-
 
         with delete:
             if st.session_state.df_aggrid_beginning.shape[0] == 0:
                 st.write("No data available")
             else:
 
-                drop_index = int(st.number_input("Row to delete", (st.session_state.df_aggrid_beginning.index[0]+1),
-                                                 (st.session_state.df_aggrid_beginning.index[-1]+1)))
+                drop_index = int(st.number_input("Row to delete", (st.session_state.df_aggrid_beginning.index[0] + 1),
+                                                 (st.session_state.df_aggrid_beginning.index[-1] + 1)))
 
                 try:
                     if st.button(f"Delete row  {drop_index}"):
-                        st.session_state.df_aggrid_beginning = st.session_state.df_aggrid_beginning.drop(drop_index-1).reset_index(drop=True)
+                        st.session_state.df_aggrid_beginning = st.session_state.df_aggrid_beginning.drop(
+                            drop_index - 1).reset_index(drop=True)
                         # st.session_state.df_r.index += 1
                         st.experimental_rerun()
                 except Exception as e:
                     st.info(e)
             deleteTable("delete_selected_rows_table")
-
 
         if st.session_state.df_aggrid_beginning.shape[0] == 0:
             st.info("Insert new data to continue")
@@ -622,17 +761,13 @@ try:
                       enable_enterprise_modules=False,
                       allow_unsafe_jscode=True,
                       editable=True,
-                      columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
+                      columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW,
                       data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
                       update_mode=GridUpdateMode.SELECTION_CHANGED,
                       allowDragFromColumnsToolPanel=False,
                       alwaysShowVerticalScroll=True,
                       alwaysShowHorizontalScroll=True,
                       theme='streamlit')
-
-
-
-
 
         # TODO: Create Entity from selected rows, Values: PerturbedTestCase
         # Naming? Labeling?
@@ -660,17 +795,18 @@ try:
 
         st.dataframe(selected_rows_DF, use_container_width=True)
         with st.expander("Show Perturbation options"):
-
             st.write(st.session_state.perturbationOptions_settings)
+
         with st.expander("Insert label for Perturbation cases"):
             label_list = []
-            for i in range(0,len(selected_rows)):
-                label_case = st.text_input(f"Label for Case {i+1}", help="Insert a name for the perturbation Assessment", key =f"label_{i}")
+            for i in range(0, len(selected_rows)):
+                label_case = st.text_input(f"Label for Case {i + 1}",
+                                           help="Insert a name for the perturbation Assessment", key=f"label_{i}")
                 label_list.append(label_case)
 
             st.write(label_list)
 
-        checkbox_upload =  st.checkbox("Upload")
+        checkbox_upload = st.checkbox("Upload")
 
         if st.button("Predict", type="primary"):
 
@@ -736,7 +872,6 @@ try:
 
                 y_pred = pd.DataFrame(st.session_state.model.predict(x_trans_df))
 
-
                 # TODO divide selected rows in order to have seperated dataframes for each row, Idee: Result DF / len(selected_rows_DF)
                 # dadurch könnten die Selected rows getrennt werden
 
@@ -746,7 +881,6 @@ try:
 
                 with st.expander("1: get prediction for selected rows"):
                     st.write(result)
-
 
                 # change values in selected rows to list in order to extend the list with perturbated values
                 # this is done because we need to explode it later
@@ -761,7 +895,6 @@ try:
             except Exception as e:
                 st.error(f"ERROR! Please change! {e}")
 
-
             try:
                 result_df = pd.DataFrame(
                     columns=result.columns)  # st.session_state.dataframe_feature_names["featureName.value"].tolist())
@@ -774,22 +907,15 @@ try:
                     try:
                         for column, method in st.session_state['perturbationOptions_settings'].items():
 
-
-
                             perturbedList = dict()
 
-
-
                             for k, v in selected_rows[i].items():
-
-
 
                                 # TODO Hier die Umwandlung der perturbations auslagern
                                 # Es muss für jede Methode eine andere möglichkeit geben
                                 try:
                                     if k == column:
                                         for algorithm_keys in method.keys():
-
 
                                             if algorithm_keys == 'Percentage perturbation':
 
@@ -835,9 +961,13 @@ try:
 
                                             elif algorithm_keys == "Bin perturbation":
                                                 try:
-                                                    for j in range(len(st.session_state.loaded_bin_dict[k])-1):
-                                                        if float(st.session_state.loaded_bin_dict[k][j]) <= float(selected_rows[i][k][0]) <= float(st.session_state.loaded_bin_dict[k][j + 1]):
-                                                            new_list = [float(st.session_state.loaded_bin_dict[k][j]), float(st.session_state.loaded_bin_dict[k][j + 1])]
+                                                    for j in range(len(st.session_state.loaded_bin_dict[k]) - 1):
+                                                        if float(st.session_state.loaded_bin_dict[k][j]) <= float(
+                                                                selected_rows[i][k][0]) <= float(
+                                                                st.session_state.loaded_bin_dict[k][j + 1]):
+                                                            new_list = [float(st.session_state.loaded_bin_dict[k][j]),
+                                                                        float(
+                                                                            st.session_state.loaded_bin_dict[k][j + 1])]
                                                             break
 
                                                     perturbedList[algorithm_keys] = (
@@ -877,12 +1007,9 @@ try:
                     # index perturb contains the different perturbation values for each case
                     index_perturb.append(perturbed_value_list.copy())
 
-
-
                 try:
                     for i in range(0, len(selected_rows)):
                         for column, method in index_perturb[i].items():
-
 
                             # for column, method in perturbed_values.items():
                             #
@@ -896,17 +1023,13 @@ try:
                                         if k == column:
                                             selected_rows[i][k].extend(perturbed_values)
 
-
                     result_df = pd.DataFrame(selected_rows,
-                                                       columns=result.columns)
+                                             columns=result.columns)
                 except Exception as e:
                     st.empty(e)
 
-
-
                 # insert predictions of case into perturbed cases
                 result_df["prediction"] = result["prediction"]
-
 
                 try:
                     # prio and selected
@@ -920,11 +1043,9 @@ try:
                 except Exception as e:
                     st.write(e)
 
-
                 # delete duplicate rows in order to prevent multiple same perturbations
 
-                result_df=result_df.drop_duplicates(keep='first')
-
+                result_df = result_df.drop_duplicates(keep='first')
 
                 for columns in result_df:
                     if st.session_state.level_of_measurement_dic[features] == 'Cardinal':
@@ -956,7 +1077,6 @@ try:
 
                 result_df["perturbation"] = y_pred
 
-
                 # KG: DEPLOYMENT
                 # KG
 
@@ -969,15 +1089,12 @@ try:
                 # except Exception as e:
                 #     st.error(e)
 
-
-
                 try:
                     st.session_state["dfs"] = [value for key, value in result_df.groupby('Case')]
                 except Exception as e:
                     st.error(e)
 
                 for i, df in enumerate(st.session_state["dfs"]):
-
 
                     # KG: DEPLOYMENT
                     # KG: ClassificationCase
@@ -997,11 +1114,13 @@ try:
                     if checkbox_upload:
                         try:
                             uuid_DefinitionOfPerturbationOption = determinationActivity(host_upload, determinationName,
-                                                                                   label_list[i],
-                                                                                   starting_time, ending_time)
+                                                                                        label_list[i],
+                                                                                        starting_time, ending_time)
 
                             uploadPerturbationAssessment(host_upload, uuid_PerturbationAssessment, label_list[i],
-                                                         uuid_DefinitionOfPerturbationOption,st.session_state.perturbationOptions_settings, st.session_state.assessmentPerturbationOptions)
+                                                         uuid_DefinitionOfPerturbationOption,
+                                                         st.session_state.perturbationOptions_settings,
+                                                         st.session_state.assessmentPerturbationOptions)
                             uuid_ClassificationCase = uuid.uuid4()
 
                             rows = selected_rows_DF.iloc[i].to_dict()
@@ -1011,31 +1130,37 @@ try:
                         except Exception as e:
                             st.error(e)
 
+                    with st.expander(f"Get prediction for perturbed **case: {i + 1} {label_list[i]}**"):
+                        df = df.drop(columns=["Case"])
 
-                    with st.expander(f"Get prediction for perturbed **case: {i+1} {label_list[i]}**"):
-                        df = df.drop(columns = ["Case"])
-                        st.write(df.style.apply(lambda x: ["background-color: #FF4B4B"
-                                                                              if (v != x.iloc[0])
-                                                                              else "" for i, v in enumerate(x)],
-                                                                   axis=0))
+                        st.write(df.style.apply(lambda x: [
+                            "background-color: {}".format(color_map.get(get_perturbation_level(x.name, v), "")) if v !=
+                                                                                                                   x.iloc[
+                                                                                                                       0] else ""
+                            for i, v in enumerate(x)], axis=0))
+
+                        # st.write(df.style.apply(lambda x: ["background-color: #FF4B4B"
+                        #                                                       if (v != x.iloc[0])
+                        #                                                       else "" for i, v in enumerate(x)],
+                        #                                            axis=0))
 
                         different_pred = df.iloc[:1]
                         different_pred2 = df[df['prediction'] != df['perturbation']]
                         # shows the first original prediction
-                        different_pred3 = pd.concat([different_pred,different_pred2]).reset_index(drop=True)
+                        different_pred3 = pd.concat([different_pred, different_pred2]).reset_index(drop=True)
 
                         ste.download_button(f'Download CSV file for Case {i + 1}: {label_list[i]}',
                                             df.to_csv(index=False),
                                             f"{label_list[i]}_{uuid_PerturbationAssessment}.csv")
 
                         if different_pred2.empty:
-                            st.info(f"No prediction with perturbated values changed for case {i+1} {label_list[i]}")
+                            st.info(f"No prediction with perturbated values changed for case {i + 1} {label_list[i]}")
                         else:
                             with st.expander("4: show cases where prediction changed"):
                                 st.dataframe(different_pred3.style.apply(lambda x: ["background-color: #FF4B4B"
-                                                                              if (v != x.iloc[0])
-                                                                              else "" for i, v in enumerate(x)],
-                                                                   axis=0))
+                                                                                    if (v != x.iloc[0])
+                                                                                    else "" for i, v in enumerate(x)],
+                                                                         axis=0))
 
 
 
@@ -1077,69 +1202,69 @@ try:
         # try:
         # if result_df is not None:
 
-            # with st.form("Save Perturbation Assessment to Database"):
-            #     # KG: DEPLOYMENT
-            #     # KG: ClassificationCase
-            #     # KG: selected_rows are ClassificationCase Entity
-            #     # TODO: Create Entity from selected rows, Values: PerturbedTestCase
-            #
-            #     ending_time = getTimestamp()
-            #     starting_time = getTimestamp()
-            #
-            #     label = st.text_input("Definition of Perturbation Case",
-            #                           help="Insert a name for the perturbation Assessment")
-            #     determinationNameUUID = 'PerturbationOfClassificationCase'
-            #     determinationName = 'PerturbationOfClassificationCase'
-            #
-            #     name = 'PerturbationOfClassificationCase'
-            #     rprovName = 'PerturbationOfClassificationCase'
-            #     ending_time = getTimestamp()
-            #
-            #     # todo mehr als eine selected row
-            #     # kann auch implementiert werden bei predict --> dadurch verpflichtend
-            #
-            #     def uploadPerturbationAssessment(uuid_PerturbationAssessment, label, uuid_DefinitionOfPerturbationOption):
-            #         for key in st.session_state.perturbationOptions_settings.keys():
-            #            for perturbationOption in st.session_state.assessmentPerturbationOptions[key]["DataUnderstandingEntity"].values():
-            #            #for perturbationOption in st.session_state.assessmentPerturbationOptions[key]["DataUnderstandingEntity"].values():
-            #                query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationAssessment}> rdf:type rprov:PerturbationAssessment, owl:NamedIndividual;
-            #                             rdfs:label "{label}"@en ;
-            #                             rprov:deploymentEntityWasDerivedFrom <{perturbationOption}>;
-            #                             rprov:perturbedTestCase "Saved as csv with name: ";
-            #                             rprov:wasGeneratedByDA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
-            #                                         }}""")
-            #                host_upload.setQuery(prefix + query)
-            #                host_upload.setMethod(POST)
-            #                host_upload.query()
-            #
-            #
-            #     def uploadClassificationCase(uuid_ClassificationCase, label, uuid_PerturbationAssessment, rows):
-            #         query = (f"""INSERT DATA {{<urn:uuid:{uuid_ClassificationCase}> rdf:type rprov:PerturbationAssessment, owl:NamedIndividual;
-            #                                         rdfs:label "{label}"@en ;
-            #                                         rprov:values "{rows}"@en;
-            #                                         rprov:wasAssignedToDeploymentEntity <{uuid_PerturbationAssessment}>;
-            #                                                     }}""")
-            #
-            #         st.write(query)
-            #         host_upload.setQuery(prefix + query)
-            #         host_upload.setMethod(POST)
-            #         host_upload.query()
-            #
-            #     if st.form_submit_button("Save Perturbation Assessment to Database"):
-            #         st.write("ff")
-            #         st.stop()
-            #
-            #
-            #         # Modeling Phase
-            #
-            #         # generate uuid for deployment activity
-            #         uuid_DefinitionOfPerturbationOption = determinationActivity(host_upload, determinationName, label,
-            #                                                               starting_time, ending_time)
-            #         uuid_PerturbationAssessment = uuid.uuid4()
-            #         uploadPerturbationAssessment(uuid_PerturbationAssessment, label, uuid_DefinitionOfPerturbationOption)
-            #         uuid_ClassificationCase = uuid.uuid4()
-            #         rows = selected_rows_DF.to_dict()
-            #         uploadClassificationCase(uuid_ClassificationCase, label,uuid_PerturbationAssessment, rows)
+        # with st.form("Save Perturbation Assessment to Database"):
+        #     # KG: DEPLOYMENT
+        #     # KG: ClassificationCase
+        #     # KG: selected_rows are ClassificationCase Entity
+        #     # TODO: Create Entity from selected rows, Values: PerturbedTestCase
+        #
+        #     ending_time = getTimestamp()
+        #     starting_time = getTimestamp()
+        #
+        #     label = st.text_input("Definition of Perturbation Case",
+        #                           help="Insert a name for the perturbation Assessment")
+        #     determinationNameUUID = 'PerturbationOfClassificationCase'
+        #     determinationName = 'PerturbationOfClassificationCase'
+        #
+        #     name = 'PerturbationOfClassificationCase'
+        #     rprovName = 'PerturbationOfClassificationCase'
+        #     ending_time = getTimestamp()
+        #
+        #     # todo mehr als eine selected row
+        #     # kann auch implementiert werden bei predict --> dadurch verpflichtend
+        #
+        #     def uploadPerturbationAssessment(uuid_PerturbationAssessment, label, uuid_DefinitionOfPerturbationOption):
+        #         for key in st.session_state.perturbationOptions_settings.keys():
+        #            for perturbationOption in st.session_state.assessmentPerturbationOptions[key]["DataUnderstandingEntity"].values():
+        #            #for perturbationOption in st.session_state.assessmentPerturbationOptions[key]["DataUnderstandingEntity"].values():
+        #                query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationAssessment}> rdf:type rprov:PerturbationAssessment, owl:NamedIndividual;
+        #                             rdfs:label "{label}"@en ;
+        #                             rprov:deploymentEntityWasDerivedFrom <{perturbationOption}>;
+        #                             rprov:perturbedTestCase "Saved as csv with name: ";
+        #                             rprov:wasGeneratedByDA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
+        #                                         }}""")
+        #                host_upload.setQuery(prefix + query)
+        #                host_upload.setMethod(POST)
+        #                host_upload.query()
+        #
+        #
+        #     def uploadClassificationCase(uuid_ClassificationCase, label, uuid_PerturbationAssessment, rows):
+        #         query = (f"""INSERT DATA {{<urn:uuid:{uuid_ClassificationCase}> rdf:type rprov:PerturbationAssessment, owl:NamedIndividual;
+        #                                         rdfs:label "{label}"@en ;
+        #                                         rprov:values "{rows}"@en;
+        #                                         rprov:wasAssignedToDeploymentEntity <{uuid_PerturbationAssessment}>;
+        #                                                     }}""")
+        #
+        #         st.write(query)
+        #         host_upload.setQuery(prefix + query)
+        #         host_upload.setMethod(POST)
+        #         host_upload.query()
+        #
+        #     if st.form_submit_button("Save Perturbation Assessment to Database"):
+        #         st.write("ff")
+        #         st.stop()
+        #
+        #
+        #         # Modeling Phase
+        #
+        #         # generate uuid for deployment activity
+        #         uuid_DefinitionOfPerturbationOption = determinationActivity(host_upload, determinationName, label,
+        #                                                               starting_time, ending_time)
+        #         uuid_PerturbationAssessment = uuid.uuid4()
+        #         uploadPerturbationAssessment(uuid_PerturbationAssessment, label, uuid_DefinitionOfPerturbationOption)
+        #         uuid_ClassificationCase = uuid.uuid4()
+        #         rows = selected_rows_DF.to_dict()
+        #         uploadClassificationCase(uuid_ClassificationCase, label,uuid_PerturbationAssessment, rows)
         # except:
         #     pass
 

@@ -1,20 +1,19 @@
-from yaml import SafeLoader
+import os.path
+import uuid
 
-from functions.fuseki_connection import *
-from functions.functions import *
-from datetime import datetime
-from streamlit_option_menu import option_menu
-# from streamlit_server_state import server_state, server_state_lock
 import pandas as pd
 import requests
+import streamlit as st
 import streamlit_authenticator as stauth
-import os.path
 import yaml
-from yaml.loader import SafeLoader
+from SPARQLWrapper import SPARQLWrapper, JSON
 from streamlit_extras.colored_header import colored_header
-import pickle
-from pathlib import Path
+from streamlit_extras.switch_page_button import switch_page
+from streamlit_option_menu import option_menu
+from yaml.loader import SafeLoader
 
+from functions.fuseki_connection import host_dataset_first_initialize, set_database, getTimestamp, \
+    determinationActivity, upload_features
 
 st.set_page_config(
     page_title="Masterthesis Pascal Badzura",
@@ -26,6 +25,7 @@ st.set_page_config(
         'About': "# This is a header. This is an *extremely* cool app!"
     }
 )
+
 
 
 
@@ -163,9 +163,12 @@ with st.expander("Create new dataset"):
         headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                'Authorization': 'Basic $(echo -n admin:password | base64)'}
         r = requests.post(host_dataset_first_initialize, data=f"dbName={new_dataset.replace(' ','')}&dbType=tdb", headers=headers)
+        # upload example ttl
+        data = open('example_upload.ttl').read()
+        headers = {'Content-Type': 'text/turtle;charset=utf-8'}
+
+        requests.put(f"http://localhost:3030{st.session_state.fuseki_database}/data", data, headers=headers)
         st.experimental_rerun()
-
-
 
 
 if st.session_state.fuseki_database=="None":
@@ -294,12 +297,17 @@ if selected2 == 'Upload':
             rprovName = 'Feature'
 
 
+
+
             if st.form_submit_button("Upload dataset to the server",type='primary'):
                 # insert first RDF into graph
                 data = open('example_upload.ttl').read()
                 headers = {'Content-Type': 'text/turtle;charset=utf-8'}
 
-                r = requests.put(f"http://localhost:3030{st.session_state.fuseki_database}?default", data, headers=headers)
+                r = requests.put(f"http://localhost:3030{st.session_state.fuseki_database}?default", data,
+                                 headers=headers)
+                r.status_code
+
 
                 sparqlupdate = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
                 uuid_determinationFeature = uuid.uuid4()

@@ -1,6 +1,6 @@
-from functions.functions import *
-from functions.functions_DataUnderstanding import *
-from functions.fuseki_connection import *
+import pandas as pd
+import streamlit as st
+from functions.fuseki_connection import getUniqueValuesSeq, get_connection_fuseki, prefix
 
 
 
@@ -14,7 +14,11 @@ def deleteTable(key):
 
 def update_steps(key, method):
     st.session_state[f"steps_{key}_{method}"] = st.session_state[
-        f"steps_widget_{key}_{method}"]
+        f"assignedPerturbationLevel_widget_{key}_{method}"]
+
+def update_perturbation_level(key, method):
+    st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.session_state[
+        f"assignedPerturbationLevel_widget_{key}_{method}"]
 
 
 def update_value_perturbate(key, method):
@@ -72,7 +76,6 @@ def getPerturbationRecommendations(host):
 
 
 def getPerturbationOptions(host):
-    dictionary_DataRestriction = dict()
     query = (f"""    SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?DUA ?values ?label{{
     ?featureID rdf:type rprov:Feature .
     ?featureID rdfs:label ?featureName.
@@ -84,36 +87,28 @@ def getPerturbationOptions(host):
     }}
     """)
 
-    results_feature_DataRestriction = get_connection_fuseki(host, (prefix + query))
-    results_feature_DataRestriction = pd.json_normalize(results_feature_DataRestriction["results"]["bindings"])
-
-    #results_feature_DataRestriction =  results_feature_DataRestriction.groupby(["featureName.value","DUA.value","DataUnderstandingEntityID.value"], as_index=False).apply(lambda x: x)
-    # # results_feature_DataRestriction = results_feature_DataRestriction.groupby(["time.value","sub.value","label.value"]).apply(lambda x: [list(x['item.value'])]).apply(pd.Series)
-    #results_feature_DataRestriction.columns = ['Feature', 'DataUnderstandingEntity', 'PertubationOption']
-    results_feature_DataRestriction = results_feature_DataRestriction[["featureID.value","featureName.value","DataUnderstandingEntityID.value","DUA.value", "values.value", "label.value"]]
-    results_feature_DataRestriction.columns = ['FeatureID','FeatureName', 'DataUnderstandingEntity', 'PerturbationOption', "Settings","label"]
-
-    return results_feature_DataRestriction
+    results_feature_PerturbationOption = get_connection_fuseki(host, (prefix + query))
+    results_feature_PerturbationOption = pd.json_normalize(results_feature_PerturbationOption["results"]["bindings"])
 
 
-# verschiedene restrictions welche eingestellt wurden
-# erstmal nicht beachten, kann später eingebaut werden
+    results_feature_PerturbationOption = results_feature_PerturbationOption[["featureID.value","featureName.value","DataUnderstandingEntityID.value","DUA.value", "values.value", "label.value"]]
+    results_feature_PerturbationOption.columns = ['FeatureID','FeatureName', 'DataUnderstandingEntity', 'PerturbationOption', "Settings","label"]
 
-
+    return results_feature_PerturbationOption
 
 
 
 # changed DeterminationOfDataRestriction to DataRestriction
 def getRestriction(host):
     dictionary_DataRestriction = dict()
-    query = (f"""                            SELECT ?sub ?seq?item ?label ?featureName ?seq ?containerMembershipProperty ?comment WHERE {{
+    query = (f"""SELECT ?sub ?seq?item ?label ?featureName ?seq ?containerMembershipProperty ?comment WHERE {{
     ?sub rdf:type rprov:DeterminationOfDataRestriction.
     ?seq rprov:wasGeneratedByDUA ?sub.
     ?seq rdfs:label ?label.
     ?seq rdfs:comment ?comment.
     ?seq rprov:toFeature ?feature.
     ?feature rdfs:label ?featureName.
-    ?seq rprov:restrictions ?list.
+    ?seq rprov:restriction ?list.
     ?list ?containerMembershipProperty ?item.
     FILTER(?containerMembershipProperty!= rdf:type)
     }}

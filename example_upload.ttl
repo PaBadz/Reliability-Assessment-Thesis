@@ -258,11 +258,7 @@ rprov:PerturbAllValues rdf:type owl:Class ;
 
 
 #################################################################
-<<<<<<< HEAD
 #    Unique Values
-=======
-#    Unique Values
->>>>>>> origin/default
 #################################################################
 rprov:minValue
         rdf:type     owl:DatatypeProperty ;
@@ -273,7 +269,7 @@ rprov:maxValue
         rdf:type     owl:DatatypeProperty ;
         rdfs:domain  rprov:MaxValueOfCardinalFeature ;
         rdfs:range   xsd:string .
-		
+
 rprov:minValueOfCardinalFeature rdf:type owl:Class;
 		rdfs:subClassOf			rprov:DataUnderstandingEntity;
 		rprov:wasGeneratedByDUA	rprov:DeterminationOfMinValueOfCardinalFeature.
@@ -306,15 +302,9 @@ rprov:UniqueValuesOfFeature rdf:type owl:Class;
 
 rprov:Seq rdf:type owl:Class, rdfs:Container.
 #################################################################
-<<<<<<< HEAD
 #    Object Properties
 #################################################################
 
-=======
-#    Object Properties
-#################################################################
-
->>>>>>> origin/default
 ###  http://www.dke.uni-linz.ac.at/rprov#deploymentEntityWasDerievedFrom
 rprov:deploymentEntityWasDerievedFrom rdf:type owl:ObjectProperty ;
                                       rdfs:subPropertyOf prov:wasDerivedFrom ;
@@ -409,15 +399,9 @@ prov:wasInformedBy rdf:type owl:ObjectProperty .
 
 
 #################################################################
-<<<<<<< HEAD
 #    Classes
 #################################################################
 
-=======
-#    Classes
-#################################################################
-
->>>>>>> origin/default
 ###  http://www.dke.uni-linz.ac.at/rprov#BusinessUnderstandingActicty
 rprov:BusinessUnderstandingActicty rdf:type owl:Class ;
                                    rdfs:subClassOf prov:Actitvty .
