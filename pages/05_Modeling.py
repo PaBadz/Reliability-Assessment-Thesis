@@ -301,14 +301,10 @@ try:
         if "data_restriction_final" not in st.session_state:
             st.session_state.data_restriction_final = st.session_state.unique_values_dict
 
-        if "perturbed_value_list" not in st.session_state:
-            st.session_state.perturbed_value_list = {}
-            for columns in st.session_state.dataframe_feature_names["featureName.value"]:
-                st.session_state.perturbed_value_list[columns] = []
 
         tab1, tab2, tab3 = st.tabs(["Cardinal", "Ordinal", "Nominal"])
         settings = dict()
-        perturbed_value_list = dict()
+        options_perturbation_level = ["Red", "Orange", "Green"]
         with tab1:
 
             # check if algorithm for level of scale is chosen
@@ -330,12 +326,11 @@ try:
                 # perturbedList = dict()
 
                 with st.expander(f"Settings for feature {key}"):
-
                     for method in value:
                         if f"steps_{key}_{method}" not in st.session_state:
                             st.session_state[f"steps_{key}_{method}"] = 1
 
-                        if f"assignedPerturbationLevel_{key}" not in st.session_state:
+                        if f"assignedPerturbationLevel_{key}_{method}" not in st.session_state:
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = "Red"
 
                         # First Initialize value which is to perturbate
@@ -365,17 +360,18 @@ try:
 
                             st.session_state[f"steps_{key}_{method}"] = int(
                                 st.number_input("Percentage of steps", min_value=int(1), max_value=int(100),
-                                                value=st.session_state[f"steps_{key}_{method}"],
+                                                value=int(st.session_state[f"steps_{key}_{method}"]),
                                                 key=f"steps_widget_{key}_{method}", on_change=update_steps,
                                                 args=(key, method)))
 
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                "Select Perturbation Level", options=["Red", "Orange", "Green"],
+                                "Select Perturbation Level", options=options_perturbation_level,
+                                index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
                                 help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                 key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                 on_change=update_perturbation_level, args=(key, method))
-
-                            settingList[method] = (
+                            if st.button("Ok", key =f"submit_{key}_{method}"):
+                                settingList[method] = (
                                 percentage_perturbation_settings(st.session_state[f"steps_{key}_{method}"],
                                                                  st.session_state[
                                                                      f"assignedPerturbationLevel_{key}_{method}"]))
@@ -384,7 +380,8 @@ try:
                         if method == "5% perturbation":
                             st.markdown(f"##### {method}")
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                "Select Perturbation Level", options=["Red", "Orange", "Green"],
+                                "Select Perturbation Level", options=options_perturbation_level,
+                                index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
                                 help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                 key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                 on_change=update_perturbation_level,
@@ -397,7 +394,8 @@ try:
                         if method == "10% perturbation":
                             st.markdown(f"##### {method}")
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                "Select Perturbation Level", options=["Red", "Orange", "Green"],
+                                "Select Perturbation Level", options=options_perturbation_level,
+                                index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
                                 help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                 key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                 on_change=update_perturbation_level,
@@ -415,20 +413,14 @@ try:
                             try:
                                 if key not in st.session_state.loaded_feature_sensor_precision_dict:
                                     st.warning("Sensor Precision is not determined in Data Understanding Step")
-                                    # st.info(
-                                    #    "When sensor precision is changed, old entity will be invalid and new one is created.")
-                                    # set precision to 0
-                                    # raise error
                                     st.session_state.loaded_feature_sensor_precision_dict[key]
-                                    # st.session_state[f"additional_value_{key}_{method}"] = 0.01
+
                                 else:
                                     st.session_state[f"additional_value_{key}_{method}"] = \
                                         st.session_state.loaded_feature_sensor_precision_dict[key]
 
                                 st.markdown(f"##### {method}")
-                                # step = st.number_input("Define stepsize", min_value=0.01, max_value=float(
-                                #     st.session_state.unique_values_dict[key][-1]), step=0.01,
-                                #                        key=f"step_sensor_precision_{key}")
+
 
                                 st.session_state[f"steps_{key}_{method}"] = int(
                                     st.number_input("Steps", min_value=int(1), step=int(1),
@@ -437,7 +429,8 @@ try:
                                                     args=(key, method)))
 
                                 st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                    "Select Perturbation Level", options=["Red", "Orange", "Green"],
+                                    "Select Perturbation Level", options=options_perturbation_level,
+                                    index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
                                     help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                     key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                     on_change=update_perturbation_level,
@@ -508,7 +501,8 @@ try:
                                                 args=(key, method)))
 
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                "Select Perturbation Level", options=["Red", "Orange", "Green"],
+                                "Select Perturbation Level", options=options_perturbation_level,
+                                index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
                                 help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                 key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                 on_change=update_perturbation_level,
@@ -575,7 +569,8 @@ try:
                                                 args=(key, method)))
 
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                "Select Perturbation Level", options=["Red", "Orange", "Green"],
+                                "Select Perturbation Level", options=options_perturbation_level,
+                                index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
                                 help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                 key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                 on_change=update_perturbation_level,
@@ -586,10 +581,7 @@ try:
                                                       st.session_state[f"additional_value_{key}_{method}_bound"][1],
                                                       st.session_state[f"steps_{key}_{method}"],
                                                       st.session_state[f"assignedPerturbationLevel_{key}_{method}"]))
-                            # perturbedList[method] = (
-                            #     perturbRange(st.session_state[f"additional_value_{key}_{method}_bound"][0],
-                            #                  st.session_state[f"additional_value_{key}_{method}_bound"][1],
-                            #                  st.session_state[f"steps_{key}_{method}"]))
+
                             st.write("---------------")
                             st.write("---------------")
 
@@ -598,12 +590,9 @@ try:
                             try:
                                 if key not in st.session_state.loaded_bin_dict:
                                     st.warning("Sensor Precision is not determined in Data Understanding Step")
-                                    # st.info(
-                                    #    "When sensor precision is changed, old entity will be invalid and new one is created.")
-                                    # set precision to 0
-                                    # raise error
+
                                     st.write(st.session_state.loaded_bin_dict[key])
-                                    # st.session_state[f"additional_value_{key}_{method}"] = 0.01
+
                                 else:
 
                                     st.write([[st.session_state.loaded_bin_dict[key][i],
@@ -617,7 +606,9 @@ try:
                                                         args=(key, method)))
 
                                     st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                        "Select Perturbation Level", options=["Red", "Orange", "Green"],
+                                        "Select Perturbation Level", options=options,
+                                        index=options.index(
+                                            st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
                                         help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                         key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                         on_change=update_perturbation_level,
@@ -637,10 +628,8 @@ try:
 
                 if settingList:
                     settings[key] = settingList
-                # if perturbedList:
-                #     perturbed_value_list[key] = perturbedList
             st.session_state['settings'] = settings
-            # st.session_state['perturbed_value_list'] = perturbed_value_list
+
 
         with tab2:
 
@@ -658,7 +647,8 @@ try:
                     st.session_state.settingList = dict()
                 settingList = dict()
 
-                with st.expander(f"Einstellungen für column {key}"):
+                with st.expander(f"Settings for column {key}"):
+
                     for method in value:
                         if f"steps_{key}_{method}" not in st.session_state:
                             st.session_state[f"steps_{key}_{method}"] = 1
@@ -681,7 +671,8 @@ try:
                                           args=(key, method)))
 
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                "Select Perturbation Level", options=["Red", "Orange", "Green"],
+                                "Select Perturbation Level", options=options_perturbation_level,
+                                index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
                                 help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                 key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                 on_change=update_perturbation_level,
@@ -700,7 +691,7 @@ try:
                                 st.session_state.data_restriction_final[key]
 
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                "Select Perturbation Level", options=["Red", "Orange", "Green"],
+                                "Select Perturbation Level", options=options,
                                 help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                 key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                 on_change=update_perturbation_level,
@@ -717,7 +708,7 @@ try:
                         settings[key] = settingList
 
                 st.session_state['settings'] = settings
-                st.session_state['perturbed_value_list'] = perturbed_value_list
+
 
         with tab3:
             # check if algorithm for level of scale is chosen
@@ -734,7 +725,8 @@ try:
                     st.session_state.settingList = dict()
                 settingList = dict()
 
-                with st.expander(f"Einstellungen für column {key}"):
+                with st.expander(f"Settings for column {key}"):
+
                     for method in value:
                         if f"steps_{key}_{method}" not in st.session_state:
                             st.session_state[f"steps_{key}_{method}"] = 0
@@ -751,7 +743,8 @@ try:
                                 st.session_state.data_restriction_final[key]
 
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                "Select Perturbation Level", options=["Red", "Orange", "Green"],
+                                "Select Perturbation Level", options=options_perturbation_level,
+                                index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
                                 help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                 key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                 on_change=update_perturbation_level,
@@ -765,10 +758,9 @@ try:
 
                     if settingList:
                         settings[key] = settingList
-                    # if perturbedList:
-                    #     perturbed_value_list[key] = perturbedList
+
                 st.session_state['settings'] = settings
-                # st.session_state['perturbed_value_list'] = perturbed_value_list
+
 
         if st.session_state['settings'] != {}:
             with st.expander("Show Perturbation Setting"):
@@ -953,7 +945,7 @@ try:
                                                       rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
                                                       rdfs:label "{labelPerturbation}-{method}: {perturbationOptionlabel}"@en.
                                                     }}""")
-                                # {st.session_state['settings'][key]}
+
 
                                 host_upload.setQuery(prefix + query)
                                 host_upload.setMethod(POST)

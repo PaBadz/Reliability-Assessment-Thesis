@@ -655,10 +655,7 @@ try:
             if "df_aggrid_beginning" not in st.session_state:
                 st.session_state.df_aggrid_beginning = pd.DataFrame(
                     columns=st.session_state.dataframe_feature_names["featureName.value"].tolist())
-            # Not necessary
-            # if st.button("Add empty row"):
-            #     add_empty = ["" for a in st.session_state.df_aggrid_beginning]
-            #     st.session_state.df_aggrid_beginning.loc[len(st.session_state.df_aggrid_beginning)] = add_empty
+
 
             with st.expander("Submit new Data", expanded=False):
                 with st.form("Add Data"):

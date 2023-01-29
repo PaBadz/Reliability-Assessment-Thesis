@@ -12,9 +12,9 @@ def deleteTable(key):
         st.session_state.df_aggrid_beginning = pd.DataFrame(
             columns=st.session_state.dataframe_feature_names["featureName.value"].tolist())
 
-def update_steps(key, method):
-    st.session_state[f"steps_{key}_{method}"] = st.session_state[
-        f"assignedPerturbationLevel_widget_{key}_{method}"]
+# def update_steps(key, method):
+#     st.session_state[f"steps_{key}_{method}"] = st.session_state[
+#         f"assignedPerturbationLevel_widget_{key}_{method}"]
 
 def update_perturbation_level(key, method):
     st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.session_state[
