@@ -28,5 +28,3 @@ st.markdown("## Business Understanding")
 st.write("""The business understanding is the first step of the CRISP-DM process. 
 In this step you will be able to choose between the different assessment approaches""")
 st.info("As of right now, perturbation approach is the only approach implemented. Therefore no need to choose.")
-
-

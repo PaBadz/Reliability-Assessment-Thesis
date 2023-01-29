@@ -47,12 +47,13 @@ def defaultValuesOrdinalRestriction(key):
 def defaultValuesNominalRestriction(key):
     st.session_state[f'data_restrictions_{key}_nominal'] = st.session_state.unique_values_dict[key]
 
-
+@st.cache
 def getDefault(host):
     try:
         st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
         raise Exception
     except Exception as e:
+        st.write(e)
         pass
 
 

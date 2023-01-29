@@ -39,6 +39,9 @@ except:
     st.error("Please select other dataset or refresh page")
     st.stop()
 
+if "data_restriction_final" not in st.session_state:
+    st.session_state.data_restriction_final = st.session_state.unique_values_dict
+
 
 if st.session_state.dataframe_feature_names.empty:
     st.stop()
@@ -67,9 +70,10 @@ if data_preparation_options == "Binned Features":
                     st.session_state[f"bin_{key}"] = list()
                 with st.expander(f"Bin {key}"):
 
+
                     try:
-                        lower_border = st.number_input("Select lower border",value =float(st.session_state.unique_values_dict[key][0]), min_value=float(st.session_state.unique_values_dict[key][0]), max_value=float(st.session_state.unique_values_dict[key][-1]), key = f"lower_border_{key}")
-                        upper_border = st.number_input("Select upper border",value =float(st.session_state.unique_values_dict[key][-1]),  max_value = float(st.session_state.unique_values_dict[key][-1]),key = f"upper_border_{key}")
+                        lower_border = st.number_input("Select lower border",value =float(st.session_state.data_restriction_final[key][0]), min_value=float(st.session_state.data_restriction_final[key][0]), max_value=float(st.session_state.data_restriction_final[key][-1]), key = f"lower_border_{key}")
+                        upper_border = st.number_input("Select upper border",value =float(st.session_state.data_restriction_final[key][-1]),  max_value = float(st.session_state.data_restriction_final[key][-1]),key = f"upper_border_{key}")
 
                         if st.session_state[f"lower_border_{key}"] >= st.session_state[f"upper_border_{key}"]:
                             st.error("Lower bound range must be smaller than upper bound.")
@@ -125,9 +129,9 @@ if data_preparation_options == "Binned Features":
 
                        If you want to change click on the button below.
                        """)
-        st.write(st.session_state["bin_dict"])
+        st.write(st.session_state["loaded_bin_dict"])
 
-        if st.button("Change missing values"):
+        if st.button("Change bins"):
             deleteWasGeneratedByDPA(host_upload, st.session_state["DF_bin_dict"])
             del st.session_state["bin_dict"]
             del st.session_state["DF_bin_dict"]

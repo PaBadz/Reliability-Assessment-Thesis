@@ -49,8 +49,6 @@ if "username" not in st.session_state:
     st.session_state.username = username
 
 
-
-
 name, authentication_status, username = authenticator.login('Login', 'main')
 
 
@@ -170,10 +168,7 @@ with st.expander("Create new dataset"):
                'Authorization': 'Basic $(echo -n admin:password | base64)'}
         r = requests.post(host_dataset_first_initialize, data=f"dbName={new_dataset.replace(' ','')}&dbType=tdb", headers=headers)
         # upload example ttl
-        data = open('example_upload.ttl').read()
-        headers = {'Content-Type': 'text/turtle;charset=utf-8'}
 
-        requests.put(f"http://localhost:3030{st.session_state.fuseki_database}/data", data, headers=headers)
         st.experimental_rerun()
 
 

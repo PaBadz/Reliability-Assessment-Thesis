@@ -73,7 +73,7 @@ if optionsDataUnderstanding == "Scale":
             st.info("Please make sure that the right level of measurement is chosen per feature because it can't be changed later")
             st.markdown(
                      """
-                     - **Cardinal**: only minimum and maximum values are saved
+                     - **Cardinal**: only minimum and maximum values are saved. **:red[Must be numerical]**
                      - **Ordinal**: the order of all values are saved, order can be arranged in the next step
                      - **Nominal**: all values are saved with no further ordering"""
                      )
@@ -407,10 +407,10 @@ if optionsDataUnderstanding == "Data Restrictions":
 
                         with st.expander("Number input"):
                             try:
-                                lower = st.number_input("Input value", min_value=float(
-                                    st.session_state.unique_values_dict[key][0]),key=f"lower_{key}",value =float(st.session_state[f'data_restrictions_{key}_cardinal'][0]))
-                                upper = st.number_input("Input upper value",key=f"upper_{key}",min_value=lower, max_value=float(
-                                        st.session_state.unique_values_dict[key][-1]), value =float(st.session_state[f'data_restrictions_{key}_cardinal'][-1]) )
+                                lower = round(st.number_input("Input value", min_value=float(
+                                    st.session_state.unique_values_dict[key][0]),key=f"lower_{key}",value =float(st.session_state[f'data_restrictions_{key}_cardinal'][0])),2)
+                                upper = round(st.number_input("Input upper value",key=f"upper_{key}",min_value=lower, max_value=float(
+                                        st.session_state.unique_values_dict[key][-1]), value =float(st.session_state[f'data_restrictions_{key}_cardinal'][-1]) ),2)
 
                                 if st.session_state[f"lower_{key}"] >= st.session_state[f"upper_{key}"]:
                                     st.error("Lower bound range must be smaller than upper bound.")
@@ -421,10 +421,6 @@ if optionsDataUnderstanding == "Data Restrictions":
                                                                                 upper]  # st.session_state[f'data_restrictions_{key}']
                             except:
                                 st.error("Lower bound range must be smaller than upper bound.")
-
-                            # update_data_restrictions_cardinal(key, lower, upper )
-                            # st.session_state[f'data_restrictions_{key}_cardinal'] = [lower, upper]
-                            # st.session_state['data_restrictions_dict'][key] = [lower, upper]
 
                         # TODO change input of cardinal values to number input
 
@@ -504,38 +500,7 @@ if optionsDataUnderstanding == "Data Restrictions":
             if st.form_submit_button("Upload"):
                 uploadDR(starting_time, host_upload, host, comment_data_restriction)
                 st.success("Data Restriction uploaded")
-            # query = (f""" SELECT  ?DataRestrictionsLabel WHERE{{
-            #                 ?DataUnderstandingEntityID rdf:type rprov:DataRestriction.
-            #                 ?DataUnderstandingEntityID rdfs:comment ?DataRestrictionsLabel.
-            #           }}""")
-            #
-            # results = get_connection_fuseki(host, (prefix + query))
-            # results = pd.json_normalize(results["results"]["bindings"])
-            #
-            # # Iterate over the rows of the DataFrame
-            # for index, row in results.iterrows():
-            #     # Get the part of the string before the first '-'
-            #     value = row["DataRestrictionsLabel.value"]
-            #
-            #     # Check if the searched value is present
-            #     if value == comment_data_restriction:
-            #         comment_data_restriction=""
-            #         st.error(f"{comment_data_restriction} already found in database. Please define unique label.")
-            #         st.stop()
-            #     else:
-            #         is_unique=True
 
-    # if not is_unique:
-    #     st.stop()
-    # st.write(st.session_state['data_restrictions_dict'])
-    #
-    #
-    #
-    # try:
-    #     if st.button("Upload Data Restrictions", on_click=uploadDR, args=(starting_time, host_upload, host, comment_data_restriction)):
-    #         pass
-    # except Exception as e:
-    #     st.error(e)
 
 
 if optionsDataUnderstanding == "Feature Sensor Precision":
@@ -579,14 +544,14 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
                     else:
                         st.session_state[f'feature_sensor_precision_{key}'] = 0
 
-                    st.session_state[f'feature_sensor_precision_{key}'] = st.number_input("Define sensor precision",
+                    st.session_state[f'feature_sensor_precision_{key}'] = round(st.number_input("Define sensor precision",
                                                                                           min_value=float(0.00),
                                                                                           max_value=float(100),
                                                                                           value=float(st.session_state[
                                                                                                           f'feature_sensor_precision_{key}']),
                                                                                           key=f'feature_sensor_precision_{key}_widget',
                                                                                           on_change=update_feature_sensor_precision,
-                                                                                          args=(key,))
+                                                                                          args=(key,)),2)
         try:
             st.write(st.session_state["feature_sensor_precision_dict"])
             st.info("Sensor precision for feature will be uploaded if bigger 0.00")

@@ -136,9 +136,9 @@ def perturbAllValues(value, values):
 
     return perturbedList
 
-def perturbAllValues_settings(value,perturbation_level):#values
+def perturbAllValues_settings(perturbation_level):#value
     settings = dict()
-    settings['value'] = value
+    # settings['value'] = value
     settings['PerturbationLevel'] = perturbation_level
     # settings['values'] = values
     return settings

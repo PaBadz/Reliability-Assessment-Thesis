@@ -27,6 +27,13 @@ from functions.perturbation_algorithms_ohne_values import percentage_perturbatio
 login()
 
 try:
+    if st.session_state.username == "user":
+        pass
+except:
+    st.warning("Please Login")
+    st.stop()
+
+try:
     host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
     host_upload: SPARQLWrapper = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
 except:
@@ -68,7 +75,7 @@ if menu_perturbation == 'Perturbation Option':
                                             </style>
                                             """
     st.markdown(hide_table_row_index, unsafe_allow_html=True)
-    t1, t2, t3 = st.tabs(["Perturbation Options", "Data Restriction", "Perturbation Recommendations"])
+    t1, t2 = st.tabs(["Perturbation Options", "Data Restriction"])
     with t1:
 
         try:
@@ -93,10 +100,8 @@ if menu_perturbation == 'Perturbation Option':
             st.session_state.perturbationOptions = {}
             for columns in st.session_state.dataframe_feature_names["featureName.value"]:
                 st.session_state.perturbationOptions[columns] = []
-                # TODO alle werte werden gespeichert
-
                 st.session_state.assessmentPerturbationOptions[columns] = []
-                # st.session_state.perturbationOptions_settings[columns] = {}
+
 
         colored_header(
             label="Choose Perturbation Options",
@@ -218,7 +223,6 @@ if menu_perturbation == 'Perturbation Option':
 
 
                                 except Exception as e:
-                                    st.error(e)
                                     st.info("Perturbation Option has no level of volatility saved")
 
                                 missing_values_entity = getMissingValuesDeployment(data_understanding_entity,
@@ -263,16 +267,6 @@ if menu_perturbation == 'Perturbation Option':
                             except:
                                 pass
 
-                        # try:
-                        #     if st.session_state.volatility_of_features_dic[feature_names] == 'High Volatility':
-                        #         st.warning("Feature has high volatility!")
-                        #         st.info(
-                        #             "Switch to perturbation Recommendations to see which algrorithms were used in the past.")
-                        #     elif st.session_state.volatility_of_features_dic[feature_names] == 'Medium Volatility':
-                        #         st.info(
-                        #             "Feature has medium volatility!  \nSwitch to perturbation Recommendations to see which algrorithms were used in the past.")
-                        # except:
-                        #     st.info("Currently no level of volatility saved")
 
                         try:
                             options = (
@@ -368,14 +362,16 @@ if menu_perturbation == 'Perturbation Option':
                                         st.info("Feature has medium volatility!")
 
                                 except Exception as e:
-                                    st.error(e)
                                     st.info("Perturbation Option has no level of volatility saved")
 
+                                missing_values_entity = getMissingValuesDeployment(data_understanding_entity,
+                                                                                   featureID, host)
+
                                 try:
-                                    st.write("Currently missing values are replaced with: ")
-                                    st.session_state["loaded_missingValues_of_features_dic"][feature_names]
-                                except:
-                                    st.info("Currently no replacement for missing values determined")
+                                    st.write("Missing values were replaced with: ",missing_values_entity["MissingValues.value"][0])
+                                except Exception as e:
+                                    st.info("Perturbation Option has no no replacement for missing values determined")
+
 
                             # st.write(st.session_state.perturbationOptions_settings[feature_names])
 
@@ -403,17 +399,7 @@ if menu_perturbation == 'Perturbation Option':
                             except:
                                 pass
 
-                        # try:
-                        #
-                        #     if st.session_state.volatility_of_features_dic[feature_names] == 'High Volatility':
-                        #         st.warning("Feature has high volatility!")
-                        #         st.info(
-                        #             "Switch to perturbation Recommendations to see which algrorithms were used in the past.")
-                        #     elif st.session_state.volatility_of_features_dic[feature_names] == 'Medium Volatility':
-                        #         st.info(
-                        #             "Feature has medium volatility!  \nSwitch to perturbation Recommendations to see which algrorithms were used in the past.")
-                        # except:
-                        #     st.info("   Currently no level of volatility saved")
+
 
                         try:
                             options = (
@@ -437,14 +423,8 @@ if menu_perturbation == 'Perturbation Option':
 
                             df_test = pd.concat([df_test, chosen_perturbationOptions_feature])
 
-
-                            # a = chosen_perturbationOptions_feature[["FeatureName", "PerturbationOption", "label"]].reset_index(drop=True)
-                            # st.write(a,use_container_width=True)
-
                             st.session_state.assessmentPerturbationOptions[
                                 feature_names] = chosen_perturbationOptions_feature.to_dict("list")
-
-                            # st.write(st.session_state.assessmentPerturbationOptions[feature_names])
 
                             for index, row in chosen_perturbationOptions_feature.iterrows():
 
@@ -464,17 +444,9 @@ if menu_perturbation == 'Perturbation Option':
                                     elif key == "PerturbationLevel":
                                         index = keys.index(key)
                                 settings["PerturbationLevel"] = keys[index + 1]
-
-                                # # create nested dictionary with column name as key and keys as second key and values as values
-                                # settings = (dict(zip(keys, values)))
-                                # settings["PerturbationLevel"]=keys[-1]
-
-                                # st.write("settings",settings)
-                                # convert values to float except if the key is step
-
                                 settingList[row["PerturbationOption"]] = settings
-                                st.write(settingList)
-                                # st.write(settingList)
+
+
 
                             st.session_state.perturbationOptions_settings[feature_names] = (settingList)
 
@@ -511,14 +483,28 @@ if menu_perturbation == 'Perturbation Option':
                                         st.info("Feature has medium volatility!")
 
                                 except Exception as e:
-                                    st.error(e)
                                     st.info("Perturbation Option has no level of volatility saved")
 
+
+                                missing_values_entity = getMissingValuesDeployment(data_understanding_entity,
+                                                                                   featureID, host)
+
                                 try:
-                                    st.write("Currently missing values are replaced with:")
-                                    st.session_state["loaded_missingValues_of_features_dic"][feature_names]
-                                except:
-                                    st.info("Currently no replacement for missing values determined")
+                                    st.write("Missing values were replaced with: ",missing_values_entity["MissingValues.value"][0])
+
+
+
+                                except Exception as e:
+                                    st.info("Perturbation Option has no no replacement for missing values determined")
+
+
+
+                                # ALT --> Es wird nur geschaut ob gerade Missing Values gespeichert sind
+                                # try:
+                                #     st.write("Currently missing values are replaced with:")
+                                #     st.session_state["loaded_missingValues_of_features_dic"][feature_names]
+                                # except:
+                                #     st.info("Currently no replacement for missing values determined")
                             # st.write(st.session_state.perturbationOptions_settings[feature_names])
                         except Exception as e:
                             st.error(e)
@@ -550,7 +536,7 @@ if menu_perturbation == 'Perturbation Option':
 
         try:
             savedRestrictions = getRestriction(host)
-            st.write(savedRestrictions)
+
 
             # data_restriction = st.selectbox("Select Data Restriction", options=savedRestrictions["DataRestrictionActivity"].unique())
             st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
@@ -575,8 +561,6 @@ if menu_perturbation == 'Perturbation Option':
                 st.session_state.assessmentPerturbationOptions[feature_name]["DataUnderstandingEntity"][0]
 
                 featureID = st.session_state.assessmentPerturbationOptions[feature_name]["FeatureID"][0]
-                st.latex(featureID)
-                st.latex(data_restriction_entity)
 
                 st.session_state["data_restrictions_dict"] = getDataRestrictionSeqDeployment(data_restriction_entity,
                                                                                              featureID, host)
@@ -585,11 +569,6 @@ if menu_perturbation == 'Perturbation Option':
                     st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
                 except Exception as e:
                     pass
-                    # st.error(e)
-                    # st.session_state["data_restrictions_dict"] = getUniqueValuesSeq(host)
-                    # st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-                    # st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
-                    # st.write(st.session_state.data_restriction_final)
 
 
 
@@ -601,14 +580,6 @@ if menu_perturbation == 'Perturbation Option':
     with st.expander("Show Data Restriction values"):
         st.write("Data Restriction", st.session_state.data_restriction_final)
 
-        # st.write(st.session_state["data_restrictions_dict"])
-
-    with t3:
-        # TODO recommencation system
-        st.info("Not implemented yet")
-        st.info("Right now it only show if a feature has a high volatility!")
-        st.write(st.session_state["volatility_of_features_dic"])
-        st.write(st.session_state["DF_feature_volatility_name"])
 
     # Define Algorithmns
 
@@ -666,7 +637,9 @@ if menu_perturbation == 'Perturbation Mode':
 
 try:
     if menu_perturbation == 'Perturbation':
-        st.write(st.session_state.perturb_mode_values)
+        if "perturb_mode_values" not in st.session_state:
+            st.session_state.perturb_mode_values =st.session_state["dataframe_feature_names"][
+                "featureName.value"].values.tolist()
 
         perturbed_value_list = dict()
 
@@ -765,7 +738,7 @@ try:
                       enable_enterprise_modules=False,
                       allow_unsafe_jscode=True,
                       editable=True,
-                      columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW,
+                      columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
                       data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
                       update_mode=GridUpdateMode.SELECTION_CHANGED,
                       allowDragFromColumnsToolPanel=False,
@@ -871,8 +844,10 @@ try:
                 x = pd.concat([df, selected_rows_DF]).reset_index(drop=True)
                 x = x.fillna(method='ffill')
 
-                x_trans_df = pd.DataFrame(ct.fit_transform(x), columns=ct.get_feature_names_out()).reset_index(
-                    drop=True)
+                try:
+                    x_trans_df = pd.DataFrame(ct.fit_transform(x).toarray(), columns=ct.get_feature_names_out()).reset_index(drop=True)
+                except:
+                    x_trans_df = pd.DataFrame(ct.fit_transform(x), columns=ct.get_feature_names_out()).reset_index(drop=True)
 
                 y_pred = pd.DataFrame(st.session_state.model.predict(x_trans_df))
 
@@ -970,17 +945,16 @@ try:
                                                                 selected_rows[i][k][0]) <= float(
                                                                 st.session_state.loaded_bin_dict[k][j + 1]):
                                                             new_list = [float(st.session_state.loaded_bin_dict[k][j]),
-                                                                        float(
-                                                                            st.session_state.loaded_bin_dict[k][j + 1])]
+                                                                        float(st.session_state.loaded_bin_dict[k][j + 1])]
                                                             break
 
                                                     perturbedList[algorithm_keys] = (
                                                         perturbRange(new_list[0],
                                                                      new_list[1],
                                                                      method[algorithm_keys]["steps"]))
-                                                except Exception as e:
-                                                    st.error(e)
-                                                    pass
+                                                except:
+                                                    st.error(f"Value of **{column}** outside of bin range. Change value or create new bins.")
+
 
 
                                             elif algorithm_keys == 'Perturb in order':
@@ -989,7 +963,7 @@ try:
                                                         perturbInOrder(method[algorithm_keys]["steps"],
                                                                        selected_rows[i][k][0],
                                                                        st.session_state.data_restriction_final[
-                                                                           column]))  # method[algorithm_keys]["values"]
+                                                                           column]))
 
 
 
@@ -1069,8 +1043,13 @@ try:
                 x = pd.concat([df, result_df.iloc[:, :-1]]).reset_index(drop=True)
                 x = x.fillna(method='ffill')
 
-                x_trans_df = pd.DataFrame(ct.fit_transform(x), columns=ct.get_feature_names_out()).reset_index(
+                try:
+                    x_trans_df = pd.DataFrame(ct.fit_transform(x).toarray(), columns=ct.get_feature_names_out()).reset_index(
                     drop=True)
+                except:
+                    x_trans_df = pd.DataFrame(ct.fit_transform(x), columns=ct.get_feature_names_out()).reset_index(
+                    drop=True)
+
 
                 # get predictions for perturbed cases
                 y_pred = pd.DataFrame(st.session_state.model.predict(x_trans_df))
@@ -1078,8 +1057,8 @@ try:
                 y_pred = y_pred.iloc[len(df):].reset_index(drop=True)
                 # reset index in order to be able to insert y_pred correctly
                 result_df = result_df.reset_index(drop=True)
-
                 result_df["perturbation"] = y_pred
+
 
                 # KG: DEPLOYMENT
                 # KG
@@ -1133,22 +1112,17 @@ try:
                                                      rows)
                         except Exception as e:
                             st.error(e)
-
                     with st.expander(f"Get prediction for perturbed **case: {i + 1} {label_list[i]}**"):
                         df = df.drop(columns=["Case"])
 
-                        st.write(df.style.apply(lambda x: [
-                            "background-color: {}".format(color_map.get(get_perturbation_level(x.name, v), "")) if v !=
-                                                                                                                   x.iloc[
-                                                                                                                       0] else ""
-                            for i, v in enumerate(x)], axis=0))
-
-                        # st.write(df.style.apply(lambda x: ["background-color: #FF4B4B"
-                        #                                                       if (v != x.iloc[0])
-                        #                                                       else "" for i, v in enumerate(x)],
-                        #                                            axis=0))
+                        try:
+                            st.write(df.style.apply(lambda x: ["background-color: {}".format(color_map.get(get_perturbation_level(x.name, v), "")) if v !=
+                                                x.iloc[0] else "" for i, v in enumerate(x)], axis=0))
+                        except Exception as e:
+                            st.write(e)
 
                         different_pred = df.iloc[:1]
+
                         different_pred2 = df[df['prediction'] != df['perturbation']]
                         # shows the first original prediction
                         different_pred3 = pd.concat([different_pred, different_pred2]).reset_index(drop=True)
