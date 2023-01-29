@@ -2,6 +2,8 @@ import pickle
 
 import pandas as pd
 import streamlit as st
+import streamlit_nested_layout
+
 from SPARQLWrapper import SPARQLWrapper
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
@@ -11,10 +13,14 @@ from functions.functions import add_parameter_ui, get_classifier
 from functions.fuseki_connection import login
 
 login()
-if st.session_state.username == "user":
-    page = st.button("Deployment")
-    if page:
-        switch_page("Deployment")
+try:
+    if st.session_state.username == "user":
+        page = st.button("Deployment")
+        if page:
+            switch_page("Deployment")
+        st.stop()
+except:
+    st.warning("Please Login")
     st.stop()
 
 try:
@@ -44,16 +50,13 @@ with tab2:
                                              ("Cardinal", SimpleImputer(strategy='median'), cardinal)],
                                remainder='drop', verbose_feature_names_out=False)
 
-        st.write(st.session_state['X'])
-        st.write(nominal)
-        neu = ct.fit_transform(st.session_state['X'])
-        st.write(ct.get_feature_names_out())
-        st.write(pd.DataFrame(ct.fit_transform(st.session_state['X'])))
 
         try:
-            x_trans_df = pd.DataFrame(ct.fit_transform(st.session_state['X']).to_array(), columns=ct.get_feature_names_out())
-        except:
+            x_trans_df = pd.DataFrame(ct.fit_transform(st.session_state['X']).toarray(), columns=ct.get_feature_names_out())
+        except Exception as e:
             x_trans_df = pd.DataFrame(ct.fit_transform(st.session_state['X']), columns=ct.get_feature_names_out())
+
+
 
         X_train, X_test, y_train, y_test = train_test_split(x_trans_df, st.session_state['y'], test_size=0.2,
                                                             random_state=1234)

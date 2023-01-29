@@ -2,16 +2,21 @@ import streamlit as st
 from SPARQLWrapper import SPARQLWrapper
 from streamlit_extras.switch_page_button import switch_page
 from streamlit_option_menu import option_menu
+import streamlit_nested_layout
 
 from functions.functions_Reliability import getDefault
 from functions.fuseki_connection import login, getAttributes, getTimestamp, uploadBinValues, determinationActivity, \
-    deleteWasGeneratedByDPA, uploadMissingValues
+    deleteWasGeneratedByDPA, uploadMissingValues, getAttributesDataPreparation
 
 login()
-if st.session_state.username == "user":
-    page = st.button("Deployment")
-    if page:
-        switch_page("Deployment")
+try:
+    if st.session_state.username == "user":
+        page = st.button("Deployment")
+        if page:
+            switch_page("Deployment")
+        st.stop()
+except:
+    st.warning("Please Login")
     st.stop()
 
 try:
@@ -24,10 +29,16 @@ except:
 
 try:
     getDefault(host)
-    getAttributes(host)
+
 except:
-    st.error("Please select other dataset")
+    st.error("Please select other dataset or refresh page")
     st.stop()
+try:
+    getAttributesDataPreparation(host)
+except:
+    st.error("Please select other dataset or refresh page")
+    st.stop()
+
 
 if st.session_state.dataframe_feature_names.empty:
     st.stop()
@@ -42,8 +53,10 @@ if data_preparation_options == "Binned Features":
         st.info("No Cardinal values determined in this dataset, therefore no binning can be performed")
 
 
-    st.write("""## Binning of cardinal features
-                Only Binning by distance is impplemented as of now""")
+    st.write("""## Binning of cardinal features""")
+    st.write("""Only Binning by distance is implemented as of now.\n
+             Please insert upper and lower bound and define amount of bins.
+             Below you can see the generated bins.""")
 
     if "bin_dict" not in st.session_state:
         st.session_state.bin_dict = dict()

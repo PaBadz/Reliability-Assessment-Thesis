@@ -4,6 +4,7 @@ from SPARQLWrapper import SPARQLWrapper
 from streamlit_extras.colored_header import colored_header
 from streamlit_option_menu import option_menu
 from streamlit_sortables import sort_items
+import streamlit_nested_layout
 
 from functions.functions import switch_page
 from functions.functions_DataUnderstanding import update_feature_sensor_precision, defaultValuesCardinal, \
@@ -13,13 +14,18 @@ from functions.functions_Reliability import defaultValuesCardinalRestriction, de
     defaultValuesNominalRestriction, getRestriction
 from functions.functions_Reliability import getDefault
 from functions.fuseki_connection import login, getAttributes, getTimestamp, determinationActivity, uploadDUE, \
-    deleteWasGeneratedByDUA, getUniqueValuesSeq, uploadDR, getSensorPrecision, uploadUniqueValues, getDataRestrictionSeq
+    deleteWasGeneratedByDUA, getUniqueValuesSeq, uploadDR, getSensorPrecision, uploadUniqueValues, \
+    getDataRestrictionSeq, getAttributesDataUnderstanding
 
 login()
-if st.session_state.username == "user":
-    page = st.button("Deployment")
-    if page:
-        switch_page("Deployment")
+try:
+    if st.session_state.username == "user":
+        page = st.button("Deployment")
+        if page:
+            switch_page("Deployment")
+        st.stop()
+except:
+    st.warning("Please Login")
     st.stop()
 try:
     host = f"http://localhost:3030{st.session_state.fuseki_database}/sparql"
@@ -28,13 +34,17 @@ except Exception as e:
     st.info(e,"Please select a database first")
     st.stop()
 
+
+
+
 try:
-    getAttributes(host)
+    getAttributesDataUnderstanding(host)
 except Exception as e:
-    st.error(e)
-    # st.error("Please select other Database")
-    # st.experimental_rerun()
-    st.stop()
+    pass
+try:
+    uploaded_DataRestriction = getRestriction(host)
+except:
+    st.warning("No Data Restrictions determined")
 
 if st.session_state.dataframe_feature_names.empty:
     st.stop()
@@ -292,7 +302,12 @@ if optionsDataUnderstanding == "Data Restrictions":
     #
 
     try:
-        uploaded_DataRestriction = getRestriction(host)
+        if "data_restriction_URN" not in st.session_state:
+            st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
+        if st.session_state.data_restriction_URN.empty:
+            st.error("No Data Restriction selected selected")
+        else:
+            st.success("Data Restriction option selected")
         data_restriction = st.selectbox("Select Data Restriction",
                                         options=uploaded_DataRestriction["Comment"].unique())
 
@@ -330,9 +345,11 @@ if optionsDataUnderstanding == "Data Restrictions":
 
         if st.button("Deselect Restriction"):
             try:
-                st.session_state["data_restrictions_dict"] = getUniqueValuesSeq(host)
+
+                st.session_state["data_restrictions_dict"] = dict()
+                # st.session_state["data_restrictions_dict"] = getUniqueValuesSeq(host)
                 st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-                st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
+                # st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
                 # st.session_state["flag_data_restriction"] = False
                 st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
                 st.experimental_rerun()
@@ -341,9 +358,8 @@ if optionsDataUnderstanding == "Data Restrictions":
                 st.write("Didnt work")
 
 
-
     except Exception as e:
-        st.write(e)
+        st.info("No Data Restrictions defined")
     starting_time = getTimestamp()
 
 

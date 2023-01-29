@@ -1,14 +1,20 @@
 import streamlit as st
+import streamlit_nested_layout
+
 from SPARQLWrapper import SPARQLWrapper
 from streamlit_extras.switch_page_button import switch_page
 
 from functions.fuseki_connection import login
 
 login()
-if st.session_state.username == "user":
-    page = st.button("Deployment")
-    if page:
-        switch_page("Deployment")
+try:
+    if st.session_state.username == "user":
+        page = st.button("Deployment")
+        if page:
+            switch_page("Deployment")
+        st.stop()
+except:
+    st.warning("Please Login")
     st.stop()
 
 try:

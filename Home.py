@@ -1,5 +1,6 @@
 import os.path
 import uuid
+import streamlit_nested_layout
 
 import pandas as pd
 import requests
@@ -12,8 +13,9 @@ from streamlit_extras.switch_page_button import switch_page
 from streamlit_option_menu import option_menu
 from yaml.loader import SafeLoader
 
+
 from functions.fuseki_connection import host_dataset_first_initialize, set_database, getTimestamp, \
-    determinationActivity, upload_features
+    determinationActivity, upload_features, getAttributes, get_feature_names
 
 st.set_page_config(
     page_title="Masterthesis Pascal Badzura",
@@ -157,6 +159,10 @@ st.session_state.fuseki_database = st.selectbox('Please select use case', index=
 host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
 host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
 
+if not any(key.startswith('level_of_measurement_') for key in st.session_state):
+    st.session_state["dataframe_feature_names"] = get_feature_names(host)
+
+
 with st.expander("Create new dataset"):
     new_dataset = st.text_input("Insert Dataset name")
     if st.button("Create new Dataset"):
@@ -231,15 +237,15 @@ if selected2 == 'Upload':
 
 
 
-    data = st.file_uploader("Choose a CSV file", accept_multiple_files=True,on_change=set_database)
+    uploaded_file = st.file_uploader("Upload file", accept_multiple_files=False,on_change=set_database)
 
-    if not data:
+    if not uploaded_file:
         st.stop()
     starting_time = getTimestamp()
-    for uploaded_file in data:
-        if uploaded_file is not None:
-            uploaded_file_df = pd.read_csv(uploaded_file)
-        st.dataframe(uploaded_file_df)
+
+    if uploaded_file is not None:
+        uploaded_file_df = pd.read_csv(uploaded_file)
+    st.dataframe(uploaded_file_df,use_container_width=True)
     if 'dataset' not in st.session_state:
         st.session_state['dataset'] = 'None'
 
@@ -333,7 +339,8 @@ if selected2 == 'Upload':
                 st.session_state['first_unique_values_dict'] = unique_values_dict
 
                 st.success("Features uploaded")
-                st.info("In the next step you can determine the scale of the features")
+                st.warning("In the next step you can determine the scale of the features and upload the values. These steps must be carried out one sequentially when creating a dataset! ")
+
 
 
 #

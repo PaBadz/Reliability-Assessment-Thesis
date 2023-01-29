@@ -4,6 +4,7 @@ import pandas as pd
 import regex as re
 import streamlit as st
 import streamlit_ext as ste
+import streamlit_nested_layout
 from SPARQLWrapper import SPARQLWrapper
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
@@ -35,10 +36,13 @@ except:
 
 try:
     getDefault(host)
+except Exception as e:
+    st.error("Please refresh page")
+try:
     getAttributes(host)
 except Exception as e:
     st.write(e)
-    st.error("Please select other dataset")
+    st.error("Please refresh page or change database.")
     st.stop()
 
 # if "data_restrictions_dict" not in st.session_state:

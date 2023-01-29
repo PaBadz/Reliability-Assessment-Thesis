@@ -170,10 +170,12 @@ def get_feature_names(host):
       ?featureID rprov:isValid true.
     }}
     """)
-
-    result_feature_names = get_connection_fuseki(host, (prefix + query))
-    result_feature_names = pd.json_normalize(result_feature_names["results"]["bindings"])
-    return result_feature_names
+    try:
+        result_feature_names = get_connection_fuseki(host, (prefix + query))
+        result_feature_names = pd.json_normalize(result_feature_names["results"]["bindings"])
+        return result_feature_names
+    except:
+        return st.warning("Please select Database")
 
 
 # Unique Values
@@ -343,7 +345,6 @@ def getFeatureScale(host):
 
     for _index, row in results_feature_scale.iterrows():
         dictionary_scales[row["featureName.value"]] = row["scale.value"]
-
     return dictionary_scales, results_feature_scale
 
 # Volatility
@@ -367,7 +368,10 @@ def getFeatureVolatility(host):
     for _index, row in results_feature_volatility.iterrows():
         dictionary_volatility[row["featureName.value"]] = row["volatility.value"]
 
-    return dictionary_volatility, results_feature_volatility
+    if dictionary_volatility == {}:
+        return Exception
+    else:
+        return dictionary_volatility, results_feature_volatility
 
 def getFeatureVolatilityDeployment(volatility,feature,host):
     query = (f"""
@@ -685,35 +689,41 @@ def getAttributes(host):
 
     if not any(key.startswith('level_of_measurement_') for key in st.session_state):
         st.session_state["dataframe_feature_names"] = get_feature_names(host)
+    if st.session_state["dataframe_feature_names"].empty:
+        st.warning("No features defined. If this is the first time a new dataset is uploaded please define features, a scale for each feature and upload the unique values.")
 
     try:
         st.session_state["level_of_measurement_dic"], st.session_state["DF_feature_scale_name"] = getFeatureScale(host)
-        for key, value in st.session_state["level_of_measurement_dic"].items():
-            st.session_state[f'level_of_measurement_{key}'] = value
+        if st.session_state["level_of_measurement_dic"] == {}:
+            st.warning(
+                "No feature scales determined. If this is the first time a new dataset is uploaded please define scale for each feature and upload the unique values.")
+        else:
+            for key, value in st.session_state["level_of_measurement_dic"].items():
+                st.session_state[f'level_of_measurement_{key}'] = value
     except Exception as e:
-        st.error(e)
-        st.session_state["DF_feature_scale_name"] = pd.DataFrame()
+        pass
+        # st.session_state["DF_feature_scale_name"] = pd.DataFrame()
         # st.session_state["level_of_measurement_dic"] = dict()
+
+    try:
+        st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
+    except Exception as e:
+        st.warning("No Unique Values in database. If this is the first time a new dataset is uploaded please upload the unique values.")
+        st.session_state["unique_values_dict"] = {}
 
     try:
         st.session_state["volatility_of_features_dic"], st.session_state[
             "DF_feature_volatility_name"] = getFeatureVolatility(host)
     except Exception as e:
-        st.write(e)
+        st.warning("No volatility level defined")
         st.session_state["volatility_of_features_dic"] = dict()
 
-    try:
-        st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
-    except Exception as e:
-        st.error(e)
-        st.session_state["unique_values_dict"] = {}
-        st.error(
-            "No Unique Values in database. If this is the first time a new dataset is uploaded please define a scale for each feature and upload the unique values.")
+
     try:
         st.session_state["loaded_feature_sensor_precision_dict"], st.session_state[
             "DF_feature_sensor_precision"] = getSensorPrecision(host)
     except Exception as e:
-        st.error(e)
+        st.warning("No sensor precision determined")
         st.session_state["loaded_feature_sensor_precision_dict"] = dict()
         st.session_state["DF_feature_sensor_precision"] = pd.DataFrame()
 
@@ -721,14 +731,98 @@ def getAttributes(host):
         st.session_state["loaded_missingValues_of_features_dic"], st.session_state[
         "DF_feature_missing_values_dic"] = getMissingValues(host)
     except:
-        pass
-        # st.session_state["missingValues_of_features_dic"] = dict()
-        # st.session_state[
-        #     "DF_feature_missing_values_dic"] = pd.DataFrame()
+        st.warning("No missing values determined")
 
     try:
         st.session_state["loaded_bin_dict"], st.session_state["DF_bin_dict"] = getBinValuesSeq(host)
     except Exception as e:
-        st.info("exception will be deleted in the final version")
-        st.write(e)
+        st.warning("No bins determined")
         st.session_state["loaded_bin_dict"] = dict()
+    st.info("warnings will be deleted in the final version")
+
+def getAttributesDataUnderstanding(host):
+
+    if not any(key.startswith('level_of_measurement_') for key in st.session_state):
+        st.session_state["dataframe_feature_names"] = get_feature_names(host)
+    if st.session_state["dataframe_feature_names"].empty:
+        st.warning("No features defined. If this is the first time a new dataset is uploaded please define features, a scale for each feature and upload the unique values.")
+
+    try:
+        st.session_state["level_of_measurement_dic"], st.session_state["DF_feature_scale_name"] = getFeatureScale(host)
+        if st.session_state["level_of_measurement_dic"] == {}:
+            st.warning(
+                "No feature scales determined. If this is the first time a new dataset is uploaded please define scale for each feature and upload the unique values.")
+        else:
+            for key, value in st.session_state["level_of_measurement_dic"].items():
+                st.session_state[f'level_of_measurement_{key}'] = value
+    except Exception as e:
+        pass
+        # st.session_state["DF_feature_scale_name"] = pd.DataFrame()
+        # st.session_state["level_of_measurement_dic"] = dict()
+
+    try:
+        st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
+    except Exception as e:
+        st.warning("No Unique Values in database. If this is the first time a new dataset is uploaded please upload the unique values.")
+        st.session_state["unique_values_dict"] = {}
+
+    try:
+        st.session_state["volatility_of_features_dic"], st.session_state[
+            "DF_feature_volatility_name"] = getFeatureVolatility(host)
+    except Exception as e:
+        st.warning("No volatility level defined")
+        st.session_state["volatility_of_features_dic"] = dict()
+
+
+    try:
+        st.session_state["loaded_feature_sensor_precision_dict"], st.session_state[
+            "DF_feature_sensor_precision"] = getSensorPrecision(host)
+    except Exception as e:
+        st.warning("No sensor precision determined")
+        st.session_state["loaded_feature_sensor_precision_dict"] = dict()
+        st.session_state["DF_feature_sensor_precision"] = pd.DataFrame()
+    st.info("warnings will be deleted in the final version")
+
+
+
+def getAttributesDataPreparation(host):
+
+    if not any(key.startswith('level_of_measurement_') for key in st.session_state):
+        st.session_state["dataframe_feature_names"] = get_feature_names(host)
+    if st.session_state["dataframe_feature_names"].empty:
+        st.warning("No features defined. If this is the first time a new dataset is uploaded please define features, a scale for each feature and upload the unique values.")
+
+    try:
+        st.session_state["level_of_measurement_dic"], st.session_state["DF_feature_scale_name"] = getFeatureScale(host)
+        if st.session_state["level_of_measurement_dic"] == {}:
+            st.warning(
+                "No feature scales determined. If this is the first time a new dataset is uploaded please define scale for each feature and upload the unique values.")
+        else:
+            for key, value in st.session_state["level_of_measurement_dic"].items():
+                st.session_state[f'level_of_measurement_{key}'] = value
+
+    except Exception as e:
+        pass
+        #st.session_state["DF_feature_scale_name"] = pd.DataFrame()
+        #st.session_state["level_of_measurement_dic"] = dict()
+
+    try:
+        st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
+    except Exception as e:
+        st.warning("No Unique Values in database. If this is the first time a new dataset is uploaded please upload the unique values.")
+        st.session_state["unique_values_dict"] = {}
+
+    try:
+        st.session_state["loaded_missingValues_of_features_dic"], st.session_state[
+        "DF_feature_missing_values_dic"] = getMissingValues(host)
+        if st.session_state["loaded_missingValues_of_features_dic"] == {}:
+            st.warning("No missing values determined")
+    except:
+        pass
+
+    try:
+        st.session_state["loaded_bin_dict"], st.session_state["DF_bin_dict"] = getBinValuesSeq(host)
+    except Exception as e:
+        st.warning("No bins determined")
+        st.session_state["loaded_bin_dict"] = dict()
+    st.info("warnings will be deleted in the final version")

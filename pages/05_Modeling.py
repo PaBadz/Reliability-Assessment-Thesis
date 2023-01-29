@@ -3,6 +3,8 @@ import uuid
 import numpy as np
 import pandas as pd
 import streamlit as st
+import streamlit_nested_layout
+
 from SPARQLWrapper import SPARQLWrapper, POST
 from streamlit_extras.colored_header import colored_header
 from streamlit_extras.switch_page_button import switch_page
@@ -18,10 +20,14 @@ from functions.perturbation_algorithms_ohne_values import percentage_perturbatio
     perturbAllValues_settings, perturbAllValues
 
 login()
-if st.session_state.username == "user":
-    page = st.button("Deployment")
-    if page:
-        switch_page("Deployment")
+try:
+    if st.session_state.username == "user":
+        page = st.button("Deployment")
+        if page:
+            switch_page("Deployment")
+        st.stop()
+except:
+    st.warning("Please Login")
     st.stop()
 
 
@@ -35,9 +41,13 @@ except:
 
 try:
     getDefault(host)
+except:
+    st.error("Please select other dataset or refresh page")
+    st.stop()
+try:
     getAttributes(host)
 except:
-    st.error("Please select other dataset")
+    st.error("Please select other dataset or refresh page")
     st.stop()
 
 
@@ -299,7 +309,7 @@ if selected2 == 'Choose Algorithms':
 
                 if st.button("Deselect Restriction"):
                     try:
-                        st.session_state["data_restrictions_dict"] = getUniqueValuesSeq(host)
+                        st.session_state["data_restrictions_dict"] = dict()
                         st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
                         st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
                         # st.session_state["flag_data_restriction"] = False
@@ -317,7 +327,7 @@ if selected2 == 'Choose Algorithms':
 
         except Exception as e:
             st.write(e)
-            st.info("No Data Restriction selected for this perturbation options available.")
+            st.info("No Data Restriction selected")
             st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
             st.session_state.data_restriction_URN = pd.DataFrame(columns=['DataRestrictionActivity', 'DataRestrictionEntity', 'Label', 'Feature', 'Value'])
 

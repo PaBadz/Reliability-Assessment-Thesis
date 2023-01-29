@@ -51,9 +51,10 @@ def defaultValuesNominalRestriction(key):
 def getDefault(host):
     try:
         st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
+        raise Exception
     except Exception as e:
         pass
-        #st.info("Dont forget to upload unique values")
+
 
 def getPerturbationRecommendations(host):
     query = (f"""
