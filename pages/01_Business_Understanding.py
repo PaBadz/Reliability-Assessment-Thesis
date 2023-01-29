@@ -5,7 +5,7 @@ from SPARQLWrapper import SPARQLWrapper
 from streamlit_extras.switch_page_button import switch_page
 
 from functions.fuseki_connection import login
-st.session_state.perturbationOptions_settings
+
 login()
 try:
     if st.session_state.username == "user":
