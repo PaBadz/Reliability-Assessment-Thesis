@@ -1113,7 +1113,7 @@ try:
                         df = df.drop(columns=["Case"])
 
                         try:
-                            st.write(df.style.apply(lambda x: ["background-color: {}".format(color_map.get(get_perturbation_level(x.name, v), "")) if v !=
+                            st.dataframe(df.style.apply(lambda x: ["background-color: {}".format(color_map.get(get_perturbation_level(x.name, v), "")) if v !=
                                                 x.iloc[0] else "" for i, v in enumerate(x)], axis=0))
                         except Exception as e:
                             st.write(e)
@@ -1132,10 +1132,11 @@ try:
                             st.info(f"No prediction with perturbated values changed for case {i + 1} {label_list[i]}")
                         else:
                             with st.expander("4: show cases where prediction changed"):
-                                st.dataframe(different_pred3.style.apply(lambda x: ["background-color: #FF4B4B"
-                                                                                    if (v != x.iloc[0])
-                                                                                    else "" for i, v in enumerate(x)],
-                                                                         axis=0))
+                                st.write(different_pred3.style.apply(lambda x: ["background-color: {}".format(
+                                    color_map.get(get_perturbation_level(x.name, v), "")) if v !=
+                                                                                             x.iloc[0] else "" for i, v
+                                                                    in enumerate(x)], axis=0))
+
 
 
 
@@ -1146,102 +1147,6 @@ try:
 
             except Exception as e:
                 st.info(e)
-
-            # try:
-            #     result_df["Case"] = result_df.index
-            #     case = st.selectbox("Select case", options=[x for x in range(0, len(selected_rows))])
-            #     st.write(result_df[result_df["Case"] == case])
-            #
-            #
-            # except:
-            #     pass
-
-            # with st.form("ClassificationCase"):
-            #     # KG: DEPLOYMENT
-            #     # KG: ClassificationCase
-            #     # KG: selected_rows are ClassificationCase Entity
-            #     amount_selected_rows = len(data["selected_rows"])
-            #     counter = 0
-            #     if amount_selected_rows > 0:
-            #         for i in range(0, amount_selected_rows):
-            #             st.text_input(f"Name of the {i + 1}. Classification Case", key=f"classification_case_{i}")
-            #         counter += 1
-            #
-            #     query = """ <http://www.semanticweb.org/dke/ontologies/2021/6/25_7437>
-            #                 rdf:type              rprov:ClassificationCase , owl:NamedIndividual ;
-            #                 rdfs:label            "CaseY"@en ;
-            #                 rprov:values          <http://www.semanticweb.org/dke/ontologies/2021/6/25_9096> , <http://www.semanticweb.org/dke/ontologies/2021/6/25_7585> ;
-            #                 rprov:wasAssignedToDeploymentEntity <http://www.semanticweb.org/dke/ontologies/2021/6/25_7487> ;
-            #                 prov:generatedAtTime  "0000-00-00T00:00:00Z" ."""
-
-        # try:
-        # if result_df is not None:
-
-        # with st.form("Save Perturbation Assessment to Database"):
-        #     # KG: DEPLOYMENT
-        #     # KG: ClassificationCase
-        #     # KG: selected_rows are ClassificationCase Entity
-        #     # TODO: Create Entity from selected rows, Values: PerturbedTestCase
-        #
-        #     ending_time = getTimestamp()
-        #     starting_time = getTimestamp()
-        #
-        #     label = st.text_input("Definition of Perturbation Case",
-        #                           help="Insert a name for the perturbation Assessment")
-        #     determinationNameUUID = 'PerturbationOfClassificationCase'
-        #     determinationName = 'PerturbationOfClassificationCase'
-        #
-        #     name = 'PerturbationOfClassificationCase'
-        #     rprovName = 'PerturbationOfClassificationCase'
-        #     ending_time = getTimestamp()
-        #
-        #     # todo mehr als eine selected row
-        #     # kann auch implementiert werden bei predict --> dadurch verpflichtend
-        #
-        #     def uploadPerturbationAssessment(uuid_PerturbationAssessment, label, uuid_DefinitionOfPerturbationOption):
-        #         for key in st.session_state.perturbationOptions_settings.keys():
-        #            for perturbationOption in st.session_state.assessmentPerturbationOptions[key]["DataUnderstandingEntity"].values():
-        #            #for perturbationOption in st.session_state.assessmentPerturbationOptions[key]["DataUnderstandingEntity"].values():
-        #                query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationAssessment}> rdf:type rprov:PerturbationAssessment, owl:NamedIndividual;
-        #                             rdfs:label "{label}"@en ;
-        #                             rprov:deploymentEntityWasDerivedFrom <{perturbationOption}>;
-        #                             rprov:perturbedTestCase "Saved as csv with name: ";
-        #                             rprov:wasGeneratedByDA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
-        #                                         }}""")
-        #                host_upload.setQuery(prefix + query)
-        #                host_upload.setMethod(POST)
-        #                host_upload.query()
-        #
-        #
-        #     def uploadClassificationCase(uuid_ClassificationCase, label, uuid_PerturbationAssessment, rows):
-        #         query = (f"""INSERT DATA {{<urn:uuid:{uuid_ClassificationCase}> rdf:type rprov:PerturbationAssessment, owl:NamedIndividual;
-        #                                         rdfs:label "{label}"@en ;
-        #                                         rprov:values "{rows}"@en;
-        #                                         rprov:wasAssignedToDeploymentEntity <{uuid_PerturbationAssessment}>;
-        #                                                     }}""")
-        #
-        #         st.write(query)
-        #         host_upload.setQuery(prefix + query)
-        #         host_upload.setMethod(POST)
-        #         host_upload.query()
-        #
-        #     if st.form_submit_button("Save Perturbation Assessment to Database"):
-        #         st.write("ff")
-        #         st.stop()
-        #
-        #
-        #         # Modeling Phase
-        #
-        #         # generate uuid for deployment activity
-        #         uuid_DefinitionOfPerturbationOption = determinationActivity(host_upload, determinationName, label,
-        #                                                               starting_time, ending_time)
-        #         uuid_PerturbationAssessment = uuid.uuid4()
-        #         uploadPerturbationAssessment(uuid_PerturbationAssessment, label, uuid_DefinitionOfPerturbationOption)
-        #         uuid_ClassificationCase = uuid.uuid4()
-        #         rows = selected_rows_DF.to_dict()
-        #         uploadClassificationCase(uuid_ClassificationCase, label,uuid_PerturbationAssessment, rows)
-        # except:
-        #     pass
 
 
 

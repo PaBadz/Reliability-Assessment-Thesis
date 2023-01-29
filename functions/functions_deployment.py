@@ -8,13 +8,16 @@ color_map = {
 
 def get_perturbation_level(col_name, value):
     plevel = {}
-    for key, value in st.session_state.perturbationOptions_settings.items():
-        plevel[key] = next(iter(value.items()))[1]['PerturbationLevel']
+    try:
+        for key, value in st.session_state.perturbationOptions_settings.items():
+            plevel[key] = next(iter(value.items()))[1]['PerturbationLevel']
 
-    level = plevel.get(col_name, None)
-    if level:
-        return level
+        level = plevel.get(col_name, None)
+        if level:
+            return level
 
-    if value in plevel[col_name].values():
-        return plevel[col_name]
-    return None
+        if value in plevel[col_name].values():
+            return plevel[col_name]
+        return None
+    except:
+        pass
