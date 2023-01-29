@@ -460,9 +460,7 @@ try:
                             except Exception as e:
                                 st.write(
                                     "Sensor Precision for this feature should be determined in Data Understanding step.")
-                                switch = st.button("Data Understanding", key=f"DataUnderstanding_{key}")
-                                if switch:
-                                    switch_page("Data Understanding")
+
 
                                 # st.write(e)
                             st.write("---------------")
@@ -606,8 +604,8 @@ try:
                                                         args=(key, method)))
 
                                     st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                        "Select Perturbation Level", options=options,
-                                        index=options.index(
+                                        "Select Perturbation Level", options=options_perturbation_level,
+                                        index=options_perturbation_level.index(
                                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
                                         help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                         key=f"assignedPerturbationLevel_widget_{key}_{method}",
@@ -619,12 +617,11 @@ try:
                                             f"assignedPerturbationLevel_{key}_{method}"]))
 
                                     st.write("---------------")
-                            except:
+                            except Exception as e:
+                                st.write(e)
                                 st.write(
                                     "Binning for this feature should be determined in Data Preparation step.")
-                                switch = st.button("Data Preparation", key=f"DataPreparation_{key}")
-                                if switch:
-                                    switch_page("Data Preparation")
+
 
                 if settingList:
                     settings[key] = settingList
@@ -650,6 +647,8 @@ try:
                 with st.expander(f"Settings for column {key}"):
 
                     for method in value:
+                        if f"assignedPerturbationLevel_{key}_{method}" not in st.session_state:
+                            st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = "Red"
                         if f"steps_{key}_{method}" not in st.session_state:
                             st.session_state[f"steps_{key}_{method}"] = 1
                         if f"value_perturbate{key}_{method}" not in st.session_state:
@@ -691,7 +690,8 @@ try:
                                 st.session_state.data_restriction_final[key]
 
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                "Select Perturbation Level", options=options,
+                                "Select Perturbation Level", options=options_perturbation_level,
+                                index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
                                 help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                 key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                 on_change=update_perturbation_level,
@@ -727,7 +727,10 @@ try:
 
                 with st.expander(f"Settings for column {key}"):
 
+
                     for method in value:
+                        if f"assignedPerturbationLevel_{key}_{method}" not in st.session_state:
+                            st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = "Red"
                         if f"steps_{key}_{method}" not in st.session_state:
                             st.session_state[f"steps_{key}_{method}"] = 0
                         if f"value_perturbate{key}_{method}" not in st.session_state:

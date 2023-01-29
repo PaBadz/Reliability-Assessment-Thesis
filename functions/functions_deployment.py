@@ -3,14 +3,19 @@ import streamlit as st
 color_map = {
     "Red": "#FF4B4B",
     "Orange": "#ffa500",
-    "Green": "#43cd80"
+    "Green": "#43cd80",
+    "Blue": "#5f9ea0"
 }
 
 def get_perturbation_level(col_name, value):
     plevel = {}
     try:
+        if col_name == "perturbation":
+            return "Blue"
+
         for key, value in st.session_state.perturbationOptions_settings.items():
             plevel[key] = next(iter(value.items()))[1]['PerturbationLevel']
+
 
         level = plevel.get(col_name, None)
         if level:
