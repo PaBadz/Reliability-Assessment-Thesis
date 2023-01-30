@@ -44,11 +44,10 @@ except:
 try:
     getDefault(host)
 except Exception as e:
-    st.error("Please refresh page")
+    st.error("Couldn't load unique values. If already inserted refresh page.")
 try:
     getAttributes(host)
 except Exception as e:
-    st.write(e)
     st.error("Please refresh page or change database.")
     st.stop()
 
@@ -1022,21 +1021,19 @@ try:
 
                 result_df = result_df.drop_duplicates(keep='first')
 
-                for columns in result_df:
-                    if st.session_state.level_of_measurement_dic[features] == 'Cardinal':
+
+                for columns in result_df.iloc[:, :-1]:
+                    if st.session_state.level_of_measurement_dic[columns] == 'Cardinal':
                         result_df[columns] = result_df[columns].astype(float)
 
                 result_df["Case"] = result_df.index
                 with st.expander("2: Get new perturbed cases"):
                     st.write(result_df)
 
-            #
-
             except Exception as e:
                 st.info(e)
 
             try:
-
                 x = pd.concat([df, result_df.iloc[:, :-1]]).reset_index(drop=True)
                 x = x.fillna(method='ffill')
 

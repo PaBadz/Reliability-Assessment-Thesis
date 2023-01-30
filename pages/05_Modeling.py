@@ -39,15 +39,14 @@ except:
 # ------------------------------------------------------------------------------------------------------------------------
 
 try:
-
     getDefault(host)
 except:
-    st.error("Please select other dataset or refresh page")
-    st.stop()
+    st.error("Couldn't load unique values. If already inserted refresh page.")
+
 try:
     getAttributes(host)
-except:
-    st.error("Please select other dataset or refresh page")
+except Exception as e:
+    st.error("Please refresh page or change database.")
     st.stop()
 
 if "data_restrictions_dict" not in st.session_state:
@@ -661,13 +660,17 @@ try:
                             st.markdown(f"##### Define settings for algorithm: {method}")
                             with st.expander("Show all values:"):
                                 st.session_state.data_restriction_final[key]
-                            st.session_state[f"steps_{key}_{method}"] = int(
-                                st.slider("Steps", min_value=int(1),
-                                          max_value=int(len(st.session_state.data_restriction_final[key]) - 1),
-                                          step=int(1),
-                                          value=st.session_state[f"steps_{key}_{method}"],
-                                          key=f"steps_widget_{key}_{method}", on_change=update_steps,
-                                          args=(key, method)))
+
+                            if len(st.session_state.data_restriction_final[key]) ==2:
+                                st.session_state[f"steps_{key}_{method}"] = 2
+                            else:
+                                st.session_state[f"steps_{key}_{method}"] = int(
+                                    st.slider("Steps", min_value=int(1),
+                                              max_value=int(len(st.session_state.data_restriction_final[key]) - 1),
+                                              step=int(1),
+                                              value=st.session_state[f"steps_{key}_{method}"],
+                                              key=f"steps_widget_{key}_{method}", on_change=update_steps,
+                                              args=(key, method)))
 
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
                                 "Select Perturbation Level", options=options_perturbation_level,

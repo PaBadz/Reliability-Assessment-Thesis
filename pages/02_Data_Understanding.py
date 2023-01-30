@@ -46,6 +46,11 @@ try:
 except:
     st.warning("No Data Restrictions determined")
 
+try:
+    getDefault(host)
+except:
+    pass
+
 if st.session_state.dataframe_feature_names.empty:
     st.stop()
 
@@ -249,8 +254,6 @@ if optionsDataUnderstanding == "Data Restrictions":
     * Nominal: All values are included
     """)
 
-    getDefault(host)
-
     if "data_restrictions_dict" not in st.session_state:
         st.session_state["data_restrictions_dict"] = dict()
 
@@ -392,19 +395,6 @@ if optionsDataUnderstanding == "Data Restrictions":
 
 
 
-                        # TODO change input of cardinal values to number input
-                        # st.session_state[f'data_restrictions_{key}_cardinal'] = st.slider(
-                        #     f"Select Range for Cardinal Value {key}",
-                        #     value=st.session_state[f'data_restrictions_{key}_cardinal'],
-                        #     min_value=float(
-                        #         st.session_state.unique_values_dict[key][0]),
-                        #     max_value=float(
-                        #         st.session_state.unique_values_dict[key][-1]),
-                        #     key=f'data_restrictions_{key}',
-                        #     on_change=update_data_restrictions_cardinal,
-                        #     step=float(step),
-                        #     args=(key,))
-
                         with st.expander("Number input"):
                             try:
                                 lower = round(st.number_input("Input value", min_value=float(
@@ -492,8 +482,7 @@ if optionsDataUnderstanding == "Data Restrictions":
     else:
         st.write("Defined Data Restriction:", st.session_state['data_restrictions_dict'])
         with st.form("Insert additional label for the defined Data Restriction"):
-            st.info(
-                "This label should be chosen wisely. It will be shown in the options for the Data Restrictions. Therefore it is advised to add as much information as possible.")
+            st.info("This label should be chosen wisely. It will be shown in the options for the Data Restrictions. Therefore it is advised to add as much information as possible. If a label is used more than once it might lead to problems.")
             comment_data_restriction = st.text_input("Insert additional label for the defined Data Restrictions",
                                               help="Name your Data Restrictions in order to find it easier later. Only unique labels allowed.")
 
@@ -583,7 +572,7 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
             st.session_state["loaded_feature_sensor_precision_dict"], st.session_state["DF_feature_sensor_precision"] = getSensorPrecision(host)
 
             deleteWasGeneratedByDUA(host_upload,st.session_state["DF_feature_sensor_precision"])
-            del st.session_state["feature_sensor_precision_dict"]
+
             del st.session_state["loaded_feature_sensor_precision_dict"]
 
             st.experimental_rerun()

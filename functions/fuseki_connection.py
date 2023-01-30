@@ -757,8 +757,7 @@ def getAttributesDataUnderstanding(host):
                 st.session_state[f'level_of_measurement_{key}'] = value
     except Exception as e:
         pass
-        # st.session_state["DF_feature_scale_name"] = pd.DataFrame()
-        # st.session_state["level_of_measurement_dic"] = dict()
+
 
     try:
         st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
