@@ -4,6 +4,7 @@ from SPARQLWrapper import SPARQLWrapper
 from streamlit_extras.colored_header import colored_header
 from streamlit_option_menu import option_menu
 from streamlit_sortables import sort_items
+import time
 import streamlit_nested_layout
 
 from functions.functions import switch_page
@@ -13,9 +14,10 @@ from functions.functions_DataUnderstanding import update_feature_sensor_precisio
 from functions.functions_Reliability import defaultValuesCardinalRestriction, defaultValuesOrdinalRestriction, \
     defaultValuesNominalRestriction, getRestriction
 from functions.functions_Reliability import getDefault
+from streamlit_extras.no_default_selectbox import selectbox
 from functions.fuseki_connection import login, getAttributes, getTimestamp, determinationActivity, uploadDUE, \
     deleteWasGeneratedByDUA, getUniqueValuesSeq, uploadDR, getSensorPrecision, uploadUniqueValues, \
-    getDataRestrictionSeq, getAttributesDataUnderstanding
+    getDataRestrictionSeq, getAttributesDataUnderstanding, get_feature_names
 
 login()
 try:
@@ -35,28 +37,33 @@ except Exception as e:
     st.stop()
 
 
-
-
 try:
-    getAttributesDataUnderstanding(host)
+    st.session_state.dataframe_feature_names = get_feature_names(host)
 except Exception as e:
-    pass
-try:
-    uploaded_DataRestriction = getRestriction(host)
-except:
-    st.warning("No Data Restrictions determined")
-
-try:
-    getDefault(host)
-except:
-    pass
+    st.error(e)
 
 if st.session_state.dataframe_feature_names.empty:
     st.stop()
 
+
 optionsDataUnderstanding = option_menu("Data Understanding Options", ["Scale", "Volatility", "Data Restrictions", "Feature Sensor Precision"],
                                        icons=['collection', 'arrow-down-up', 'slash-circle'],
                                        menu_icon="None", default_index=0, orientation="horizontal")
+
+with st.expander("Show information"):
+    try:
+        getAttributesDataUnderstanding(host)
+    except Exception as e:
+        pass
+    try:
+        uploaded_DataRestriction = getRestriction(host)
+    except:
+        st.warning("No Data Restrictions determined")
+
+    try:
+        getDefault(host)
+    except:
+        pass
 
 
 # Hier kann die scale ausgewählt werden
@@ -73,9 +80,8 @@ if optionsDataUnderstanding == "Scale":
 
     # wenn noch keine scale in fuseki bestimmt wurde, erstelle Form mit auswahl von scales
     if st.session_state["level_of_measurement_dic"] == {}:
-        st.warning("Please insert level of scale and upload unique values! If this step is not done properly this application will not work")
+        st.warning("Please insert level of scale for each feature! This is an important step and cannot be changed afterwards.")
         with st.expander("Click here to changes scale of features"):
-            st.info("Please make sure that the right level of measurement is chosen per feature because it can't be changed later")
             st.markdown(
                      """
                      - **Cardinal**: only minimum and maximum values are saved. **:red[Must be numerical]**
@@ -85,16 +91,26 @@ if optionsDataUnderstanding == "Scale":
             starting_time = getTimestamp()
 
             with st.form("Change level of measurement for features"):
-                options = ['Ordinal', 'Cardinal', 'Nominal']
+                options = ['Cardinal', 'Ordinal', 'Nominal']
 
                 for index, row in st.session_state.dataframe_feature_names["featureName.value"].items():
                     if f'level_of_measurement_{row}' not in st.session_state:
-                        st.session_state[f'level_of_measurement_{row}'] = "Nominal"
+                        st.session_state[f'level_of_measurement_{row}'] = ' '
                     # wenn level of measurement dictionary nicht leer ist gibt es die level of measurement an
-                    st.session_state.level_of_measurement_dic[row] = st.selectbox(f"**{row}**", options=options, index=2,key=f'level_of_measurement_{row}_widget')
+                    #st.session_state.level_of_measurement_dic[row] = st.selectbox(f"**{row}**", options=options, index=0,key=f'level_of_measurement_{row}_widget',format_func=lambda x: 'Select an option' if x == '' else x)
+
+
+
+                    st.session_state.level_of_measurement_dic[row] = selectbox(f"**{row}**", options=options,key=f'level_of_measurement_{row}_widget')
+
+
 
                 # submit selected scale of measurements
                 if st.form_submit_button("Submit", type="primary"):
+
+                    if None in st.session_state.level_of_measurement_dic.values():
+                        st.error("Please select a level of measurement for all features")
+                        st.stop()
                     ending_time = getTimestamp()
                     uuid_determinationScale = determinationActivity(host_upload, determinationName, label,
                                                                starting_time, ending_time)
@@ -118,7 +134,10 @@ if optionsDataUnderstanding == "Scale":
                     del st.session_state["level_of_measurement_dic"]
                     deleteWasGeneratedByDUA(host_upload,st.session_state["DF_feature_scale_name"])
                     st.experimental_rerun()
-
+                st.error(
+                    "Please define order of ordinal features and upload!")
+                st.warning(
+                    "If these steps are not completed at the beginning, this will result in errors and the app will not run properly.!")
         colored_header(
             label="Order of ordinal features",
             description="""Open the expander for the feature to change the order and upload unique values afterwards!
@@ -130,9 +149,6 @@ if optionsDataUnderstanding == "Scale":
             getUniqueValuesSeq(host)
 
         except Exception as e:
-            st.info(
-                "Determination of scale of feature and uploading unique values must still be done in one piece.")
-            st.info("If these steps are not completed at the beginning, this will result in errors and the app will not run properly.!")
             for feature, scale in st.session_state["level_of_measurement_dic"].items():
                 starting_time = getTimestamp()
                 #data_restrictions_dic = dict()
@@ -152,7 +168,6 @@ if optionsDataUnderstanding == "Scale":
                             for unique_values in st.session_state.first_unique_values_dict[feature]:
                                 dictionary_values = {'name': unique_values}
                                 data.append(str(unique_values))
-                                # data.append(dictionary_values)
                                 st.session_state[f'order_of_ordinal_{feature}'] = data
                         else:
                             data = st.session_state[f'order_of_ordinal_{feature}']
@@ -164,7 +179,7 @@ if optionsDataUnderstanding == "Scale":
                         # st.session_state[f'data_restrictions_{feature}_ordinal'] = st.session_state[f'order_of_ordinal_{feature}']
 
 
-            if st.button("Upload unique values",help="This information is needed for further steps in the CRISP-DM model. Based on those values data restrictions can be modeled.",type="primary"):
+            if st.button("Upload values",help="All values must be uploaded for further processing.",type="primary"):
                 st.info("This process may take a while")
                 determinationNameUUID = 'DeterminationOfUniqueValuesOfFeature_'
                 determinationName = 'DeterminationOfUniqueValuesOfFeature'
@@ -183,8 +198,8 @@ if optionsDataUnderstanding == "Scale":
                     st.write(e)
         if st.session_state.unique_values_dict != {}:
             st.success("Unique values uploaded")
-        if st.button("Show ordered unique values"):
-            st.write(st.session_state['unique_values_dict'])
+            if st.button("Show ordered unique values"):
+                st.write(st.session_state['unique_values_dict'])
 
 
 
@@ -215,16 +230,12 @@ if optionsDataUnderstanding == "Volatility":
             with st.form("Change level of volatility for features"):
 
                 for index, row in st.session_state.dataframe_feature_names["featureName.value"].items():
-                    if f'volatility_of_feature_{row}' not in st.session_state:
-                        st.session_state[f'volatility_of_feature_{row}'] = "Low Volatility"
-                    try:
-                        _index = options.index(st.session_state[f'volatility_of_feature_{row}'])
-                    except:
-                        _index = 1
-                    st.session_state["volatility_of_features_dic"][row] = st.selectbox(row, options=options, index=2,
-                                                                                       key=f'volatility_of_features_{row}')
+                    st.session_state["volatility_of_features_dic"][row] = selectbox(row, options=options, key=f'volatility_of_features_{row}')
 
                 if st.form_submit_button("Submit", type="primary"):
+                    if None in st.session_state["volatility_of_features_dic"].values():
+                        st.error("Please select a volatility level for all features")
+                        st.stop()
                     ending_time = getTimestamp()
                     uuid_determinationVolatility = determinationActivity(host_upload, determinationName, label,starting_time, ending_time)
                     uploadDUE(host_upload,host,st.session_state["volatility_of_features_dic"], uuid_determinationVolatility, name,
@@ -366,7 +377,7 @@ if optionsDataUnderstanding == "Data Restrictions":
     starting_time = getTimestamp()
 
 
-
+    placeholder = st.empty()
 
     tab1, tab2, tab3 = st.tabs(["Cardinal", "Ordinal", "Nominal"])
     for key, values in st.session_state.level_of_measurement_dic.items():
@@ -395,39 +406,27 @@ if optionsDataUnderstanding == "Data Restrictions":
 
 
 
-                        with st.expander("Number input"):
-                            try:
-                                lower = round(st.number_input("Input value", min_value=float(
-                                    st.session_state.unique_values_dict[key][0]),key=f"lower_{key}",value =float(st.session_state[f'data_restrictions_{key}_cardinal'][0])),2)
-                                upper = round(st.number_input("Input upper value",key=f"upper_{key}",min_value=lower, max_value=float(
-                                        st.session_state.unique_values_dict[key][-1]), value =float(st.session_state[f'data_restrictions_{key}_cardinal'][-1]) ),2)
 
+                        try:
+                            lower = round(st.number_input("Input value", min_value=float(
+                                st.session_state.unique_values_dict[key][0]),key=f"lower_{key}",value =float(st.session_state[f'data_restrictions_{key}_cardinal'][0])),2)
+                            upper = round(st.number_input("Input upper value",key=f"upper_{key}",min_value=lower, max_value=float(
+                                    st.session_state.unique_values_dict[key][-1]), value =float(st.session_state[f'data_restrictions_{key}_cardinal'][-1]) ),2)
+                            if st.button("OK",key=f"data_restriction_ok_widget_{key}"):
                                 if st.session_state[f"lower_{key}"] >= st.session_state[f"upper_{key}"]:
                                     st.error("Lower bound range must be smaller than upper bound.")
-                                elif st.button("Upload", key = f"button_dataRestriction_{key}", type="primary"):
+                                else:
+
+                                    st.session_state[f'data_restrictions_{key}'] = [lower,
+                                                                                             upper]
                                     st.session_state[f'data_restrictions_{key}_cardinal'] = [lower,
                                                                                              upper]  # st.session_state[f'data_restrictions_{key}']
                                     st.session_state['data_restrictions_dict'][key] = [lower,
                                                                                 upper]  # st.session_state[f'data_restrictions_{key}']
-                            except:
-                                st.error("Lower bound range must be smaller than upper bound.")
-
-                        # TODO change input of cardinal values to number input
-
-                        step = st.number_input("Define stepsize",min_value=0.01, max_value=float(
-                                st.session_state.unique_values_dict[key][-1]), step=0.01, key =f"step_cardinal_{key}")
-                        st.session_state[f'data_restrictions_{key}_cardinal'] = st.slider(
-                            f"Select Range for Cardinal Value {key}",
-                            value=st.session_state[f'data_restrictions_{key}_cardinal'],
-                            min_value=float(
-                                st.session_state.unique_values_dict[key][0]),
-                            max_value=float(
-                                st.session_state.unique_values_dict[key][-1]),
-                            key=f'data_restrictions_{key}',
-                            on_change=update_data_restrictions_cardinal,
-                            step=float(step),
-                            args=(key,))
-
+                                    update_data_restrictions_cardinal(key)
+                        except Exception as e:
+                            st.write(e)
+                            st.error("Lower bound range must be smaller than upper bound.")
 
         if values == 'Ordinal':
             with tab2:
@@ -477,18 +476,29 @@ if optionsDataUnderstanding == "Data Restrictions":
 
 
     is_unique = False
-    if st.session_state['data_restrictions_dict'] == {}:
-        st.stop()
-    else:
-        st.write("Defined Data Restriction:", st.session_state['data_restrictions_dict'])
-        with st.form("Insert additional label for the defined Data Restriction"):
-            st.info("This label should be chosen wisely. It will be shown in the options for the Data Restrictions. Therefore it is advised to add as much information as possible. If a label is used more than once it might lead to problems.")
-            comment_data_restriction = st.text_input("Insert additional label for the defined Data Restrictions",
-                                              help="Name your Data Restrictions in order to find it easier later. Only unique labels allowed.")
 
-            if st.form_submit_button("Upload"):
-                uploadDR(starting_time, host_upload, host, comment_data_restriction)
-                st.success("Data Restriction uploaded")
+    if st.session_state['data_restrictions_dict'] == {}:
+     st.stop()
+    else:
+        st.write("-------------")
+        with st.expander("Defined Data Restriction"):
+            st.write(st.session_state['data_restrictions_dict'])
+        with placeholder.container():
+
+            with st.form("Insert label for the defined Data Restriction"):
+                st.info("This label will be shown for the defined Data Restrictions. If a label is used more than once it might lead to problems.")
+                comment_data_restriction = st.text_input("Insert label for the defined Data Restrictions",
+                                                  help="Name your Data Restrictions in order to find it easier later.")
+
+                if st.form_submit_button("Upload Data Restrictions", type="primary", help="Upload the defined Data Restrictions."):
+                    uploadDR(starting_time, host_upload, host, comment_data_restriction)
+
+
+                    dr_success = st.success("Data Restriction uploaded")
+                    time.sleep(2)
+                    dr_success.empty()
+                    st.experimental_rerun()
+
 
 
 
@@ -522,7 +532,7 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
 
             if values == 'Cardinal':
 
-                with st.expander(f"Define sensor precision for {key}"):
+                with st.expander(f"Define sensor precision for {key} in percent", help="the measured value is correct within the defined percentage range"):
 
                     if "feature_sensor_precision_dict" not in st.session_state:
                         st.session_state[f"feature_sensor_precision_dict"] = dict()
@@ -542,7 +552,6 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
                                                                                           on_change=update_feature_sensor_precision,
                                                                                           args=(key,)),2)
         try:
-            st.write(st.session_state["feature_sensor_precision_dict"])
             st.info("Sensor precision for feature will be uploaded if bigger 0.00")
         except:
             st.info("No Cardinal values determined in this dataset")
@@ -554,6 +563,9 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
                       uuid_determinationSensorPrecision, name,
                       rprovName)
             st.session_state["loaded_feature_sensor_precision_dict"] = st.session_state["feature_sensor_precision_dict"]
+            Sensor_success = st.success("Sensor Precision uploaded")
+            time.sleep(2)
+            Sensor_success.empty()
             st.experimental_rerun()
 
 

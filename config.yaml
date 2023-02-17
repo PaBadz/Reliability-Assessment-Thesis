@@ -12,10 +12,13 @@ credentials:
       email: melsby@gmail.com
       name: Mel
       password: $2b$12$DfnrBaYRnH43mjjbLBigHOo3rTlj8rB.sHdWfjJeF4./nQS7MOzyK
+    pascal:
+      email: pascal@badzura.de
+      name: Pascal
+      password: $2b$12$M5HJIOP5v72a6oxj9t5xF.z77YaeRiPxejFfAPyFI..VkbLwB3/H2
     user:
       email: User
       name: User
       password: $2b$12$2S7eTDjJSIa7ZSsSowPxCO20YmaXX/kTyFx5laEpKWRRdxTMkGi0O
 preauthorized:
-  emails:
-
+  emails: pascal@badzura.de rainhard@schwarz.de tobias@meier.de

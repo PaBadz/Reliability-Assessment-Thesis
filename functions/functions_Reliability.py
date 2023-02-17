@@ -74,14 +74,14 @@ def getPerturbationRecommendations(host):
 
 
 def getPerturbationOptions(host):
-    query = (f"""    SELECT ?featureID ?featureName ?DataUnderstandingEntityID ?DUA ?values ?label{{
+    query = (f"""    SELECT ?featureID ?featureName ?PerturbationOptionID ?DUA ?values ?label{{
     ?featureID rdf:type rprov:Feature .
     ?featureID rdfs:label ?featureName.
-    ?DataUnderstandingEntityID rdf:type owl:NamedIndividual.
-	?DataUnderstandingEntityID rprov:perturbedFeature ?featureID.
-    ?DataUnderstandingEntityID rprov:generationAlgorithm ?DUA.
-    ?DataUnderstandingEntityID rprov:values ?values.
-    ?DataUnderstandingEntityID rdfs:label ?label.
+    ?PerturbationOptionID rdf:type owl:NamedIndividual.
+	?PerturbationOptionID rprov:perturbedFeature ?featureID.
+    ?PerturbationOptionID rprov:generationAlgorithm ?DUA.
+    ?PerturbationOptionID rprov:values ?values.
+    ?PerturbationOptionID rdfs:label ?label.
     }}
     """)
 
@@ -89,7 +89,7 @@ def getPerturbationOptions(host):
     results_feature_PerturbationOption = pd.json_normalize(results_feature_PerturbationOption["results"]["bindings"])
 
 
-    results_feature_PerturbationOption = results_feature_PerturbationOption[["featureID.value","featureName.value","DataUnderstandingEntityID.value","DUA.value", "values.value", "label.value"]]
+    results_feature_PerturbationOption = results_feature_PerturbationOption[["featureID.value","featureName.value","PerturbationOptionID.value","DUA.value", "values.value", "label.value"]]
     results_feature_PerturbationOption.columns = ['FeatureID','FeatureName', 'DataUnderstandingEntity', 'PerturbationOption', "Settings","label"]
 
     return results_feature_PerturbationOption

@@ -1,6 +1,5 @@
 import streamlit as st
 def update_data_restrictions_cardinal(key):
-    st.session_state[f'data_restrictions_{key}_cardinal'] = st.session_state[f'data_restrictions_{key}']
     st.session_state['data_restrictions_dict'][key] = st.session_state[f'data_restrictions_{key}']
 
 
@@ -31,7 +30,6 @@ def defaultValuesCardinal(key):
         st.info("Feature is not Cardinal")
     try:
         del st.session_state["data_restrictions_dict"][key]
-        st.write("Geht nich")
     except:
         st.info("Default values already selected")
 

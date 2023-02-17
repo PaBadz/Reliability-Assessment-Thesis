@@ -16,7 +16,6 @@ def percentage_perturbation(percentage_steps, value, data_restriction):
                 perturbedList.append(float(new_value))
             else:
                 pass
-            # print(new_value)
     return perturbedList
 
 def percentage_perturbation_settings(percentage_steps, perturbation_level):

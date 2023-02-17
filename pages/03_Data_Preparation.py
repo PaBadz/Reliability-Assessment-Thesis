@@ -1,5 +1,6 @@
 import streamlit as st
 from SPARQLWrapper import SPARQLWrapper
+from streamlit_extras.colored_header import colored_header
 from streamlit_extras.switch_page_button import switch_page
 from streamlit_option_menu import option_menu
 import streamlit_nested_layout
@@ -26,6 +27,10 @@ except:
     st.info("Please select a database first")
     st.stop()
 
+data_preparation_options = option_menu("Data Preparation Options", ["Binned Features", "Missing Values"],
+                                       icons=['collection', 'slash-circle'],
+                                       menu_icon="None", default_index=0, orientation="horizontal"
+                                       )
 
 try:
     getDefault(host)
@@ -33,11 +38,12 @@ try:
 except:
     st.error("Please select other dataset or refresh page")
     st.stop()
-try:
-    getAttributesDataPreparation(host)
-except:
-    st.error("Please select other dataset or refresh page")
-    st.stop()
+with st.expander("Show Information"):
+    try:
+        getAttributesDataPreparation(host)
+    except:
+        st.error("Please select other dataset or refresh page")
+        st.stop()
 
 if "data_restriction_final" not in st.session_state:
     st.session_state.data_restriction_final = st.session_state.unique_values_dict
@@ -46,24 +52,24 @@ if "data_restriction_final" not in st.session_state:
 if st.session_state.dataframe_feature_names.empty:
     st.stop()
 
-data_preparation_options = option_menu("Data Preparation Options", ["Binned Features", "Missing Values"],
-                                       icons=['collection', 'slash-circle'],
-                                       menu_icon="None", default_index=0, orientation="horizontal")
 
 
 if data_preparation_options == "Binned Features":
     if "Cardinal" not in set(st.session_state.DF_feature_scale_name["scale.value"].to_list()):
         st.info("No Cardinal values determined in this dataset, therefore no binning can be performed")
 
+    colored_header(
+        label="Binning of cardinal features",
+        description="If feature was binned, insert how it was done.",
+        color_name="red-70",
+    )
 
-    st.write("""## Binning of cardinal features""")
-    st.write("""Only Binning by distance is implemented as of now.\n
-             Please insert upper and lower bound and define amount of bins.
-             Below you can see the generated bins.""")
+    st.session_state["loaded_bin_dict"]
 
     if "bin_dict" not in st.session_state:
         st.session_state.bin_dict = dict()
     if st.session_state["loaded_bin_dict"] == {}:
+        st.write("Please insert upper and lower bound and define amount of bins.")
         for key, values in st.session_state.level_of_measurement_dic.items():
             if values == 'Cardinal':
                 if f"bin_{key}" not in st.session_state:
@@ -81,7 +87,7 @@ if data_preparation_options == "Binned Features":
                             bins = st.number_input("Select amount of bins", min_value=int(1), key=f"amount_bin_{key}")
                             step = (upper_border - lower_border) / (bins)
 
-                            if st.button("Save", key=f"bin_{key}_button"):
+                            if st.button("Ok", key=f"bin_{key}_button"):
                                 if bins > 1:
                                     st.session_state[f"bin_{key}"] = [
                                         round(lower_border + n * step, 1) for n in
@@ -105,10 +111,10 @@ if data_preparation_options == "Binned Features":
 
 
 
-
-
-        st.write(st.session_state.bin_dict)
-        if st.button("Submit bins", key="button_bins"):
+        st.write("------------------")
+        with st.expander("Show bins"):
+            st.write(st.session_state.bin_dict)
+        if st.button("Upload bins", key="button_bins", type="primary"):
             determinationName = 'DocuOfRangeOfBinnedFeature'
             label = '"DocuOfRangeOfBinnedFeature"@en'
 
@@ -123,9 +129,8 @@ if data_preparation_options == "Binned Features":
             uploadBinValues(host_upload, host, st.session_state["bin_dict"], uuid_determinationBin, rprovName)
             st.experimental_rerun()
     else:
-        # st.write(st.session_state["DF_bin_dict"])
         st.markdown("""
-                       **Here you can see how what bins were generatedfor each feature**
+                       **Here you can see how bins were generated for each feature**
 
                        If you want to change click on the button below.
                        """)
@@ -133,7 +138,7 @@ if data_preparation_options == "Binned Features":
 
         if st.button("Change bins"):
             deleteWasGeneratedByDPA(host_upload, st.session_state["DF_bin_dict"])
-            del st.session_state["bin_dict"]
+            del st.session_state["loaded_bin_dict"]
             del st.session_state["DF_bin_dict"]
 
             st.experimental_rerun()
@@ -142,16 +147,18 @@ elif data_preparation_options == "Missing Values":
 
     determinationNameUUID = 'DocuOfHandlingOfMissingValues'
     determinationName = 'DocuOfHandlingOfMissingValues'
-    label = 'detMissingValues@en'
+    label = 'MissingValues'
 
     ending_time = getTimestamp()
 
     starting_time = getTimestamp()
 
+    colored_header(
+        label="Missing values of features",
+        description="If missing values of feature were replaced, insert how it was done.",
+        color_name="red-70",
+    )
 
-
-    st.markdown("""## How were missing data replaced?""")
-    st.info("If missing values of feature were replaced, insert how it was done. If not, leave empty.")
     tab1, tab2, tab3 = st.tabs(["Cardinal", "Ordinal", "Nominal"])
 
     if st.session_state.loaded_missingValues_of_features_dic=={}:
@@ -186,7 +193,9 @@ elif data_preparation_options == "Missing Values":
                         st.session_state[f'missingValues_{key}'] = st.text_input("How were missing values replaced?", value=st.session_state[f'missingValues_{key}'],key=(f'missingValues_{key}_widget'))
                         if st.session_state[f'missingValues_{key}'] != "":
                             st.session_state["missingValues_of_features_dic"][key]=st.session_state[f'missingValues_{key}']
-        st.write(st.session_state["missingValues_of_features_dic"])
+        st.write("------------------")
+        with st.expander("Show missing values"):
+            st.write(st.session_state["missingValues_of_features_dic"])
         if st.button("Submit", type="primary"):
             uuid_DocuOfHandlingOfMissingValues = determinationActivity(host_upload, determinationName,
                                                                  label,

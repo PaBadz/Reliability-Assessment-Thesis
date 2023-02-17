@@ -111,7 +111,7 @@ def uploadMissingValues(sparqlupdate,host,dic , uuid_DeterminationOfScaleOfFeatu
             result_2 = pd.json_normalize(results_update["results"]["bindings"])
 
             query = (f"""INSERT DATA {{<urn:uuid:{uuid_ScaleOfFeature}> rdf:type rprov:{name}, owl:NamedIndividual;
-                          rdfs:label "detMissingValues {key}"@en;
+                          rdfs:label "missing values {key}"@en;
                           rdfs:comment "{value}";
                           rprov:toFeature <{result_2["subject.value"][0]}>;
                           rprov:wasGeneratedByDPA  <urn:uuid:{uuid_DeterminationOfScaleOfFeature}>;
@@ -156,18 +156,18 @@ def upload_features(sparqlupdate, uuid_Feature, features, uuid_determinationFeat
     query = (f"""INSERT DATA {{<urn:uuid:{uuid_Feature}> rdf:type rprov:Feature, owl:NamedIndividual;
                                         rdfs:label '{features}';
                                         rprov:wasGeneratedByDUA <urn:uuid:{uuid_determinationFeature}>;
-                                        rprov:isValid true.}}""")
+                                        }}""")
 
     sparqlupdate.setQuery(prefix + query)
     sparqlupdate.setMethod(POST)
     sparqlupdate.query()
+    return True
 
 def get_feature_names(host):
     query = (f"""
     SELECT ?featureID ?featureName WHERE {{
       ?featureID rdf:type rprov:Feature .
       ?featureID rdfs:label ?featureName.
-      ?featureID rprov:isValid true.
     }}
     """)
     try:
@@ -195,15 +195,12 @@ def uploadUniqueValues(sparqlupdate,host,dic, level_measurement, uuid_Determinat
 
             result_2 = pd.json_normalize(results_update["results"]["bindings"])
 
-            #sparqlupdate = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
-
             query = (f"""INSERT DATA {{<urn:uuid:{uuid_UniqueValues_entity}> rdf:type rprov:{name}, owl:NamedIndividual;
                               rprov:{rprovName} <urn:uuid:{uuid_UniqueValues_seq}>;
                               rdfs:label "{rprovName} {key}";
                               rprov:toFeature <{result_2["subject.value"][0]}>;
                               rprov:wasGeneratedByDUA  <urn:uuid:{uuid_DeterminationUniqueValues}>;
                               prov:generatedAtTime '{time}'^^xsd:dateTime;
-                              rprov:isValid true.
                             }}""")
             sparqlupdate.setQuery(prefix+query)
             sparqlupdate.setMethod(POST)
@@ -262,7 +259,6 @@ def getUniqueValuesSeq(host):
     ?container ?containerMembershipProperty ?item.
     ?sub rprov:toFeature ?feature.
     ?feature rdfs:label ?label.
-    ?sub rprov:isValid true.
     FILTER(?containerMembershipProperty!= rdf:type)
   }}
     """)
@@ -285,6 +281,7 @@ def getApproach(host):
                             ?DataUnderstandingEntityID rprov:wasGeneratedByBUA ?BUA.
 
                             FILTER(?rprov!=owl:NamedIndividual).
+                            FILTER(?rprov!=owl:Class).
                            FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
                         }}""")
     results_approach = get_connection_fuseki(host, (prefix + query))
@@ -523,7 +520,7 @@ def getBinValuesSeq(host):
     ?DPE rprov:toFeature ?feature.
     ?feature rdfs:label ?label.
     FILTER(?containerMembershipProperty!= rdf:type).
-    FILTER NOT EXISTS{{(?DPE prov:invalidatedAtTime ?time)}}.
+    FILTER NOT EXISTS{{?DPE prov:invalidatedAtTime ?time}}.
     }}
     """)
 
@@ -727,18 +724,71 @@ def getAttributes(host):
         st.session_state["loaded_feature_sensor_precision_dict"] = dict()
         st.session_state["DF_feature_sensor_precision"] = pd.DataFrame()
 
+
     try:
         st.session_state["loaded_missingValues_of_features_dic"], st.session_state[
         "DF_feature_missing_values_dic"] = getMissingValues(host)
+        if st.session_state["loaded_missingValues_of_features_dic"] == {}:
+            st.warning("No missing values determined")
     except:
-        st.warning("No missing values determined")
+        pass
 
     try:
         st.session_state["loaded_bin_dict"], st.session_state["DF_bin_dict"] = getBinValuesSeq(host)
     except Exception as e:
         st.warning("No bins determined")
         st.session_state["loaded_bin_dict"] = dict()
-    st.info("warnings will be deleted in the final version")
+
+
+def getAttributesDeployment(host):
+
+    if not any(key.startswith('level_of_measurement_') for key in st.session_state):
+        st.session_state["dataframe_feature_names"] = get_feature_names(host)
+    if st.session_state["dataframe_feature_names"].empty:
+        st.warning("No features defined. If this is the first time a new dataset is uploaded please define features, a scale for each feature and upload the unique values.")
+
+    try:
+        st.session_state["level_of_measurement_dic"], st.session_state["DF_feature_scale_name"] = getFeatureScale(host)
+        if st.session_state["level_of_measurement_dic"] == {}:
+            st.warning(
+                "No feature scales determined. If this is the first time a new dataset is uploaded please define scale for each feature and upload the unique values.")
+        else:
+            for key, value in st.session_state["level_of_measurement_dic"].items():
+                st.session_state[f'level_of_measurement_{key}'] = value
+    except Exception as e:
+        pass
+
+
+    try:
+        st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
+    except Exception as e:
+        st.warning("No Unique Values in database. If this is the first time a new dataset is uploaded please upload the unique values.")
+        st.session_state["unique_values_dict"] = {}
+
+    try:
+        st.session_state["volatility_of_features_dic"], st.session_state[
+            "DF_feature_volatility_name"] = getFeatureVolatility(host)
+    except Exception as e:
+        st.session_state["volatility_of_features_dic"] = dict()
+
+
+    try:
+        st.session_state["loaded_feature_sensor_precision_dict"], st.session_state[
+            "DF_feature_sensor_precision"] = getSensorPrecision(host)
+    except Exception as e:
+        st.session_state["loaded_feature_sensor_precision_dict"] = dict()
+        st.session_state["DF_feature_sensor_precision"] = pd.DataFrame()
+
+    try:
+        st.session_state["loaded_missingValues_of_features_dic"], st.session_state[
+        "DF_feature_missing_values_dic"] = getMissingValues(host)
+    except:
+        pass
+
+    try:
+        st.session_state["loaded_bin_dict"], st.session_state["DF_bin_dict"] = getBinValuesSeq(host)
+    except Exception as e:
+        st.session_state["loaded_bin_dict"] = dict()
 
 def getAttributesDataUnderstanding(host):
 
@@ -780,7 +830,7 @@ def getAttributesDataUnderstanding(host):
         st.warning("No sensor precision determined")
         st.session_state["loaded_feature_sensor_precision_dict"] = dict()
         st.session_state["DF_feature_sensor_precision"] = pd.DataFrame()
-    st.info("warnings will be deleted in the final version")
+
 
 
 
@@ -802,8 +852,6 @@ def getAttributesDataPreparation(host):
 
     except Exception as e:
         pass
-        #st.session_state["DF_feature_scale_name"] = pd.DataFrame()
-        #st.session_state["level_of_measurement_dic"] = dict()
 
     try:
         st.session_state["unique_values_dict"] = getUniqueValuesSeq(host)
@@ -824,4 +872,3 @@ def getAttributesDataPreparation(host):
     except Exception as e:
         st.warning("No bins determined")
         st.session_state["loaded_bin_dict"] = dict()
-    st.info("warnings will be deleted in the final version")
