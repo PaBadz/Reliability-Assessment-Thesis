@@ -22,12 +22,9 @@ from functions.perturbation_algorithms_ohne_values import percentage_perturbatio
 login()
 try:
     if st.session_state.username == "user":
-        page = st.button("Deployment")
-        if page:
-            switch_page("Deployment")
         st.stop()
 except:
-    st.warning("Please Login")
+    st.warning("Please switch to Deployment Page")
     st.stop()
 
 try:

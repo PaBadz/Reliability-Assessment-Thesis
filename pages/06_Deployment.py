@@ -752,7 +752,7 @@ if menu_perturbation == 'Perturbation Option':
 
 
         # data_restriction = st.selectbox("Select Data Restriction", options=savedRestrictions["DataRestrictionActivity"].unique())
-        st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
+        st.session_state["data_restriction_final_deployment"] = st.session_state.unique_values_dict.copy()
 
 
         for feature_name, level_of_scale in st.session_state["level_of_measurement_dic"].items():
@@ -780,7 +780,7 @@ if menu_perturbation == 'Perturbation Option':
                 pass
 
             try:
-                st.session_state.data_restriction_final.update(st.session_state.data_restriction_deployment)
+                st.session_state.data_restriction_final_deployment.update(st.session_state.data_restriction_deployment)
             except Exception as e:
                 pass
 
@@ -790,7 +790,7 @@ if menu_perturbation == 'Perturbation Option':
 
     except Exception as e:
         st.write(e)
-        st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
+        st.session_state["data_restriction_final_deployment"] = st.session_state.unique_values_dict.copy()
 
 
     colored_header(
@@ -823,7 +823,7 @@ if menu_perturbation == 'Perturbation Option':
 
     with st.expander("Show Data Restriction values"):
 
-        st.write("Data Restriction", st.session_state.data_restriction_final)
+        st.write("Data Restriction", st.session_state.data_restriction_final_deployment)
 
 
     # Define Algorithmns
@@ -912,23 +912,23 @@ try:
                             with col_cardinal:
                                 dic[feature_name] = st.number_input(f"Select Value for {feature_name}",
                                                                     min_value=float(
-                                                                        st.session_state.data_restriction_final[
+                                                                        st.session_state.data_restriction_final_deployment[
                                                                             feature_name][0]),
                                                                     max_value=float(
-                                                                        st.session_state.data_restriction_final[
+                                                                        st.session_state.data_restriction_final_deployment[
                                                                             feature_name][-1]),
                                                                     key=f"add_data_{feature_name}")
 
                         if level_of_scale == "Ordinal":
                             with col_ordinal:
                                 dic[feature_name] = st.selectbox(f"Select Value for {feature_name}",
-                                                                 options=st.session_state.data_restriction_final[
+                                                                 options=st.session_state.data_restriction_final_deployment[
                                                                      feature_name],
                                                                  key=f"add_data_{feature_name}")
                         if level_of_scale == "Nominal":
                             with col_nominal:
                                 dic[feature_name] = st.selectbox(f"Select Value for {feature_name}",
-                                                                 options=st.session_state.data_restriction_final[
+                                                                 options=st.session_state.data_restriction_final_deployment[
                                                                      feature_name],
                                                                  key=f"add_data_{feature_name}")
                     if st.form_submit_button("Submit Data", type='primary'):
@@ -983,7 +983,7 @@ try:
         gb.configure_selection(selection_mode="multiple", use_checkbox=False, rowMultiSelectWithClick=True)
         gb.configure_auto_height(autoHeight=True)
 
-        for feature_name, value in st.session_state.data_restriction_final.items():
+        for feature_name, value in st.session_state.data_restriction_final_deployment.items():
             if st.session_state.level_of_measurement_dic[feature_name] != 'Cardinal':
                 gb.configure_column(f"{feature_name}", editable=True, cellEditor="agSelectCellEditor",
                                     cellEditorPopup=True, cellEditorParams={"values": value},
@@ -1163,7 +1163,7 @@ try:
                                                 perturbedList[algorithm_keys] = (
                                                     percentage_perturbation(method[algorithm_keys]["steps"],
                                                                             selected_rows[i][k][0],
-                                                                            st.session_state.data_restriction_final[
+                                                                            st.session_state.data_restriction_final_deployment[
                                                                                 column]))
 
 
@@ -1171,7 +1171,7 @@ try:
                                                 try:
                                                     perturbedList[algorithm_keys] = (
                                                         percentage_perturbation(5, selected_rows[i][k][0],
-                                                                                st.session_state.data_restriction_final[
+                                                                                st.session_state.data_restriction_final_deployment[
                                                                                     column]))
                                                 except Exception as e:
                                                     st.error(f"ERROR! Please change! {e}")
@@ -1179,7 +1179,7 @@ try:
                                             elif algorithm_keys == '10% perturbation':
                                                 perturbedList[algorithm_keys] = (
                                                     percentage_perturbation(10, selected_rows[i][k][0],
-                                                                            st.session_state.data_restriction_final[
+                                                                            st.session_state.data_restriction_final_deployment[
                                                                                 column]))
 
                                             elif algorithm_keys == 'Sensor Precision':
@@ -1187,13 +1187,13 @@ try:
                                                     sensorPrecision(method[algorithm_keys]["sensorPrecision"],
                                                                     method[algorithm_keys]["steps"],
                                                                     selected_rows[i][k][0],
-                                                                    st.session_state.data_restriction_final[column]))
+                                                                    st.session_state.data_restriction_final_deployment[column]))
                                             elif algorithm_keys == 'Fixed amount':
                                                 perturbedList[algorithm_keys] = (
                                                     fixedAmountSteps(method[algorithm_keys]["amount"],
                                                                      method[algorithm_keys]["steps"],
                                                                      selected_rows[i][k][0],
-                                                                     st.session_state.data_restriction_final[column]))
+                                                                     st.session_state.data_restriction_final_deployment[column]))
                                             elif algorithm_keys == 'Range perturbation':
                                                 perturbedList[algorithm_keys] = (
                                                     perturbRange(method[algorithm_keys]["lowerBound"],
@@ -1224,7 +1224,7 @@ try:
                                                     perturbedList[algorithm_keys] = (
                                                         perturbInOrder(method[algorithm_keys]["steps"],
                                                                        selected_rows[i][k][0],
-                                                                       st.session_state.data_restriction_final[
+                                                                       st.session_state.data_restriction_final_deploymental[
                                                                            column]))
 
 
@@ -1237,7 +1237,7 @@ try:
                                                 perturbedList[algorithm_keys] = (
                                                     perturbAllValues(  # method[algorithm_keys]["value"],
                                                         selected_rows[i][k][0],
-                                                        st.session_state.data_restriction_final[column]))
+                                                        st.session_state.data_restriction_final_deployment[column]))
                                 except Exception as e:
                                     st.error(e)
                                 perturbed_value_list[column] = perturbedList

@@ -103,27 +103,27 @@ if st.session_state.username == "user":
     # if st.button('Load all datasets from Fuseki', type='primary'):
         # Get all datasets from fuseki
     get_dataset_from_fuseki()
-    # sparql = SPARQLWrapper(host_dataset_first_initialize)
-    # # sparql.setCredentials("admin", "vesB24jhOU4zxNy")
-    # sparql.setReturnFormat(JSON)
-    # fuseki_datasets = sparql.query().convert()
-    #
-    # if 'fueski_dataset_options' not in st.session_state:
-    #     st.session_state['fueski_dataset_options'] = ["None"]
-    #     for dataset in fuseki_datasets["datasets"]:
-    #         st.session_state['fueski_dataset_options'].append(dataset["ds.name"])
-    #
-    # if 'fueski_dataset_options' not in st.session_state:
-    #     st.stop()
-    #
-    # if 'fuseki_database' not in st.session_state:
-    #     st.session_state['fuseki_database'] = "None"
-    # index = st.session_state['fueski_dataset_options'].index(st.session_state['fuseki_database'])
-    #
-    # st.session_state.fuseki_database = st.selectbox('Please insert a name for the database', index=index,
-    #                                                 options=st.session_state['fueski_dataset_options'],
-    #                                                 on_change=set_database, key='name_fuseki_database')
-    #
+    sparql = SPARQLWrapper(host_dataset_first_initialize)
+    # sparql.setCredentials("admin", "vesB24jhOU4zxNy")
+    sparql.setReturnFormat(JSON)
+    fuseki_datasets = sparql.query().convert()
+
+    if 'fueski_dataset_options' not in st.session_state:
+        st.session_state['fueski_dataset_options'] = ["None"]
+        for dataset in fuseki_datasets["datasets"]:
+            st.session_state['fueski_dataset_options'].append(dataset["ds.name"])
+
+    if 'fueski_dataset_options' not in st.session_state:
+        st.stop()
+
+    if 'fuseki_database' not in st.session_state:
+        st.session_state['fuseki_database'] = "None"
+    index = st.session_state['fueski_dataset_options'].index(st.session_state['fuseki_database'])
+
+    st.session_state.fuseki_database = st.selectbox('Please insert a name for the database', index=index,
+                                                    options=st.session_state['fueski_dataset_options'],
+                                                    on_change=set_database, key='name_fuseki_database')
+
     host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
     host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
     st.warning("Please switch to Deployment page")

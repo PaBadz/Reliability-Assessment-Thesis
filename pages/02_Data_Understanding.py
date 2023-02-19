@@ -22,12 +22,9 @@ from functions.fuseki_connection import login, getAttributes, getTimestamp, dete
 login()
 try:
     if st.session_state.username == "user":
-        page = st.button("Deployment")
-        if page:
-            switch_page("Deployment")
         st.stop()
 except:
-    st.warning("Please Login")
+    st.warning("Please switch to Deployment Page")
     st.stop()
 try:
     host = f"http://localhost:3030{st.session_state.fuseki_database}/sparql"
@@ -330,7 +327,7 @@ if optionsDataUnderstanding == "Data Restrictions":
                                                               value=float(
                                                                   st.session_state[f'data_restrictions_{key}_cardinal'][
                                                                       -1])), 2)
-                                if st.button("OK", key=f"data_restriction_ok_widget_{key}"):
+                                if st.button("Save", key=f"data_restriction_ok_widget_{key}", type="primary"):
                                     if st.session_state[f"lower_{key}"] >= st.session_state[f"upper_{key}"]:
                                         st.error("Lower bound range must be smaller than upper bound.")
                                     else:
@@ -342,6 +339,7 @@ if optionsDataUnderstanding == "Data Restrictions":
                                         st.session_state['data_restrictions_dict'][key] = [lower,
                                                                                            upper]  # st.session_state[f'data_restrictions_{key}']
                                         update_data_restrictions_cardinal(key)
+                                        st.success(f"Data Restriction for {key} saved, please upload when finished.")
                             except Exception as e:
                                 st.write(e)
                                 st.error("Lower bound range must be smaller than upper bound.")

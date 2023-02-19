@@ -13,15 +13,15 @@ from functions.functions import add_parameter_ui, get_classifier
 from functions.fuseki_connection import login
 
 login()
-try:
-    if st.session_state.username == "user":
-        page = st.button("Deployment")
-        if page:
-            switch_page("Deployment")
-        st.stop()
-except:
-    st.warning("Please Login")
-    st.stop()
+# try:
+#     if st.session_state.username == "user":
+#         page = st.button("Deployment")
+#         if page:
+#             switch_page("Deployment")
+#         st.stop()
+# except:
+#     st.warning("Please Login")
+#     st.stop()
 
 try:
     host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")

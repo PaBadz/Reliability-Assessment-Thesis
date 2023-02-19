@@ -13,12 +13,9 @@ from functions.fuseki_connection import login, getAttributes, getTimestamp, uplo
 login()
 try:
     if st.session_state.username == "user":
-        page = st.button("Deployment")
-        if page:
-            switch_page("Deployment")
         st.stop()
 except:
-    st.warning("Please Login")
+    st.warning("Please switch to Deployment Page")
     st.stop()
 
 
@@ -105,7 +102,7 @@ if data_preparation_options == "Binned Features":
                         if st.session_state[f"lower_border_{key}"] >= st.session_state[f"upper_border_{key}"]:
                             st.error("Lower bound range must be smaller than upper bound.")
                         else:
-                            bins = st.number_input("Select amount of bins", min_value=int(1), key=f"amount_bin_{key}")
+                            bins = st.number_input("Select amount of bins", min_value=int(2), key=f"amount_bin_{key}")
                             step = (upper_border - lower_border) / (bins)
 
                             if st.button("Save", key=f"bin_{key}_button"):
