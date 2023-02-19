@@ -26,9 +26,14 @@ except:
 try:
     host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
     host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
+    if st.session_state.fuseki_database == "None":
+        st.error("Select dataset")
+        st.stop()
 except:
-    st.info("Please select a database first")
+
     st.stop()
+
+
 
 tab1, tab2 = st.tabs(["Data", "Model"])
 

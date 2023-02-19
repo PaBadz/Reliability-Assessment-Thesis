@@ -10,7 +10,7 @@ def update_data_restrictions_ordinal(key):
 
 def update_data_restrictions_nominal(key):
     st.session_state[f'data_restrictions_{key}_nominal'] = st.session_state[f'data_restrictions_{key}']
-    st.session_state['data_restrictions_dict'][key] = st.session_state[f'data_restrictions_{key}']
+    # st.session_state['data_restrictions_dict'][key] = st.session_state[f'data_restrictions_{key}']
 
 
 

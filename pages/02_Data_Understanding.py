@@ -32,6 +32,9 @@ except:
 try:
     host = f"http://localhost:3030{st.session_state.fuseki_database}/sparql"
     host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
+    if st.session_state.fuseki_database == "None":
+        st.error("Select dataset")
+        st.stop()
 except Exception as e:
     st.info(e,"Please select a database first")
     st.stop()
@@ -50,13 +53,17 @@ optionsDataUnderstanding = option_menu("Data Understanding Options", ["Scale", "
                                        icons=['collection', 'arrow-down-up', 'slash-circle'],
                                        menu_icon="None", default_index=0, orientation="horizontal")
 
+
 with st.expander("Show information"):
     try:
         getAttributesDataUnderstanding(host)
     except Exception as e:
         pass
     try:
+        # TODO include data restriction in getAttributes
         uploaded_DataRestriction = getRestriction(host)
+        st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(
+            uploaded_DataRestriction["DUA.value"][0], host)
     except:
         st.warning("No Data Restrictions determined")
 
@@ -103,8 +110,7 @@ if optionsDataUnderstanding == "Scale":
 
                     st.session_state.level_of_measurement_dic[row] = selectbox(f"**{row}**", options=options,key=f'level_of_measurement_{row}_widget')
 
-
-
+                st.session_state.level_of_measurement_dic
                 # submit selected scale of measurements
                 if st.form_submit_button("Submit", type="primary"):
 
@@ -139,7 +145,7 @@ if optionsDataUnderstanding == "Scale":
                 st.warning(
                     "If these steps are not completed at the beginning, this will result in errors and the app will not run properly.!")
         colored_header(
-            label="Order of ordinal features",
+            label="Upload features",
             description="""Open the expander for the feature to change the order and upload unique values afterwards!
                         """,
             color_name="red-70",
@@ -154,6 +160,11 @@ if optionsDataUnderstanding == "Scale":
                 #data_restrictions_dic = dict()
                 data = list()
                 if scale == "Cardinal":
+                    try:
+                        float(min(st.session_state['first_unique_values_dict'][feature]))
+                    except:
+                        st.error(f"Feature {feature} is not numerical. Please change!")
+                        st.stop()
                     st.session_state['first_unique_values_dict'][feature] = [
                         min(st.session_state['first_unique_values_dict'][feature]),
                         max(st.session_state['first_unique_values_dict'][feature])]
@@ -208,6 +219,13 @@ if optionsDataUnderstanding == "Scale":
 
 if optionsDataUnderstanding == "Volatility":
 
+    try:
+        getUniqueValuesSeq(host)
+
+    except Exception as e:
+        st.error("Please upload feature values in Data Understanding Step")
+        st.stop()
+
     determinationNameUUID = 'DeterminationOfVolatilityOfFeature_'
     determinationName = 'DeterminationOfVolatilityOfFeature'
     label = "detVolatilityOfFeature"
@@ -249,260 +267,272 @@ if optionsDataUnderstanding == "Volatility":
         If you want to change the volatility levels click on the button below.
         """)
         st.write(st.session_state["volatility_of_features_dic"])
-        if st.button("Change Volatility",on_click=deleteWasGeneratedByDUA,args=(host_upload,st.session_state["DF_feature_volatility_name"])):
+        if st.button("Delete Volatility",on_click=deleteWasGeneratedByDUA,args=(host_upload,st.session_state["DF_feature_volatility_name"]),help="Old values will be invalid and new volatility levels can be created"):
             pass
 if optionsDataUnderstanding == "Data Restrictions":
+    try:
+        getUniqueValuesSeq(host)
 
-    # TODO insert option for ordinal data to be selected with slider
-
-
+    except Exception as e:
+        st.error("Please upload feature values in Data Understanding Step")
+        st.stop()
     st.markdown("""
     **Here you can see set the data restrictions for each feature**
-    
+
     Based on the level of measurement different options are available.
     * Cardinal: Must be numerical
     * Ordinal: You must create an order for the features first
     * Nominal: All values are included
     """)
-
+    uploaded_DataRestriction = getRestriction(host)
     if "data_restrictions_dict" not in st.session_state:
-        st.session_state["data_restrictions_dict"] = dict()
+        st.session_state.data_restrictions_dict = dict()
+    if st.session_state['data_restrictions_dict'] is None:
+        st.session_state['data_restrictions_dict'] = dict()
+    if uploaded_DataRestriction.empty:
+        tab1, tab2, tab3 = st.tabs(["Cardinal", "Ordinal", "Nominal"])
+        for key, values in st.session_state.level_of_measurement_dic.items():
 
+
+            data_restrictions_dic = dict()
+            data = list()
+            if values == 'Cardinal':
+                with tab1:
+                    with st.expander(f"Define Data Restrictions for ***{key}***"):
+                        col1, col2, col3 = st.columns([0.05, 10, 0.5])
+                        with col2:
+
+                            # mit is digit prüfen ob int oder float
+                            if f'data_restrictions_{key}_cardinal' not in st.session_state:
+                                defaultValuesCardinal(key)
+
+
+
+                            try:
+                                if key in st.session_state.data_restrictions_dict.keys():
+                                    st.session_state[f'data_restrictions_{key}_cardinal'] = [float(s) for s in
+                                                                                             st.session_state.data_restrictions_dict[
+                                                                                                 key]]
+                            except:
+                                pass
+
+                            if st.button(f"Default Values for {key}", key=f'defaultValuesCardinal_{key}',
+                                         type="secondary"):
+                                defaultValuesCardinal(key)
+
+                            try:
+                                lower = round(st.number_input("Input value", min_value=float(
+                                    st.session_state.unique_values_dict[key][0]), key=f"lower_{key}", value=float(
+                                    st.session_state[f'data_restrictions_{key}_cardinal'][0])), 2)
+                                upper = round(st.number_input("Input upper value", key=f"upper_{key}", min_value=lower,
+                                                              max_value=float(
+                                                                  st.session_state.unique_values_dict[key][-1]),
+                                                              value=float(
+                                                                  st.session_state[f'data_restrictions_{key}_cardinal'][
+                                                                      -1])), 2)
+                                if st.button("OK", key=f"data_restriction_ok_widget_{key}"):
+                                    if st.session_state[f"lower_{key}"] >= st.session_state[f"upper_{key}"]:
+                                        st.error("Lower bound range must be smaller than upper bound.")
+                                    else:
+
+                                        st.session_state[f'data_restrictions_{key}'] = [lower,
+                                                                                        upper]
+                                        st.session_state[f'data_restrictions_{key}_cardinal'] = [lower,
+                                                                                                 upper]  # st.session_state[f'data_restrictions_{key}']
+                                        st.session_state['data_restrictions_dict'][key] = [lower,
+                                                                                           upper]  # st.session_state[f'data_restrictions_{key}']
+                                        update_data_restrictions_cardinal(key)
+                            except Exception as e:
+                                st.write(e)
+                                st.error("Lower bound range must be smaller than upper bound.")
+
+            if values == 'Ordinal':
+                with tab2:
+                    with st.expander(f"Define Data Restrictions for ***{key}***"):
+                        col1, col2, col3 = st.columns([0.05, 10, 0.5])
+                        with col2:
+
+                            if f'data_restrictions_{key}_ordinal' not in st.session_state:
+                                defaultValuesOrdinal(key)
+                            try:
+                                if key in st.session_state.data_restrictions_dict.keys():
+                                    st.session_state[f'data_restrictions_{key}_ordinal'] = [s for s in
+                                                                                            st.session_state.data_restrictions_dict[
+                                                                                                key]]
+                            except:
+                                pass
+
+                            if st.button(f"Default Values for {key}", key=f'defaultValuesOrdinal_{key}'):
+                                defaultValuesOrdinal(key)
+                            st.session_state[f'data_restrictions_{key}_ordinal'] = st.multiselect(
+                                f"Select Values for Ordinal Value {key}",
+                                options=st.session_state[f'data_restrictions_{key}_ordinal'],
+                                default=st.session_state[f'data_restrictions_{key}_ordinal'],
+                                key=f'data_restrictions_{key}',
+                                on_change=update_data_restrictions_ordinal,
+                                args=(key,))
+                            st.markdown("""---""")
+
+            if values == 'Nominal':
+                with tab3:
+                    with st.expander(f"Define Data Restrictions for ***{key}***"):
+                        col1, col2, col3 = st.columns([0.05, 10, 0.5])
+                        with col2:
+
+                            if f'data_restrictions_{key}_nominal' not in st.session_state:
+                                defaultValuesNominal(key)
+                            if st.button(f"Default Values for {key}", key=f'defaultValuesNominal_{key}'):
+                                defaultValuesNominal(key)
+                            st.session_state[f'data_restrictions_{key}_nominal'] = st.multiselect(
+                                f"Select Values for Nominal Value {key}",
+                                options=st.session_state.unique_values_dict[key],
+                                default=st.session_state[f'data_restrictions_{key}_nominal'],
+                                key=f'data_restrictions_{key}',
+                                on_change=update_data_restrictions_nominal,
+                                args=(key,))
+                            st.markdown("""---""")
+
+    # TODO insert option for ordinal data to be selected with slider
+        if st.session_state['data_restrictions_dict'] == {}:
+            st.stop()
+        else:
+            st.write("-------------")
+            with st.expander("Defined Data Restriction"):
+                st.write(st.session_state['data_restrictions_dict'])
+            if st.button("Upload Data Restrictions", type="primary", help="Upload the defined Data Restrictions."):
+                starting_time = getTimestamp()
+                uploadDR(starting_time, host_upload, host)
+
+                dr_success = st.success("Data Restriction uploaded")
+                dr_success.empty()
+                st.experimental_rerun()
+
+    else:
+
+        for key, value in st.session_state["level_of_measurement_dic"].items():
+            if value == "Cardinal":
+                defaultValuesCardinalRestriction(key)
+            if value == "Ordinal":
+                defaultValuesOrdinalRestriction(key)
+            if value == "Nominal":
+                defaultValuesNominalRestriction(key)
+        # st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(
+        #     uploaded_DataRestriction["DUA.value"][0], host)
+
+        st.write(uploaded_DataRestriction["DUA.value"])
+
+        st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
+
+        st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
+
+        with st.expander("Show Data Restriction:"):
+            st.write(st.session_state.data_restrictions_dict)
+
+
+        st.session_state["data_restrictions_dict"]
+
+
+        if st.button("Delete Data Restriction", help="Delete Data Restriction in order to create a new Data Restriction"):
+            deleteWasGeneratedByDUA(host_upload, uploaded_DataRestriction)
+            del st.session_state["data_restrictions_dict"]
+            del st.session_state.data_restriction_final
+            st.session_state.data_restriction_final = st.session_state.unique_values_dict.copy()
+            uploaded_DataRestriction = pd.DataFrame()
+            st.experimental_rerun()
+
+
+
+
+    # if "data_restrictions_dict" not in st.session_state:
+    #     st.session_state["data_restrictions_dict"] = dict()
 
     # try:
-    #     uploaded_DataRestriction = getRestriction(host)
-    #     data_restriction = st.selectbox("Select Data Restriction",
-    #                                     options=uploaded_DataRestriction["Comment"].unique())
+    #     # if "data_restriction_URN" not in st.session_state:
+    #     #     st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
+    #     # if st.session_state.data_restriction_URN.empty:
+    #     #     st.error("No Data Restriction selected determined")
+    #     # else:
+    #     #     st.success("Data Restriction option selected")
     #
-    #     data_restriction_activity = uploaded_DataRestriction.loc[
-    #         uploaded_DataRestriction["Comment"] == data_restriction]
-    #     st.dataframe(data_restriction_activity[["Label", "Feature", "Comment", "Value"]].reset_index(drop=True), use_container_width=True)
-    #     if st.button("Select Restriction", type="primary"):
+    #     st.write(uploaded_DataRestriction)
+    #
+    #     try:
+    #         for key, value in st.session_state["level_of_measurement_dic"].items():
+    #             if value == "Cardinal":
+    #                 defaultValuesCardinalRestriction(key)
+    #             if value == "Ordinal":
+    #                 defaultValuesOrdinalRestriction(key)
+    #             if value == "Nominal":
+    #                 defaultValuesNominalRestriction(key)
+    #         st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(
+    #             uploaded_DataRestriction["DataRestrictionActivity"][0], host)
+    #
+    #         st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
+    #
+    #         st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
+    #         st.experimental_rerun()
+    #
+    #
+    #
+    #
+    #
+    #
+    #     except Exception as e:
+    #         st.write(e)
+    #         st.info("Dont forget to upload unique values")
+    #
+    #     if st.button("Delete Restriction"):
     #         try:
-    #             for key, value in st.session_state["level_of_measurement_dic"].items():
-    #                 if value == "Cardinal":
-    #                     defaultValuesCardinalRestriction(key)
-    #                 if value == "Ordinal":
-    #                     defaultValuesOrdinalRestriction(key)
-    #                 if value == "Nominal":
-    #                     defaultValuesNominalRestriction(key)
-    #             st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(
-    #                 data_restriction_activity["DataRestrictionActivity"][0], host)
-    #
-    #
-    #
-    #
-    #         except Exception as e:
-    #             st.write(e)
-    #             st.info("Dont forget to upload unique values")
-    #
-    #     if st.button("Deselect Restriction"):
-    #         try:
-    #             st.session_state["data_restrictions_dict"] = getUniqueValuesSeq(host)
+    #             deleteWasGeneratedByDUA(host_upload, uploaded_DataRestriction)
+    #             # del st.session_state["loaded_bin_dict"]
+    #             # del st.session_state["DF_bin_dict"]
+    #             st.session_state["data_restrictions_dict"] = dict()
     #             st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-    #             st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
-    #             st.session_state["flag_data_restriction"] = False
-    #             st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
-    #             # st.experimental_rerun()
+    #             st.experimental_rerun()
     #         except Exception as e:
     #             st.write(e)
     #             st.write("Didnt work")
     #
-    #     st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-    #     st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
     #
-    # except:
-    #     st.info("Define Data Restriction.")
-    #
-
-    try:
-        if "data_restriction_URN" not in st.session_state:
-            st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
-        if st.session_state.data_restriction_URN.empty:
-            st.error("No Data Restriction selected selected")
-        else:
-            st.success("Data Restriction option selected")
-        data_restriction = st.selectbox("Select Data Restriction",
-                                        options=uploaded_DataRestriction["Comment"].unique())
-
-        data_restriction_activity = uploaded_DataRestriction.loc[
-            uploaded_DataRestriction["Comment"] == data_restriction]
-        st.dataframe(data_restriction_activity[["Label", "Feature", "Comment", "Value"]].reset_index(drop=True),
-                     use_container_width=True)
-
-        if st.button("Select Restriction", type="primary"):
-            st.session_state.data_restriction_URN = data_restriction_activity
-            try:
-                for key, value in st.session_state["level_of_measurement_dic"].items():
-                    if value == "Cardinal":
-                        defaultValuesCardinalRestriction(key)
-                    if value == "Ordinal":
-                        defaultValuesOrdinalRestriction(key)
-                    if value == "Nominal":
-                        defaultValuesNominalRestriction(key)
-                st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(
-                    data_restriction_activity["DataRestrictionActivity"][0], host)
-
-                st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-
-                st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
-                st.experimental_rerun()
-
-
-
-
-
-
-            except Exception as e:
-                st.write(e)
-                st.info("Dont forget to upload unique values")
-
-        if st.button("Deselect Restriction"):
-            try:
-
-                st.session_state["data_restrictions_dict"] = dict()
-                # st.session_state["data_restrictions_dict"] = getUniqueValuesSeq(host)
-                st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-                # st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
-                # st.session_state["flag_data_restriction"] = False
-                st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
-                st.experimental_rerun()
-            except Exception as e:
-                st.write(e)
-                st.write("Didnt work")
-
-
-    except Exception as e:
-        st.info("No Data Restrictions defined")
-    starting_time = getTimestamp()
+    # except Exception as e:
+    #     st.write(e)
+    #     st.info("No Data Restrictions defined")
+    # starting_time = getTimestamp()
 
 
     placeholder = st.empty()
 
-    tab1, tab2, tab3 = st.tabs(["Cardinal", "Ordinal", "Nominal"])
-    for key, values in st.session_state.level_of_measurement_dic.items():
-        data_restrictions_dic = dict()
-        data = list()
-        if values == 'Cardinal':
-            with tab1:
-                with st.expander(f"Define Data Restrictions for ***{key}***"):
-                    col1, col2, col3 = st.columns([0.05, 10, 0.5])
-                    with col2:
 
+    #
+    #
+    # is_unique = False
+    #
 
+    #     with placeholder.container():
+    #
+    #         st.info("This label will be shown for the defined Data Restrictions. If a label is used more than once it might lead to problems.")
+    #         comment_data_restriction = st.text_input("Insert label for the defined Data Restrictions",
+    #                                           help="Name your Data Restrictions in order to find it easier later.")
+    #
+    #         if st.button("Upload Data Restrictions", type="primary", help="Upload the defined Data Restrictions."):
+    #             starting_time = getTimestamp()
+    #             uploadDR(starting_time, host_upload, host, comment_data_restriction)
+    #
+    #
+    #             dr_success = st.success("Data Restriction uploaded")
+    #             dr_success.empty()
 
-                        # mit is digit prüfen ob int oder float
-                        if f'data_restrictions_{key}_cardinal' not in st.session_state:
-                            defaultValuesCardinal(key)
-
-
-                        if key in st.session_state.data_restrictions_dict.keys():
-                            st.session_state[f'data_restrictions_{key}_cardinal'] = [float(s) for s in st.session_state.data_restrictions_dict[key]]
-
-
-
-                        if st.button(f"Default Values for {key}", key=f'defaultValuesCardinal_{key}', type="secondary"):
-                            defaultValuesCardinal(key)
-
-
-
-
-                        try:
-                            lower = round(st.number_input("Input value", min_value=float(
-                                st.session_state.unique_values_dict[key][0]),key=f"lower_{key}",value =float(st.session_state[f'data_restrictions_{key}_cardinal'][0])),2)
-                            upper = round(st.number_input("Input upper value",key=f"upper_{key}",min_value=lower, max_value=float(
-                                    st.session_state.unique_values_dict[key][-1]), value =float(st.session_state[f'data_restrictions_{key}_cardinal'][-1]) ),2)
-                            if st.button("OK",key=f"data_restriction_ok_widget_{key}"):
-                                if st.session_state[f"lower_{key}"] >= st.session_state[f"upper_{key}"]:
-                                    st.error("Lower bound range must be smaller than upper bound.")
-                                else:
-
-                                    st.session_state[f'data_restrictions_{key}'] = [lower,
-                                                                                             upper]
-                                    st.session_state[f'data_restrictions_{key}_cardinal'] = [lower,
-                                                                                             upper]  # st.session_state[f'data_restrictions_{key}']
-                                    st.session_state['data_restrictions_dict'][key] = [lower,
-                                                                                upper]  # st.session_state[f'data_restrictions_{key}']
-                                    update_data_restrictions_cardinal(key)
-                        except Exception as e:
-                            st.write(e)
-                            st.error("Lower bound range must be smaller than upper bound.")
-
-        if values == 'Ordinal':
-            with tab2:
-                with st.expander(f"Define Data Restrictions for ***{key}***"):
-                    col1, col2, col3 = st.columns([0.05, 10, 0.5])
-                    with col2:
-
-                        if f'data_restrictions_{key}_ordinal' not in st.session_state:
-                            defaultValuesOrdinal(key)
-
-                        if key in st.session_state.data_restrictions_dict.keys():
-                            st.session_state[f'data_restrictions_{key}_ordinal'] = [s for s in
-                                                                                     st.session_state.data_restrictions_dict[
-                                                                                         key]]
-
-                        if st.button(f"Default Values for {key}", key=f'defaultValuesOrdinal_{key}'):
-                            defaultValuesOrdinal(key)
-                        st.session_state[f'data_restrictions_{key}_ordinal'] = st.multiselect(
-                            f"Select Values for Ordinal Value {key}",
-                            options=st.session_state[f'data_restrictions_{key}_ordinal'],
-                            default=st.session_state[f'data_restrictions_{key}_ordinal'],
-                            key=f'data_restrictions_{key}',
-                            on_change=update_data_restrictions_ordinal,
-                            args=(key,))
-                        st.markdown("""---""")
-
-        if values == 'Nominal':
-            with tab3:
-                with st.expander(f"Define Data Restrictions for ***{key}***"):
-                    col1, col2, col3 = st.columns([0.05, 10, 0.5])
-                    with col2:
-
-                        if f'data_restrictions_{key}_nominal' not in st.session_state:
-                            defaultValuesNominal(key)
-                        if st.button(f"Default Values for {key}", key=f'defaultValuesNominal_{key}'):
-                            defaultValuesNominal(key)
-                        st.session_state[f'data_restrictions_{key}_nominal'] = st.multiselect(
-                            f"Select Values for Nominal Value {key}",
-                            options=st.session_state.unique_values_dict[key],
-                            default=st.session_state[f'data_restrictions_{key}_nominal'],
-                            key=f'data_restrictions_{key}',
-                            on_change=update_data_restrictions_nominal,
-                            args=(key,))
-                        st.markdown("""---""")
-
-
-
-
-    is_unique = False
-
-    if st.session_state['data_restrictions_dict'] == {}:
-     st.stop()
-    else:
-        st.write("-------------")
-        with st.expander("Defined Data Restriction"):
-            st.write(st.session_state['data_restrictions_dict'])
-        with placeholder.container():
-
-            with st.form("Insert label for the defined Data Restriction"):
-                st.info("This label will be shown for the defined Data Restrictions. If a label is used more than once it might lead to problems.")
-                comment_data_restriction = st.text_input("Insert label for the defined Data Restrictions",
-                                                  help="Name your Data Restrictions in order to find it easier later.")
-
-                if st.form_submit_button("Upload Data Restrictions", type="primary", help="Upload the defined Data Restrictions."):
-                    uploadDR(starting_time, host_upload, host, comment_data_restriction)
-
-
-                    dr_success = st.success("Data Restriction uploaded")
-                    time.sleep(2)
-                    dr_success.empty()
-                    st.experimental_rerun()
 
 
 
 
 if optionsDataUnderstanding == "Feature Sensor Precision":
+    try:
+        getUniqueValuesSeq(host)
+
+    except Exception as e:
+        st.error("Please upload feature values in Data Understanding Step")
+        st.stop()
     # TODO insert DeterminationOfSensorPrecisionOfFeature_ to fuseki general graph
     determinationNameUUID = 'DeterminationOfSensorPrecisionOfFeature_'
     determinationName = 'DeterminationOfSensorPrecisionOfFeature'
@@ -532,7 +562,7 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
 
             if values == 'Cardinal':
 
-                with st.expander(f"Define sensor precision for {key} in percent", help="the measured value is correct within the defined percentage range"):
+                with st.expander(f"Define sensor precision for {key} in percent"):
 
                     if "feature_sensor_precision_dict" not in st.session_state:
                         st.session_state[f"feature_sensor_precision_dict"] = dict()
@@ -550,7 +580,7 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
                                                                                                           f'feature_sensor_precision_{key}']),
                                                                                           key=f'feature_sensor_precision_{key}_widget',
                                                                                           on_change=update_feature_sensor_precision,
-                                                                                          args=(key,)),2)
+                                                                                          args=(key,),help="the measured value is correct within the defined percentage range"),2)
         try:
             st.info("Sensor precision for feature will be uploaded if bigger 0.00")
         except:

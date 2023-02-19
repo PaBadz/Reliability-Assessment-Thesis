@@ -14,14 +14,15 @@ from streamlit_extras.colored_header import colored_header
 from streamlit_option_menu import option_menu
 from streamlit_sortables import sort_items
 
-
+from functions.functions import switch_page
 from functions.functions_Reliability import getDefault, getPerturbationOptions, getPerturbationRecommendations, \
     changePerturbationOption, getRestriction, defaultValuesCardinalRestriction, defaultValuesOrdinalRestriction, \
     defaultValuesNominalRestriction, deleteTable
 from functions.functions_deployment import get_perturbation_level, color_map
 from functions.fuseki_connection import login, getAttributes, getDataRestrictionSeqDeployment, \
     getFeatureVolatilityDeployment, getMissingValuesDeployment, getTimestamp, determinationActivity, \
-    uploadPerturbationAssessment, uploadClassificationCase, getAttributesDeployment
+    uploadPerturbationAssessment, uploadClassificationCase, getAttributesDeployment, getBinValuesSeq, getBinsDeployment, \
+    getUniqueValuesSeq
 from functions.perturbation_algorithms_ohne_values import percentage_perturbation, sensorPrecision, fixedAmountSteps, \
     perturbRange, perturbInOrder, perturbAllValues
 pd.set_option("styler.render.max_elements", 999_999_999_999)
@@ -38,10 +39,21 @@ except:
 try:
     host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
     host_upload: SPARQLWrapper = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
+    if st.session_state.fuseki_database == "None":
+        st.error("Select dataset")
+        st.stop()
 except:
-    st.info("Please select a database first")
     st.stop()
 # ------------------------------------------------------------------------------------------------------------------------
+
+try:
+    getUniqueValuesSeq(host)
+
+except Exception as e:
+    st.error("Please upload feature values in Data Understanding step")
+    if st.button("Data Understanding"):
+        switch_page("Data Understanding")
+    st.stop()
 
 try:
     getDefault(host)
@@ -53,9 +65,6 @@ except Exception as e:
     st.error("Please refresh page or change database.")
     st.stop()
 
-# if "data_restrictions_dict" not in st.session_state:
-#     st.session_state["data_restrictions_dict"] = dict()
-#
 # # horizontal menu
 menu_perturbation = option_menu(None, ["Perturbation Option", 'Perturbation Mode', "Perturbation"],
                                 icons=['house', 'gear'],
@@ -64,6 +73,7 @@ menu_perturbation = option_menu(None, ["Perturbation Option", 'Perturbation Mode
 try:
     savedPerturbationOptions = getPerturbationOptions(host)
 except Exception as e:
+    st.write(e)
     st.info("There are no Perturbation Options to select at the moment.")
     st.stop()
 
@@ -87,6 +97,22 @@ if menu_perturbation == 'Perturbation Option':
         st.dataframe(
             savedPerturbationOptions[["FeatureName", "PerturbationOption", "label"]].reset_index(drop=True),
             use_container_width=True)
+
+
+    def extract_chars(s):
+        return s.split('-')[0]
+
+
+    savedPerturbationOptions['group'] = savedPerturbationOptions['label'].apply(extract_chars)
+    options_group=["None"]
+    options_group.extend(savedPerturbationOptions["group"].unique().tolist())
+    def deletePO():
+        del st.session_state.perturbationOptions
+
+    modelingActivityGroupSelection = st.selectbox("Select group", options=options_group, index =0, on_change=deletePO,help="Here you can select the perturbation options which were defined together, if selected all perturbation options within this group are selected together")
+    modelingActivityIDGroup = savedPerturbationOptions.loc[savedPerturbationOptions["group"]==modelingActivityGroupSelection]["ModelingActivity"].unique()
+
+
 
     if "perturbationOptions" not in st.session_state:
 
@@ -144,19 +170,65 @@ if menu_perturbation == 'Perturbation Option':
                                 pass
 
                         try:
-                            options = (
-                                savedPerturbationOptions.loc[savedPerturbationOptions['FeatureName'] == feature_names][
-                                    "label"])
+                            try:
+                                if len(st.session_state.perturbationOptions[feature_names])==0:
+                                    options = (
+                                        savedPerturbationOptions.loc[savedPerturbationOptions['FeatureName'] == feature_names][
+                                            "label"])
+                                elif len(st.session_state.perturbationOptions[feature_names])>0:
+                                    same_entity = (
+                                        savedPerturbationOptions.loc[(
+                                            savedPerturbationOptions['label'] == st.session_state.perturbationOptions[feature_names][0])&(savedPerturbationOptions['FeatureName'] == feature_names)]["DataRestrictionEntities"]).reset_index(drop=True)
+                                    options=savedPerturbationOptions.loc[
+                                        (savedPerturbationOptions["DataRestrictionEntities"].isin(same_entity)) & (
+                                                    savedPerturbationOptions['FeatureName'] == feature_names)]["label"]
+
+                                if modelingActivityGroupSelection != "None":
+                                    try:
+                                        st.session_state.perturbationOptions[feature_names] =(
+                                            savedPerturbationOptions.loc[(
+                                             savedPerturbationOptions['ModelingActivity'] ==modelingActivityIDGroup[0]) & (
+                                             savedPerturbationOptions['FeatureName'] == feature_names)][
+                                            "label"]).reset_index(drop=True)
+
+                                        same_entity = (
+                                            savedPerturbationOptions.loc[(
+                                                                                 savedPerturbationOptions['label'] ==
+                                                                                 st.session_state.perturbationOptions[
+                                                                                     feature_names][0]) & (
+                                                                                     savedPerturbationOptions[
+                                                                                         'FeatureName'] == feature_names)][
+                                                "DataRestrictionEntities"]).reset_index(drop=True)
+                                        options = savedPerturbationOptions.loc[
+                                            (savedPerturbationOptions["DataRestrictionEntities"].isin(same_entity)) & (
+                                                    savedPerturbationOptions['FeatureName'] == feature_names)]["label"]
+                                    except:
+                                        options = (
+                                            savedPerturbationOptions.loc[
+                                                savedPerturbationOptions['FeatureName'] == feature_names][
+                                                "label"])
+                                else:
+                                    pass
+                            except:
+                                options = (
+                                    savedPerturbationOptions.loc[
+                                        savedPerturbationOptions['FeatureName'] == feature_names][
+                                        "label"])
+
+
+
                             st.session_state.perturbationOptions[feature_names] = st.multiselect(f'{feature_names}',
                                                                                                  options=options,
                                                                                                  default=
                                                                                                  st.session_state.perturbationOptions[
                                                                                                      feature_names],
+
                                                                                                  key=f"perturbationOption_{feature_names}",
                                                                                                  on_change=changePerturbationOption,
                                                                                                  args=(
-                                                                                                     feature_names,),max_selections=1
-                                                                                                 )  # ,
+                                                                                                     feature_names,), help="Select Perturbation Options for this Feature. If more than one Perturbation Option is selected the Perturbation Level of the first Perturbation Option is used "
+                                                                                                 )
+
 
                             chosen_perturbationOptions_feature = (
                                 savedPerturbationOptions.loc[(savedPerturbationOptions['label'].isin(
@@ -169,6 +241,9 @@ if menu_perturbation == 'Perturbation Option':
                             if not chosen_perturbationOptions_feature.empty:
                                 st.session_state.assessmentPerturbationOptions[
                                 feature_names] = chosen_perturbationOptions_feature.to_dict("list")
+                            else:
+                                st.session_state.assessmentPerturbationOptions[
+                                    feature_names] = []
 
 
                             for index, row in chosen_perturbationOptions_feature.iterrows():
@@ -176,9 +251,9 @@ if menu_perturbation == 'Perturbation Option':
                                 values = re.findall(': (.*?)(?:,|})', row["Settings"])
 
                                 # create nested dictionary with column name as key and keys as second key and values as values
-                                settings_ = (dict(zip(keys, values)))
+                                settings = (dict(zip(keys, values)))
                                 # convert values to float except if the key is step
-                                for key, value in settings_.items():
+                                for key, value in settings.items():
                                     if key == "steps":
                                         settings[key] = int(value)
                                     elif key == "PerturbationLevel":
@@ -187,67 +262,85 @@ if menu_perturbation == 'Perturbation Option':
                                         settings[key] = float(value)
 
                                 settings["PerturbationLevel"] = keys[index + 1]
-                                settingList[row["PerturbationOption"]] = settings
 
-                            st.session_state.perturbationOptions_settings[feature_names] = settingList
+                                if row["PerturbationOption"] in settingList:
+                                    settingList[row["PerturbationOption"]].append(settings)
+                                else:
+                                    settingList[row["PerturbationOption"]] = settings
+
+
+
+
+
+                            st.session_state.perturbationOptions_settings[feature_names] = (settingList)
+                            if len(st.session_state.perturbationOptions_settings[feature_names]) > 1:
+                                st.info("If Perturbation Options differ in Perturbation Level, first one is used for visualization purposes.")
 
                             if feature_names in st.session_state.assessmentPerturbationOptions.keys() and \
                                     st.session_state.perturbationOptions[feature_names] != []:
                                 st.table(chosen_perturbationOptions_feature[
                                              ["FeatureName", "PerturbationOption", "Settings", "label"]])
-                                data_understanding_entity = \
-                                    st.session_state.assessmentPerturbationOptions[feature_names][
-                                        "DataUnderstandingEntity"][
-                                        0]
-
-                                featureID = st.session_state.assessmentPerturbationOptions[feature_names]["FeatureID"][
-                                    0]
-                                data_restriction_entity = getDataRestrictionSeqDeployment(data_understanding_entity,
-                                                                                          featureID, host)
-                                if data_restriction_entity:
-
-                                    st.success(f"Data Restriction for this feature:  {data_restriction_entity[feature_names]}")
-                                else:
-                                    st.info("No Data Restriction selected for this perturbation option")
-
-
-                                volatility_entity = getFeatureVolatilityDeployment(data_understanding_entity,
-                                                                                   featureID, host)
-
-                                try:
-                                    if volatility_entity["volatilityLevel.value"][0] == 'High Volatility':
-                                        st.error("Feature has high volatility!")
-
-                                    elif volatility_entity["volatilityLevel.value"][0] == 'Medium Volatility':
-                                        st.warning(
-                                            "Feature has medium volatility!")
-                                    elif volatility_entity["volatilityLevel.value"][0] == 'Low Volatility':
-                                        st.info("Feature has medium volatility!")
+                                for i_perturbationOptions in range(0, len(
+                                        st.session_state.perturbationOptions[feature_names])):
+                                    with st.expander(f"Settings for Perturbation Option {i_perturbationOptions+1}"):
 
 
 
+                                        data_understanding_entity = \
+                                            st.session_state.assessmentPerturbationOptions[feature_names][
+                                                "PerturbationOptionID"][i_perturbationOptions]
 
-                                except Exception as e:
-                                    st.info("Perturbation Option has no level of volatility saved")
+                                        featureID = st.session_state.assessmentPerturbationOptions[feature_names]["FeatureID"][
+                                            0]
+                                        data_restriction_entity = getDataRestrictionSeqDeployment(data_understanding_entity,
+                                                                                                  featureID, host)
 
-                                missing_values_entity = getMissingValuesDeployment(data_understanding_entity,
-                                                                                   featureID, host)
-
-                                try:
-                                    st.success(f"Missing values were replaced with: {missing_values_entity['MissingValues.value'][0]}")
-
-
-
-                                except Exception as e:
-                                    st.info("Perturbation Option has no no replacement for missing values determined")
-
+                                        if data_restriction_entity:
+                                            st.success(f"Data Restriction for this feature:  {data_restriction_entity[feature_names]}")
+                                        else:
+                                            st.info("No Data Restriction selected for this perturbation option")
 
 
-                            if "Bin perturbation" in st.session_state.perturbationOptions_settings[feature_names]:
-                                st.success(f"Bins determined for this Perturbation Option:")
-                                st.write([[st.session_state.loaded_bin_dict[feature_names][i],
-                                           st.session_state.loaded_bin_dict[feature_names][i + 1]] for i in
-                                          range(len(st.session_state.loaded_bin_dict[feature_names]) - 1)])
+                                        volatility_entity = getFeatureVolatilityDeployment(data_understanding_entity,
+                                                                                           featureID, host)
+
+                                        try:
+                                            if volatility_entity["volatilityLevel.value"][0] == 'High Volatility':
+                                                st.error("Feature has high volatility!")
+
+                                            elif volatility_entity["volatilityLevel.value"][0] == 'Medium Volatility':
+                                                st.warning(
+                                                    "Feature has medium volatility!")
+                                            elif volatility_entity["volatilityLevel.value"][0] == 'Low Volatility':
+                                                st.info("Feature has medium volatility!")
+
+
+
+
+                                        except Exception as e:
+                                            st.info(f"Perturbation Option {i_perturbationOptions + 1} has no level of volatility saved")
+
+                                        missing_values_entity = getMissingValuesDeployment(data_understanding_entity,
+                                                                                           featureID, host)
+
+                                        try:
+                                            st.success(f"Missing values were replaced with: {missing_values_entity['MissingValues.value'][0]}")
+
+
+
+                                        except Exception as e:
+                                            st.info(f"Perturbation Option {i_perturbationOptions + 1} has no replacement for missing values determined")
+
+
+
+                                        if st.session_state.assessmentPerturbationOptions[feature_names]["PerturbationOption"][i_perturbationOptions] == "Bin perturbation":
+                                            st.success(f"Bins determined for this Perturbation Option:")
+                                            bin_values_entity = getBinsDeployment(data_understanding_entity,featureID, host)
+                                            bin_values_entity_list = bin_values_entity["item.value"].tolist()
+
+                                            st.write([[bin_values_entity_list[i],
+                                                       bin_values_entity_list[i + 1]] for i in
+                                                      range(len(bin_values_entity_list) - 1)])
 
                             # TODO connect to
                         except Exception as e:
@@ -275,21 +368,75 @@ if menu_perturbation == 'Perturbation Option':
                             except:
                                 pass
 
-
                         try:
-                            options = (
-                                savedPerturbationOptions.loc[savedPerturbationOptions['FeatureName'] == feature_names][
-                                    "label"])
+                            try:
+                                if len(st.session_state.perturbationOptions[feature_names]) == 0:
+                                    options = (
+                                        savedPerturbationOptions.loc[
+                                            savedPerturbationOptions['FeatureName'] == feature_names][
+                                            "label"])
+                                elif len(st.session_state.perturbationOptions[feature_names]) > 0:
+                                    same_entity = (
+                                        savedPerturbationOptions.loc[(
+                                                                             savedPerturbationOptions['label'] ==
+                                                                             st.session_state.perturbationOptions[
+                                                                                 feature_names][0]) & (
+                                                                                 savedPerturbationOptions[
+                                                                                     'FeatureName'] == feature_names)][
+                                            "DataRestrictionEntities"]).reset_index(drop=True)
+                                    options = savedPerturbationOptions.loc[
+                                        (savedPerturbationOptions["DataRestrictionEntities"].isin(same_entity)) & (
+                                                savedPerturbationOptions['FeatureName'] == feature_names)]["label"]
+
+                                if modelingActivityGroupSelection != "None":
+                                    try:
+                                        st.session_state.perturbationOptions[feature_names] = (
+                                            savedPerturbationOptions.loc[(
+                                                                                 savedPerturbationOptions[
+                                                                                     'ModelingActivity'] ==
+                                                                                 modelingActivityIDGroup[0]) & (
+                                                                                 savedPerturbationOptions[
+                                                                                     'FeatureName'] == feature_names)][
+                                                "label"]).reset_index(drop=True)
+
+                                        same_entity = (
+                                            savedPerturbationOptions.loc[(
+                                                                                 savedPerturbationOptions['label'] ==
+                                                                                 st.session_state.perturbationOptions[
+                                                                                     feature_names][0]) & (
+                                                                                 savedPerturbationOptions[
+                                                                                     'FeatureName'] == feature_names)][
+                                                "DataRestrictionEntities"]).reset_index(drop=True)
+                                        options = savedPerturbationOptions.loc[
+                                            (savedPerturbationOptions["DataRestrictionEntities"].isin(same_entity)) & (
+                                                    savedPerturbationOptions['FeatureName'] == feature_names)]["label"]
+                                    except:
+                                        options = (
+                                            savedPerturbationOptions.loc[
+                                                savedPerturbationOptions['FeatureName'] == feature_names][
+                                                "label"])
+                                else:
+                                    pass
+                            except:
+                                options = (
+                                    savedPerturbationOptions.loc[
+                                        savedPerturbationOptions['FeatureName'] == feature_names][
+                                        "label"])
+
+
                             st.session_state.perturbationOptions[feature_names] = st.multiselect(f'{feature_names}',
                                                                                                  options=options,
                                                                                                  default=
                                                                                                  st.session_state.perturbationOptions[
                                                                                                      feature_names],
+
                                                                                                  key=f"perturbationOption_{feature_names}",
                                                                                                  on_change=changePerturbationOption,
                                                                                                  args=(
-                                                                                                     feature_names,),
-                                                                                                 max_selections=1)  # ,
+                                                                                                     feature_names,)
+                                                                                                 )
+
+
 
                             chosen_perturbationOptions_feature = (
                                 savedPerturbationOptions.loc[(savedPerturbationOptions['label'].isin(
@@ -321,68 +468,84 @@ if menu_perturbation == 'Perturbation Option':
                                 values = re.findall(': (.*?)(?:,|})', row["Settings"])
 
                                 # create nested dictionary with column name as key and keys as second key and values as values
-                                settings_ = (dict(zip(keys, values)))
+                                settings = (dict(zip(keys, values)))
 
                                 # convert values to float except if the key is step
-                                for key, value in settings_.items():
+                                for key, value in settings.items():
                                     if key == "steps":
                                         settings[key] = int(value)
                                     elif key == "PerturbationLevel":
                                         index = keys.index(key)
+
                                 settings["PerturbationLevel"] = keys[index + 1]
 
-                                st.write(settings)
-                                # if settings != {}:
-                                settingList[row["PerturbationOption"]] = settings
+                                if row["PerturbationOption"] in settingList:
+                                    settingList[row["PerturbationOption"]].append(settings)
+                                else:
+                                    settingList[row["PerturbationOption"]] = settings
 
                             st.session_state.perturbationOptions_settings[feature_names] = (settingList)
+                            if len(st.session_state.perturbationOptions_settings[feature_names]) > 1:
+                                st.info(
+                                    "If Perturbation Options differ in Perturbation Level, first one is used for visualization purposes.")
 
                             if feature_names in st.session_state.assessmentPerturbationOptions.keys() and \
                                     st.session_state.perturbationOptions[feature_names] != []:
                                 st.table(chosen_perturbationOptions_feature[
                                              ["FeatureName", "PerturbationOption", "Settings", "label"]])
-                                data_understanding_entity = \
-                                    st.session_state.assessmentPerturbationOptions[feature_names][
-                                        "DataUnderstandingEntity"][
-                                        0]
+                                for i_perturbationOptions in range(0, len(
+                                        st.session_state.perturbationOptions[feature_names])):
+                                    with st.expander(f"Settings for Perturbation Option {i_perturbationOptions + 1}"):
 
-                                featureID = st.session_state.assessmentPerturbationOptions[feature_names]["FeatureID"][
-                                    0]
-                                data_restriction_entity = getDataRestrictionSeqDeployment(data_understanding_entity,
-                                                                                          featureID, host)
-                                if data_restriction_entity:
+                                        data_understanding_entity = \
+                                            st.session_state.assessmentPerturbationOptions[feature_names][
+                                                "PerturbationOptionID"][i_perturbationOptions]
 
-                                    st.write("Data Restriction:", data_restriction_entity)
-                                else:
-                                    st.info("No Data Restriction selected for this perturbation option")
+                                        featureID = \
+                                        st.session_state.assessmentPerturbationOptions[feature_names]["FeatureID"][
+                                            0]
+                                        data_restriction_entity = getDataRestrictionSeqDeployment(
+                                            data_understanding_entity,
+                                            featureID, host)
 
-                                volatility_entity = getFeatureVolatilityDeployment(data_understanding_entity,
-                                                                               featureID, host)
+                                        if data_restriction_entity:
+                                            st.success(
+                                                f"Data Restriction for this feature:  {data_restriction_entity[feature_names]}")
+                                        else:
+                                            st.info("No Data Restriction selected for this perturbation option")
 
-                                try:
-                                    if volatility_entity["volatilityLevel.value"][0] == 'High Volatility':
-                                        st.error("Feature has high volatility!")
+                                        volatility_entity = getFeatureVolatilityDeployment(data_understanding_entity,
+                                                                                           featureID, host)
 
-                                    elif volatility_entity["volatilityLevel.value"][0] == 'Medium Volatility':
-                                        st.warning(
-                                            "Feature has medium volatility!")
-                                    elif volatility_entity["volatilityLevel.value"][0] == 'Low Volatility':
-                                        st.info("Feature has medium volatility!")
+                                        try:
+                                            if volatility_entity["volatilityLevel.value"][0] == 'High Volatility':
+                                                st.error("Feature has high volatility!")
 
-                                except Exception as e:
-                                    st.info("Perturbation Option has no level of volatility saved")
-
-                                missing_values_entity = getMissingValuesDeployment(data_understanding_entity,
-                                                                                   featureID, host)
-
-                                try:
-                                    st.write("Missing values were replaced with: ",missing_values_entity["MissingValues.value"][0])
-                                except Exception as e:
-                                    st.info("Perturbation Option has no no replacement for missing values determined")
+                                            elif volatility_entity["volatilityLevel.value"][0] == 'Medium Volatility':
+                                                st.warning(
+                                                    "Feature has medium volatility!")
+                                            elif volatility_entity["volatilityLevel.value"][0] == 'Low Volatility':
+                                                st.info("Feature has medium volatility!")
 
 
-                            # st.write(st.session_state.perturbationOptions_settings[feature_names])
 
+
+                                        except Exception as e:
+                                            st.info(
+                                                f"Perturbation Option {i_perturbationOptions + 1} has no level of volatility saved")
+
+                                        missing_values_entity = getMissingValuesDeployment(data_understanding_entity,
+                                                                                           featureID, host)
+
+                                        try:
+                                            st.success(
+                                                f"Missing values were replaced with: {missing_values_entity['MissingValues.value'][0]}")
+
+
+
+                                        except Exception as e:
+                                            st.info(
+                                                f"Perturbation Option {i_perturbationOptions + 1} has no replacement for missing values determined")
 
 
                         except Exception as e:
@@ -410,22 +573,72 @@ if menu_perturbation == 'Perturbation Option':
                             except:
                                 pass
 
-
-
                         try:
-                            options = (
-                                savedPerturbationOptions.loc[savedPerturbationOptions['FeatureName'] == feature_names][
-                                    "label"])
+                            try:
+                                if len(st.session_state.perturbationOptions[feature_names]) == 0:
+                                    options = (
+                                        savedPerturbationOptions.loc[
+                                            savedPerturbationOptions['FeatureName'] == feature_names][
+                                            "label"])
+                                elif len(st.session_state.perturbationOptions[feature_names]) > 0:
+                                    same_entity = (
+                                        savedPerturbationOptions.loc[(
+                                                                             savedPerturbationOptions['label'] ==
+                                                                             st.session_state.perturbationOptions[
+                                                                                 feature_names][0]) & (
+                                                                                 savedPerturbationOptions[
+                                                                                     'FeatureName'] == feature_names)][
+                                            "DataRestrictionEntities"]).reset_index(drop=True)
+                                    options = savedPerturbationOptions.loc[
+                                        (savedPerturbationOptions["DataRestrictionEntities"].isin(same_entity)) & (
+                                                savedPerturbationOptions['FeatureName'] == feature_names)]["label"]
+
+                                if modelingActivityGroupSelection != "None":
+                                    try:
+                                        st.session_state.perturbationOptions[feature_names] = (
+                                            savedPerturbationOptions.loc[(
+                                                                                 savedPerturbationOptions[
+                                                                                     'ModelingActivity'] ==
+                                                                                 modelingActivityIDGroup[0]) & (
+                                                                                 savedPerturbationOptions[
+                                                                                     'FeatureName'] == feature_names)][
+                                                "label"]).reset_index(drop=True)
+
+                                        same_entity = (
+                                            savedPerturbationOptions.loc[(
+                                                                                 savedPerturbationOptions['label'] ==
+                                                                                 st.session_state.perturbationOptions[
+                                                                                     feature_names][0]) & (
+                                                                                 savedPerturbationOptions[
+                                                                                     'FeatureName'] == feature_names)][
+                                                "DataRestrictionEntities"]).reset_index(drop=True)
+                                        options = savedPerturbationOptions.loc[
+                                            (savedPerturbationOptions["DataRestrictionEntities"].isin(same_entity)) & (
+                                                    savedPerturbationOptions['FeatureName'] == feature_names)]["label"]
+                                    except:
+                                        options = (
+                                            savedPerturbationOptions.loc[
+                                                savedPerturbationOptions['FeatureName'] == feature_names][
+                                                "label"])
+                                else:
+                                    pass
+                            except:
+                                options = (
+                                    savedPerturbationOptions.loc[
+                                        savedPerturbationOptions['FeatureName'] == feature_names][
+                                        "label"])
+
                             st.session_state.perturbationOptions[feature_names] = st.multiselect(f'{feature_names}',
                                                                                                  options=options,
                                                                                                  default=
                                                                                                  st.session_state.perturbationOptions[
                                                                                                      feature_names],
+
                                                                                                  key=f"perturbationOption_{feature_names}",
                                                                                                  on_change=changePerturbationOption,
-                                                                                                 args=(feature_names,),
-                                                                                                 max_selections=1)
-
+                                                                                                 args=(
+                                                                                                     feature_names,)
+                                                                                                 )
                             chosen_perturbationOptions_feature = (
                             savedPerturbationOptions.loc[(savedPerturbationOptions['label'].isin(
                                 st.session_state.perturbationOptions[feature_names])) & (
@@ -436,6 +649,7 @@ if menu_perturbation == 'Perturbation Option':
 
                             st.session_state.assessmentPerturbationOptions[
                                 feature_names] = chosen_perturbationOptions_feature.to_dict("list")
+
 
                             for index, row in chosen_perturbationOptions_feature.iterrows():
 
@@ -454,59 +668,78 @@ if menu_perturbation == 'Perturbation Option':
                                         settings[key] = int(value)
                                     elif key == "PerturbationLevel":
                                         index = keys.index(key)
-                                settings["PerturbationLevel"] = keys[index + 1]
-                                settingList[row["PerturbationOption"]] = settings
 
+                                settings["PerturbationLevel"] = keys[index + 1]
+                                if row["PerturbationOption"] in settingList:
+                                    settingList[row["PerturbationOption"]].append(settings)
+
+                                else:
+                                    settingList[row["PerturbationOption"]] = settings
 
 
                             st.session_state.perturbationOptions_settings[feature_names] = (settingList)
+                            if len(st.session_state.perturbationOptions_settings[feature_names]) > 1:
+                                st.info("If Perturbation Options differ in Perturbation Level, first one is used for visualization purposes.")
+
 
                             if feature_names in st.session_state.assessmentPerturbationOptions.keys() and \
                                     st.session_state.perturbationOptions[feature_names] != []:
                                 st.table(chosen_perturbationOptions_feature[
                                              ["FeatureName", "PerturbationOption", "Settings", "label"]])
-                                data_understanding_entity = \
-                                    st.session_state.assessmentPerturbationOptions[feature_names][
-                                        "DataUnderstandingEntity"][
-                                        0]
+                                for i_perturbationOptions in range(0, len(
+                                        st.session_state.perturbationOptions[feature_names])):
+                                    with st.expander(f"Settings for Perturbation Option {i_perturbationOptions + 1}"):
 
-                                featureID = st.session_state.assessmentPerturbationOptions[feature_names]["FeatureID"][
-                                    0]
-                                data_restriction_entity = getDataRestrictionSeqDeployment(data_understanding_entity,
-                                                                                          featureID, host)
-                                if data_restriction_entity:
+                                        data_understanding_entity = \
+                                            st.session_state.assessmentPerturbationOptions[feature_names][
+                                                "PerturbationOptionID"][i_perturbationOptions]
 
-                                    st.write("Data Restriction:", data_restriction_entity)
-                                else:
-                                    st.info("No Data Restriction selected for this perturbation option")
+                                        featureID = \
+                                        st.session_state.assessmentPerturbationOptions[feature_names]["FeatureID"][
+                                            0]
+                                        data_restriction_entity = getDataRestrictionSeqDeployment(
+                                            data_understanding_entity,
+                                            featureID, host)
 
-                                volatility_entity = getFeatureVolatilityDeployment(data_understanding_entity,
-                                                                                   featureID, host)
+                                        if data_restriction_entity:
+                                            st.success(
+                                                f"Data Restriction for this feature:  {data_restriction_entity[feature_names]}")
+                                        else:
+                                            st.info("No Data Restriction selected for this perturbation option")
 
-                                try:
-                                    if volatility_entity["volatilityLevel.value"][0] == 'High Volatility':
-                                        st.error("Feature has high volatility!")
+                                        volatility_entity = getFeatureVolatilityDeployment(data_understanding_entity,
+                                                                                           featureID, host)
 
-                                    elif volatility_entity["volatilityLevel.value"][0] == 'Medium Volatility':
-                                        st.warning(
-                                            "Feature has medium volatility!")
-                                    elif volatility_entity["volatilityLevel.value"][0] == 'Low Volatility':
-                                        st.info("Feature has medium volatility!")
+                                        try:
+                                            if volatility_entity["volatilityLevel.value"][0] == 'High Volatility':
+                                                st.error("Feature has high volatility!")
 
-                                except Exception as e:
-                                    st.info("Perturbation Option has no level of volatility saved")
-
-
-                                missing_values_entity = getMissingValuesDeployment(data_understanding_entity,
-                                                                                   featureID, host)
-
-                                try:
-                                    st.write("Missing values were replaced with: ",missing_values_entity["MissingValues.value"][0])
+                                            elif volatility_entity["volatilityLevel.value"][0] == 'Medium Volatility':
+                                                st.warning(
+                                                    "Feature has medium volatility!")
+                                            elif volatility_entity["volatilityLevel.value"][0] == 'Low Volatility':
+                                                st.info("Feature has medium volatility!")
 
 
 
-                                except Exception as e:
-                                    st.info("Perturbation Option has no no replacement for missing values determined")
+
+                                        except Exception as e:
+                                            st.info(
+                                                f"Perturbation Option {i_perturbationOptions + 1} has no level of volatility saved")
+
+                                        missing_values_entity = getMissingValuesDeployment(data_understanding_entity,
+                                                                                           featureID, host)
+
+                                        try:
+                                            st.success(
+                                                f"Missing values were replaced with: {missing_values_entity['MissingValues.value'][0]}")
+
+
+
+                                        except Exception as e:
+                                            st.info(
+                                                f"Perturbation Option {i_perturbationOptions + 1} has no replacement for missing values determined")
+
 
 
 
@@ -533,20 +766,21 @@ if menu_perturbation == 'Perturbation Option':
 
         # look in assessmentPerturbationOptions if there are data restrictions for the feature and if so, update the data_restriction_dict
 
+
         for feature_name in st.session_state.assessmentPerturbationOptions.keys():
             try:
                 data_restriction_entity = \
-                st.session_state.assessmentPerturbationOptions[feature_name]["DataUnderstandingEntity"][0]
+                st.session_state.assessmentPerturbationOptions[feature_name]["PerturbationOptionID"][0]
 
                 featureID = st.session_state.assessmentPerturbationOptions[feature_name]["FeatureID"][0]
 
-                st.session_state["data_restrictions_dict"] = getDataRestrictionSeqDeployment(data_restriction_entity,
+                st.session_state["data_restriction_deployment"] = getDataRestrictionSeqDeployment(data_restriction_entity,
                                                                                              featureID, host)
-            except:
+            except Exception as e:
                 pass
 
             try:
-                st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
+                st.session_state.data_restriction_final.update(st.session_state.data_restriction_deployment)
             except Exception as e:
                 pass
 
@@ -555,6 +789,7 @@ if menu_perturbation == 'Perturbation Option':
 
 
     except Exception as e:
+        st.write(e)
         st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
 
 
@@ -587,6 +822,7 @@ if menu_perturbation == 'Perturbation Option':
 
 
     with st.expander("Show Data Restriction values"):
+
         st.write("Data Restriction", st.session_state.data_restriction_final)
 
 
@@ -643,7 +879,6 @@ if menu_perturbation == 'Perturbation Mode':
             st.info("Perturb mode is set to Full")
             st.session_state.pertubation_mode = "Full"
             st.session_state.perturb_mode_values = feature_names
-
 try:
     if menu_perturbation == 'Perturbation':
         if "perturb_mode_values" not in st.session_state:
@@ -702,6 +937,23 @@ try:
                         st.experimental_rerun()
                         st.success("Data added")
 
+
+            with st.expander("Upload new Data"):
+                new_cases = st.file_uploader("Upload csv file", type="csv")
+                if new_cases is not None:
+                    file = pd.read_csv(new_cases)
+                    for columns in file:
+                        if st.session_state.level_of_measurement_dic[columns]=="Cardinal":
+                            file[columns] = file[columns].astype(float)
+                        else:
+                            file[columns] = file[columns].astype(str)
+
+                    st.session_state.df_aggrid_beginning = file
+
+
+
+
+
         with delete:
             if st.session_state.df_aggrid_beginning.shape[0] == 0:
                 st.write("No data available")
@@ -714,7 +966,6 @@ try:
                     if st.button(f"Delete row  {drop_index}"):
                         st.session_state.df_aggrid_beginning = st.session_state.df_aggrid_beginning.drop(
                             drop_index - 1).reset_index(drop=True)
-                        # st.session_state.df_r.index += 1
                         st.experimental_rerun()
                 except Exception as e:
                     st.info(e)
@@ -801,7 +1052,6 @@ try:
         if st.button("Predict", type="primary"):
 
             def uploadPerturbationMode():
-                st.session_state.pertubation_mode = "Full"
                 st.session_state.perturb_mode_values = feature_names
                 """ACTIVITY
                 <http://www.semanticweb.org/dke/ontologies/2021/6/25_7273>
@@ -862,6 +1112,8 @@ try:
                 except:
                     x_trans_df = pd.DataFrame(ct.fit_transform(x), columns=ct.get_feature_names_out()).reset_index(drop=True)
 
+
+
                 y_pred = pd.DataFrame(st.session_state.model.predict(x_trans_df))
 
                 # TODO divide selected rows in order to have seperated dataframes for each row, Idee: Result DF / len(selected_rows_DF)
@@ -879,7 +1131,7 @@ try:
                             if st.session_state.level_of_measurement_dic[feature] != 'Cardinal':
                                 row[feature] = [value]
                             else:
-                                row[feature] = [float(value)]
+                                row[feature] = [round(float(value),3)]
 
             except Exception as e:
                 st.error(f"ERROR! Please change! {e}")
@@ -994,8 +1246,8 @@ try:
                         st.write(e)
                     # index perturb contains the different perturbation values for each case
                     index_perturb.append(perturbed_value_list.copy())
-
-                st.write(perturbed_value_list)
+                with st.expander("Show perturbed values"):
+                    st.write(perturbed_value_list)
 
                 try:
                     for i in range(0, len(selected_rows)):
@@ -1038,24 +1290,33 @@ try:
                 result_df = result_df.drop_duplicates(keep='first')
 
 
-                for columns in result_df.iloc[:, :-1]:
-                    if st.session_state.level_of_measurement_dic[columns] == 'Cardinal':
-                        result_df[columns] = result_df[columns].astype(float)
-
                 result_df["Case"] = result_df.index
 
             except Exception as e:
                 st.info(e)
 
             try:
-                x = pd.concat([df, result_df.iloc[:, :-1]]).reset_index(drop=True)
-                x = x.fillna(method='ffill')
 
+
+                x = pd.concat([df, result_df.iloc[:, :-1]]).reset_index(drop=True)
+                x_filled = x.fillna(method='ffill').copy()
+
+
+                for columns in x_filled:
+                    try:
+                        if st.session_state.level_of_measurement_dic[columns] == "Cardinal":
+                            x_filled[columns] = x_filled[columns].astype(float)
+                        else:
+                            x_filled[columns] = x_filled[columns].astype(str)
+                    except:
+                        pass
+                # x_filled
                 try:
-                    x_trans_df = pd.DataFrame(ct.fit_transform(x).toarray(), columns=ct.get_feature_names_out()).reset_index(
+                    x_trans_df = pd.DataFrame(ct.fit_transform(x_filled).toarray(), columns=ct.get_feature_names_out()).reset_index(
                     drop=True)
                 except:
-                    x_trans_df = pd.DataFrame(ct.fit_transform(x), columns=ct.get_feature_names_out()).reset_index(
+                    # st.write(e)
+                    x_trans_df = pd.DataFrame(ct.fit_transform(x_filled), columns=ct.get_feature_names_out()).reset_index(
                     drop=True)
 
 

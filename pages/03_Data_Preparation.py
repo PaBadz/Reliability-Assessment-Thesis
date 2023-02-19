@@ -5,9 +5,10 @@ from streamlit_extras.switch_page_button import switch_page
 from streamlit_option_menu import option_menu
 import streamlit_nested_layout
 
-from functions.functions_Reliability import getDefault
+from functions.functions_Reliability import getDefault, getRestriction
 from functions.fuseki_connection import login, getAttributes, getTimestamp, uploadBinValues, determinationActivity, \
-    deleteWasGeneratedByDPA, uploadMissingValues, getAttributesDataPreparation
+    deleteWasGeneratedByDPA, uploadMissingValues, getAttributesDataPreparation, getUniqueValuesSeq, get_feature_names, \
+    getDataRestrictionSeq
 
 login()
 try:
@@ -20,21 +21,27 @@ except:
     st.warning("Please Login")
     st.stop()
 
+
 try:
-    host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
+    host = f"http://localhost:3030{st.session_state.fuseki_database}/sparql"
     host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
-except:
-    st.info("Please select a database first")
+    if st.session_state.fuseki_database == "None":
+        st.error("Select dataset")
+        st.stop()
+except Exception as e:
+    st.info(e,"Please select a database first")
     st.stop()
 
-data_preparation_options = option_menu("Data Preparation Options", ["Binned Features", "Missing Values"],
-                                       icons=['collection', 'slash-circle'],
-                                       menu_icon="None", default_index=0, orientation="horizontal"
-                                       )
+try:
+    getUniqueValuesSeq(host)
 
+except Exception as e:
+    st.error("Please upload feature values in Data Understanding step")
+    if st.button("Data Understanding"):
+        switch_page("Data Understanding")
+    st.stop()
 try:
     getDefault(host)
-
 except:
     st.error("Please select other dataset or refresh page")
     st.stop()
@@ -44,14 +51,29 @@ with st.expander("Show Information"):
     except:
         st.error("Please select other dataset or refresh page")
         st.stop()
+    try:
+        # TODO include data restriction in getAttributes
+        uploaded_DataRestriction = getRestriction(host)
+        st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(
+            uploaded_DataRestriction["DUA.value"][0], host)
+        st.session_state.data_restriction_final = st.session_state.unique_values_dict.copy()
+        st.session_state.data_restriction_final.update(st.session_state["data_restrictions_dict"])
+
+    except:
+        st.warning("No Data Restrictions determined")
+
+
+
 
 if "data_restriction_final" not in st.session_state:
     st.session_state.data_restriction_final = st.session_state.unique_values_dict
 
-
 if st.session_state.dataframe_feature_names.empty:
     st.stop()
 
+data_preparation_options = option_menu("Data Preparation Options", ["Binned Features", "Missing Values"],
+                                       icons=['collection', 'slash-circle'],
+                                       menu_icon="None", default_index=0, orientation="horizontal")
 
 
 if data_preparation_options == "Binned Features":
@@ -64,7 +86,6 @@ if data_preparation_options == "Binned Features":
         color_name="red-70",
     )
 
-    st.session_state["loaded_bin_dict"]
 
     if "bin_dict" not in st.session_state:
         st.session_state.bin_dict = dict()
@@ -87,12 +108,13 @@ if data_preparation_options == "Binned Features":
                             bins = st.number_input("Select amount of bins", min_value=int(1), key=f"amount_bin_{key}")
                             step = (upper_border - lower_border) / (bins)
 
-                            if st.button("Ok", key=f"bin_{key}_button"):
+                            if st.button("Save", key=f"bin_{key}_button"):
                                 if bins > 1:
                                     st.session_state[f"bin_{key}"] = [
                                         round(lower_border + n * step, 1) for n in
                                         range(bins + 1)]
                                     st.session_state["bin_dict"][key] = st.session_state[f"bin_{key}"]
+                                    st.success(f"Bin for {key} saved, please upload when finished.")
 
                                 else:
                                     try:
@@ -136,7 +158,7 @@ if data_preparation_options == "Binned Features":
                        """)
         st.write(st.session_state["loaded_bin_dict"])
 
-        if st.button("Change bins"):
+        if st.button("Delete bins"):
             deleteWasGeneratedByDPA(host_upload, st.session_state["DF_bin_dict"])
             del st.session_state["loaded_bin_dict"]
             del st.session_state["DF_bin_dict"]

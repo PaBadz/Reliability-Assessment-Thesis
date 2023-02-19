@@ -300,7 +300,7 @@ if selected2 == 'Upload':
                 dicName = 'level_of_measurement_dic'
                 rprovName = 'scale'
 
-                query = (f"""INSERT DATA {{<urn:uuid:{uuid_ScaleOfFeature}> rdf:type rprov:{rprovName}, owl:NamedIndividual;
+                query = (f"""INSERT DATA {{<urn:uuid:{uuid_ScaleOfFeature}> rdf:type rprov:ScaleOfFeature, owl:NamedIndividual;
                               rprov:{rprovName} "{uploaded_file_JSON[key]["levelOfScale"]}";
                               rdfs:label "{rprovName} {key}"@en;
                               rprov:toFeature <{result_2["subject.value"][0]}>;
@@ -361,6 +361,7 @@ if selected2 == 'Upload':
                 except Exception as e:
                     st.error(e)
 
+            switch_page("Data Understanding")
 
 
     if upload_option == "CSV":

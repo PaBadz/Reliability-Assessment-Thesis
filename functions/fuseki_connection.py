@@ -536,6 +536,30 @@ def getBinValuesSeq(host):
 
 
 
+def getBinsDeployment(bin,feature,host):
+    query = (f"""
+    SELECT ?binEntity ?feature ?label ?MissingValues ?seq ?item WHERE {{
+    <{bin}> rprov:modelingEntityWasDerivedFrom ?binEntity.
+    ?binEntity rdf:type rprov:RangeOfBinnedFeature.
+    ?binEntity rprov:RangeOfBinnedFeature ?seq.
+    ?seq a rdf:Seq .
+    ?seq ?containerMembershipProperty ?item.
+    ?binEntity rprov:toFeature <{feature}>.
+    ?binEntity rprov:toFeature ?feature.
+    ?feature rdfs:label ?label.
+    FILTER(?containerMembershipProperty!= rdf:type)
+}}
+    """)
+
+    try:
+        results_feature_volatility = get_connection_fuseki(host, (prefix+query))
+
+        results_feature_volatility = pd.json_normalize(results_feature_volatility["results"]["bindings"])
+
+        return results_feature_volatility
+    except Exception as e:
+        st.write(e)
+        return
 
 
 def uploadPerturbationAssessment(host_upload,uuid_PerturbationAssessment, label,
@@ -576,7 +600,7 @@ def uploadClassificationCase(host_upload,uuid_ClassificationCase, label, uuid_Pe
 
 
 
-def uploadDataRestrictionSeq(sparqlupdate,host,dic , uuid_DeterminationOfScaleOfFeature, name, rprovName, comment_data_restriction):
+def uploadDataRestrictionSeq(sparqlupdate,host,dic , uuid_DeterminationOfScaleOfFeature, name, rprovName):
     time = getTimestamp()
     for key, value in dic.items():
         uuid_DataRestrictionEntity = uuid.uuid4()
@@ -596,7 +620,6 @@ def uploadDataRestrictionSeq(sparqlupdate,host,dic , uuid_DeterminationOfScaleOf
                           rprov:toFeature <{result_2["subject.value"][0]}>;
                           rprov:wasGeneratedByDUA  <urn:uuid:{uuid_DeterminationOfScaleOfFeature}>;
                           prov:generatedAtTime '{time}'^^xsd:dateTime;
-                          rdfs:comment '{comment_data_restriction}';
                         }}""")
         try:
             sparqlupdate.setQuery(prefix+query)
@@ -613,7 +636,7 @@ def uploadDataRestrictionSeq(sparqlupdate,host,dic , uuid_DeterminationOfScaleOf
             sparqlupdate.query()
             i = i + 1
 
-def uploadDR(starting_time, host_upload, host, comment_data_restriction):
+def uploadDR(starting_time, host_upload, host):
     determinationNameUUID = 'DeterminationOfDataRestriction'
     determinationName = 'DeterminationOfDataRestriction'
     label = "detDataRestriction"
@@ -624,26 +647,28 @@ def uploadDR(starting_time, host_upload, host, comment_data_restriction):
                                                               starting_time, ending_time)
     uploadDataRestrictionSeq(host_upload, host, st.session_state['data_restrictions_dict'],
                              uuid_determinationDataRestriction, name,
-                             rprovName, comment_data_restriction)
+                             rprovName)
 
 
 def getDataRestrictionSeq(data_restriction,host):
     dictionary_DataRestriction = dict()
-    query = (f"""    SELECT ?label ?containerMembershipProperty ?item WHERE {{
-    ?sub rprov:restriction ?container.
-    ?sub rprov:wasGeneratedByDUA <{data_restriction}>.
+    query = (f"""    SELECT ?DUA ?label ?containerMembershipProperty ?item WHERE {{
+    ?DUA rprov:restriction ?container.
+    ?DUA rprov:wasGeneratedByDUA <{data_restriction}>.
     ?container a rdf:Seq .
     ?container ?containerMembershipProperty ?item.
-    ?sub rprov:toFeature ?feature.
+    ?DUA rprov:toFeature ?feature.
     ?feature rdfs:label ?label.
-    FILTER(?containerMembershipProperty!= rdf:type)}}
+    FILTER(?containerMembershipProperty!= rdf:type).
+    FILTER NOT EXISTS{{?container prov:invalidatedAtTime ?time}}
+    }}
     """)
 
     results_feature_DataRestriction = get_connection_fuseki(host, (prefix+query))
     results_feature_DataRestriction = pd.json_normalize(results_feature_DataRestriction["results"]["bindings"])
-    results_feature_DataRestriction= results_feature_DataRestriction.groupby("label.value")["item.value"].apply(list)
+    results_feature_DataRestriction_grouped= results_feature_DataRestriction.groupby("label.value")["item.value"].apply(list)
 
-    for _index, row in results_feature_DataRestriction.items():
+    for _index, row in results_feature_DataRestriction_grouped.items():
         dictionary_DataRestriction[_index] = row
 
     return dictionary_DataRestriction

@@ -74,23 +74,49 @@ def getPerturbationRecommendations(host):
 
 
 def getPerturbationOptions(host):
-    query = (f"""    SELECT ?featureID ?featureName ?PerturbationOptionID ?DUA ?values ?label{{
-    ?featureID rdf:type rprov:Feature .
-    ?featureID rdfs:label ?featureName.
-    ?PerturbationOptionID rdf:type owl:NamedIndividual.
-	?PerturbationOptionID rprov:perturbedFeature ?featureID.
-    ?PerturbationOptionID rprov:generationAlgorithm ?DUA.
-    ?PerturbationOptionID rprov:values ?values.
-    ?PerturbationOptionID rdfs:label ?label.
-    }}
+    # query = (f"""    SELECT ?featureID ?featureName ?PerturbationOptionID ?DUA ?values ?label{{
+    # ?featureID rdf:type rprov:Feature .
+    # ?featureID rdfs:label ?featureName.
+    # ?PerturbationOptionID rdf:type owl:NamedIndividual.
+	# ?PerturbationOptionID rprov:perturbedFeature ?featureID.
+    # ?PerturbationOptionID rprov:generationAlgorithm ?DUA.
+    # ?PerturbationOptionID rprov:values ?values.
+    # ?PerturbationOptionID rdfs:label ?label.
+    # }}
+    # """)
+    query = (f"""    SELECT ?featureID ?featureName ?PerturbationOptionID ?generationAlgo ?values ?label ?DataRestrictionEntities ?MA {{
+?featureID rdf:type rprov:Feature .
+?featureID rdfs:label ?featureName .
+?PerturbationOptionID rdf:type owl:NamedIndividual .
+?PerturbationOptionID rprov:perturbedFeature ?featureID .
+?PerturbationOptionID rprov:generationAlgorithm ?generationAlgo .
+?PerturbationOptionID rprov:values ?values .
+?PerturbationOptionID rdfs:label ?label .
+?PerturbationOptionID rprov:wasGeneratedByMA ?MA
+OPTIONAL {{
+?PerturbationOptionID rprov:modelingEntityWasDerivedFrom ?DataRestrictionEntities .
+?DataRestrictionEntities rdf:type rprov:DataRestriction .
+}}
+}}
     """)
 
     results_feature_PerturbationOption = get_connection_fuseki(host, (prefix + query))
     results_feature_PerturbationOption = pd.json_normalize(results_feature_PerturbationOption["results"]["bindings"])
 
 
-    results_feature_PerturbationOption = results_feature_PerturbationOption[["featureID.value","featureName.value","PerturbationOptionID.value","DUA.value", "values.value", "label.value"]]
-    results_feature_PerturbationOption.columns = ['FeatureID','FeatureName', 'DataUnderstandingEntity', 'PerturbationOption', "Settings","label"]
+
+    try:
+        results_feature_PerturbationOption = results_feature_PerturbationOption[["featureID.value","featureName.value","PerturbationOptionID.value","generationAlgo.value", "values.value", "label.value", "DataRestrictionEntities.value", "MA.value"]]
+        results_feature_PerturbationOption.columns = ['FeatureID','FeatureName', 'PerturbationOptionID', 'PerturbationOption', "Settings","label" ,"DataRestrictionEntities", "ModelingActivity"]
+    except:
+        results_feature_PerturbationOption = results_feature_PerturbationOption[
+            ["featureID.value", "featureName.value", "PerturbationOptionID.value", "generationAlgo.value",
+             "values.value", "label.value", "MA.value"]]
+        results_feature_PerturbationOption.columns = ['FeatureID', 'FeatureName', 'PerturbationOptionID',
+                                                      'PerturbationOption', "Settings", "label",
+                                                      "ModelingActivity"]
+
+
 
     return results_feature_PerturbationOption
 
@@ -99,26 +125,28 @@ def getPerturbationOptions(host):
 # changed DeterminationOfDataRestriction to DataRestriction
 def getRestriction(host):
     dictionary_DataRestriction = dict()
-    query = (f"""SELECT ?sub ?seq?item ?label ?featureName ?seq ?containerMembershipProperty ?comment WHERE {{
+    query = (f"""SELECT ?sub ?seq?item ?label ?featureName ?seq ?containerMembershipProperty WHERE {{
     ?sub rdf:type rprov:DeterminationOfDataRestriction.
     ?seq rprov:wasGeneratedByDUA ?sub.
     ?seq rdfs:label ?label.
-    ?seq rdfs:comment ?comment.
     ?seq rprov:toFeature ?feature.
     ?feature rdfs:label ?featureName.
     ?seq rprov:restriction ?list.
     ?list ?containerMembershipProperty ?item.
-    FILTER(?containerMembershipProperty!= rdf:type)
+    FILTER(?containerMembershipProperty!= rdf:type).
+    FILTER NOT EXISTS{{?seq prov:invalidatedAtTime ?time}}
     }}
     """)
 
     results_feature_DataRestriction = get_connection_fuseki(host, (prefix + query))
     results_feature_DataRestriction = pd.json_normalize(results_feature_DataRestriction["results"]["bindings"])
-    results_feature_DataRestriction = \
-        results_feature_DataRestriction.groupby(["sub.value","seq.value", "label.value", "featureName.value", "comment.value"], as_index=False)[
-            "item.value"].agg(list)
-    # results_feature_DataRestriction = results_feature_DataRestriction.groupby(["time.value","sub.value","label.value"]).apply(lambda x: [list(x['item.value'])]).apply(pd.Series)
-    results_feature_DataRestriction.columns = ['DataRestrictionActivity', 'DataRestrictionEntity', 'Label', 'Feature', 'Comment', "Value"]
+    if not results_feature_DataRestriction.empty:
+
+        results_feature_DataRestriction = \
+            results_feature_DataRestriction.groupby(["sub.value","seq.value", "label.value", "featureName.value", ], as_index=False)[
+                "item.value"].agg(list)
+        # results_feature_DataRestriction = results_feature_DataRestriction.groupby(["time.value","sub.value","label.value"]).apply(lambda x: [list(x['item.value'])]).apply(pd.Series)
+        results_feature_DataRestriction.columns = ['DUA.value', 'DataRestrictionEntity', 'Label', 'Feature', "Value"]
 
     return results_feature_DataRestriction
 
