@@ -1,9 +1,7 @@
 import pandas as pd
 import streamlit as st
-from functions.fuseki_connection import getUniqueValuesSeq, get_connection_fuseki, prefix
-
-
-
+from functions.fuseki_connection import getUniqueValuesSeq, get_connection_fuseki, prefix, \
+    getDataRestrictionSeqDeployment
 
 
 # ------------------------------------------------------------------------------------------------------------------------
@@ -154,8 +152,9 @@ def getRestriction(host):
 def changeAlgorithm(key):
     st.session_state.default[key] = st.session_state[f"algo_{key}"]
 
-def changePerturbationOption(column):
-    st.session_state.perturbationOptions[column] = st.session_state[f"perturbationOption_{column}"]
+def changePerturbationOption(feature_name):
+    st.session_state.perturbationOptions[feature_name] = st.session_state[f"perturbationOption_{feature_name}"]
+
 
 
 

@@ -335,9 +335,9 @@ if optionsDataUnderstanding == "Data Restrictions":
                                         st.session_state[f'data_restrictions_{key}'] = [lower,
                                                                                         upper]
                                         st.session_state[f'data_restrictions_{key}_cardinal'] = [lower,
-                                                                                                 upper]  # st.session_state[f'data_restrictions_{key}']
+                                                                                                 upper]
                                         st.session_state['data_restrictions_dict'][key] = [lower,
-                                                                                           upper]  # st.session_state[f'data_restrictions_{key}']
+                                                                                           upper]
                                         update_data_restrictions_cardinal(key)
                                         st.success(f"Data Restriction for {key} saved, please upload when finished.")
                             except Exception as e:
@@ -347,48 +347,45 @@ if optionsDataUnderstanding == "Data Restrictions":
             if values == 'Ordinal':
                 with tab2:
                     with st.expander(f"Define Data Restrictions for ***{key}***"):
-                        col1, col2, col3 = st.columns([0.05, 10, 0.5])
-                        with col2:
 
-                            if f'data_restrictions_{key}_ordinal' not in st.session_state:
-                                defaultValuesOrdinal(key)
-                            try:
-                                if key in st.session_state.data_restrictions_dict.keys():
-                                    st.session_state[f'data_restrictions_{key}_ordinal'] = [s for s in
-                                                                                            st.session_state.data_restrictions_dict[
-                                                                                                key]]
-                            except:
-                                pass
+                        if f'data_restrictions_{key}_ordinal' not in st.session_state:
+                            defaultValuesOrdinal(key)
+                        try:
+                            if key in st.session_state.data_restrictions_dict.keys():
+                                st.session_state[f'data_restrictions_{key}_ordinal'] = [s for s in
+                                                                                        st.session_state.data_restrictions_dict[
+                                                                                            key]]
+                        except:
+                            pass
 
-                            if st.button(f"Default Values for {key}", key=f'defaultValuesOrdinal_{key}'):
-                                defaultValuesOrdinal(key)
-                            st.session_state[f'data_restrictions_{key}_ordinal'] = st.multiselect(
-                                f"Select Values for Ordinal Value {key}",
-                                options=st.session_state[f'data_restrictions_{key}_ordinal'],
-                                default=st.session_state[f'data_restrictions_{key}_ordinal'],
-                                key=f'data_restrictions_{key}',
-                                on_change=update_data_restrictions_ordinal,
-                                args=(key,))
-                            st.markdown("""---""")
+                        if st.button(f"Default Values for {key}", key=f'defaultValuesOrdinal_{key}'):
+                            defaultValuesOrdinal(key)
+                        st.session_state[f'data_restrictions_{key}_ordinal'] = st.multiselect(
+                            f"Select Values for Ordinal Value {key}",
+                            options=st.session_state.unique_values_dict[key],
+                            default=st.session_state[f'data_restrictions_{key}_ordinal'],
+                            key=f'data_restrictions_{key}',
+                            on_change=update_data_restrictions_ordinal,
+                            args=(key,))
+                        st.markdown("""---""")
 
             if values == 'Nominal':
                 with tab3:
                     with st.expander(f"Define Data Restrictions for ***{key}***"):
-                        col1, col2, col3 = st.columns([0.05, 10, 0.5])
-                        with col2:
 
-                            if f'data_restrictions_{key}_nominal' not in st.session_state:
-                                defaultValuesNominal(key)
-                            if st.button(f"Default Values for {key}", key=f'defaultValuesNominal_{key}'):
-                                defaultValuesNominal(key)
-                            st.session_state[f'data_restrictions_{key}_nominal'] = st.multiselect(
-                                f"Select Values for Nominal Value {key}",
-                                options=st.session_state.unique_values_dict[key],
-                                default=st.session_state[f'data_restrictions_{key}_nominal'],
-                                key=f'data_restrictions_{key}',
-                                on_change=update_data_restrictions_nominal,
-                                args=(key,))
-                            st.markdown("""---""")
+                        if f'data_restrictions_{key}_nominal' not in st.session_state:
+                            defaultValuesNominal(key)
+                        if st.button(f"Default Values for {key}", key=f'defaultValuesNominal_{key}'):
+                            defaultValuesNominal(key)
+                        st.session_state[f'data_restrictions_{key}_nominal'] = st.multiselect(
+                            f"Select Values for Nominal Value {key}",
+                            options=st.session_state.unique_values_dict[key],
+                            default=st.session_state[f'data_restrictions_{key}_nominal'],
+                            key=f'data_restrictions_{key}',
+                            on_change=update_data_restrictions_nominal,
+                            args=(key,))
+                        st.markdown("""---""")
+
 
     # TODO insert option for ordinal data to be selected with slider
         if st.session_state['data_restrictions_dict'] == {}:

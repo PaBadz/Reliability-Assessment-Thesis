@@ -235,15 +235,20 @@ if menu_perturbation == 'Perturbation Option':
                                     st.session_state.perturbationOptions[feature_names])) & (savedPerturbationOptions[
                                                                                                  'FeatureName'] == feature_names)])
 
+
+
                             df_test = pd.concat([df_test, chosen_perturbationOptions_feature])
 
 
-                            if not chosen_perturbationOptions_feature.empty:
-                                st.session_state.assessmentPerturbationOptions[
-                                feature_names] = chosen_perturbationOptions_feature.to_dict("list")
+                            if chosen_perturbationOptions_feature.empty:
+                                try:
+                                    del st.session_state.assessmentPerturbationOptions[
+                                    feature_names]
+                                except:
+                                    pass
                             else:
                                 st.session_state.assessmentPerturbationOptions[
-                                    feature_names] = []
+                                    feature_names] = chosen_perturbationOptions_feature.to_dict("list")
 
 
                             for index, row in chosen_perturbationOptions_feature.iterrows():
@@ -273,8 +278,19 @@ if menu_perturbation == 'Perturbation Option':
 
 
                             st.session_state.perturbationOptions_settings[feature_names] = (settingList)
+
+
                             if len(st.session_state.perturbationOptions_settings[feature_names]) > 1:
                                 st.info("If Perturbation Options differ in Perturbation Level, first one is used for visualization purposes.")
+                            # elif len(st.session_state.perturbationOptions_settings[feature_names]) == 0:
+                            #
+                            #
+                            #     st.session_state.data_restriction_final_deployment[feature_names]=[float(st.session_state.unique_values_dict[feature_names][0]),
+                            #                                  float(st.session_state.unique_values_dict[feature_names][-1])]
+
+
+
+
 
                             if feature_names in st.session_state.assessmentPerturbationOptions.keys() and \
                                     st.session_state.perturbationOptions[feature_names] != []:
@@ -754,28 +770,34 @@ if menu_perturbation == 'Perturbation Option':
         # data_restriction = st.selectbox("Select Data Restriction", options=savedRestrictions["DataRestrictionActivity"].unique())
         st.session_state["data_restriction_final_deployment"] = st.session_state.unique_values_dict.copy()
 
-
-        for feature_name, level_of_scale in st.session_state["level_of_measurement_dic"].items():
-            # gets unique values for each feature and updates if data restriction is applicable
-            if level_of_scale == "Cardinal":
-                defaultValuesCardinalRestriction(feature_name)
-            if level_of_scale == "Ordinal":
-                defaultValuesOrdinalRestriction(feature_name)
-            if level_of_scale == "Nominal":
-                defaultValuesNominalRestriction(feature_name)
+        # for feature_name, level_of_scale in st.session_state["level_of_measurement_dic"].items():
+        #     # gets unique values for each feature and updates if data restriction is applicable
+        #     if level_of_scale == "Cardinal":
+        #         defaultValuesCardinalRestriction(feature_name)
+        #     if level_of_scale == "Ordinal":
+        #         defaultValuesOrdinalRestriction(feature_name)
+        #     if level_of_scale == "Nominal":
+        #         defaultValuesNominalRestriction(feature_name)
 
         # look in assessmentPerturbationOptions if there are data restrictions for the feature and if so, update the data_restriction_dict
 
 
         for feature_name in st.session_state.assessmentPerturbationOptions.keys():
+            st.session_state["data_restriction_deployment"] = [(st.session_state.unique_values_dict[feature_names][0]),
+                                                             (st.session_state.unique_values_dict[feature_names][-1])]
+
             try:
                 data_restriction_entity = \
                 st.session_state.assessmentPerturbationOptions[feature_name]["PerturbationOptionID"][0]
 
                 featureID = st.session_state.assessmentPerturbationOptions[feature_name]["FeatureID"][0]
 
+
+
                 st.session_state["data_restriction_deployment"] = getDataRestrictionSeqDeployment(data_restriction_entity,
                                                                                              featureID, host)
+
+
             except Exception as e:
                 pass
 
@@ -789,7 +811,6 @@ if menu_perturbation == 'Perturbation Option':
 
 
     except Exception as e:
-        st.write(e)
         st.session_state["data_restriction_final_deployment"] = st.session_state.unique_values_dict.copy()
 
 
@@ -800,8 +821,9 @@ if menu_perturbation == 'Perturbation Option':
     )
     with st.expander("Show chosen Perturbation Options"):
         # delete empty dictionaries
-        st.write(df_test)
+        st.dataframe(df_test[["FeatureName","PerturbationOption","Settings","DataRestrictionEntities","group"]].reset_index(drop=True),use_container_width=True)
         st.session_state.df_test = df_test
+
         try:
 
             for key in list(st.session_state.assessmentPerturbationOptions.keys()):
