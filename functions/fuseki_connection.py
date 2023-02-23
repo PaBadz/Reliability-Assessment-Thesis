@@ -39,6 +39,17 @@ def get_connection_fuseki(host, query):
     sparql.setMethod(GET)
     return sparql.query().convert()
 
+def get_dataset():
+    try:
+        host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
+        host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
+        if st.session_state.fuseki_database == "None":
+            st.error("Select dataset")
+            st.stop()
+    except:
+        st.stop()
+    return host, host_upload
+
 def login():
     try:
         if st.session_state["authentication_status"] == False:
@@ -47,8 +58,28 @@ def login():
         elif st.session_state["authentication_status"] == None:
             st.warning('Please enter your username and password')
             st.stop()
-    except Exception as e:
-        pass
+    except:
+        st.warning("Please Login")
+        st.stop()
+
+
+    if st.session_state.username == "analyst" or st.session_state.username=="user":
+        st.warning("Please switch to Deployment Page")
+        st.stop()
+
+
+
+def login_analyst():
+    try:
+        if st.session_state["authentication_status"] == False:
+            st.error('Username/password is incorrect')
+            st.stop()
+        elif st.session_state["authentication_status"] == None:
+            st.warning('Please enter your username and password')
+            st.stop()
+    except:
+        st.warning("Please Login")
+
 
 
 def getTimestamp():
@@ -175,7 +206,7 @@ def get_feature_names(host):
         result_feature_names = pd.json_normalize(result_feature_names["results"]["bindings"])
         return result_feature_names
     except:
-        return st.warning("Please select Database")
+        return st.warning("Please select dataset")
 
 
 # Unique Values

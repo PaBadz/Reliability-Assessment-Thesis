@@ -20,12 +20,11 @@ from functions.fuseki_connection import host_dataset_first_initialize, set_datab
 
 st.set_page_config(
     page_title="Masterthesis Pascal Badzura",
-    page_icon="🦈",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
         'Get Help': 'https://docs.streamlit.io/en/stable/getting_started.html',
-        'About': "# This is a header. This is an *extremely* cool app!"
+        'About': "# This is the Masterthesis of Pascal Badzura."
     }
 )
 
@@ -88,12 +87,8 @@ def get_dataset_from_fuseki():
     if 'fuseki_database' not in st.session_state:
         st.session_state['fuseki_database'] = "None"
 
-    index = st.session_state['fueski_dataset_options'].index(st.session_state['fuseki_database'])
 
-    host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
-    host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
-
-if st.session_state.username == "user":
+if st.session_state.username == "analyst":
     colored_header(
         label="Masterthesis",
         description="Design and Implementation of a web-based User Interface for the guided Assessment of Reliability of Classification Results using the Perturbation Approach",
@@ -120,7 +115,7 @@ if st.session_state.username == "user":
         st.session_state['fuseki_database'] = "None"
     index = st.session_state['fueski_dataset_options'].index(st.session_state['fuseki_database'])
 
-    st.session_state.fuseki_database = st.selectbox('Please insert a name for the database', index=index,
+    st.session_state.fuseki_database = st.selectbox('Please select dataset', index=index,
                                                     options=st.session_state['fueski_dataset_options'],
                                                     on_change=set_database, key='name_fuseki_database')
 
@@ -144,19 +139,16 @@ st.write('--------------')
 st.markdown("**In Order to continue please upload a dataset to the server or choose a dataset from the database**")
 
 success = False
-selected2 = option_menu(None, ["Database", "Upload"],
-                        icons=['database', 'cloud-upload'],
+selected2 = option_menu(None, ["Select dataset", "Upload dataset"],
+                        icons=['nothing','cloud-upload'],
                         menu_icon="", default_index=0, orientation="horizontal")
 
-if selected2 == 'Upload':
-    st.info("""The following steps must be carried out when using the device for the first time!
-- Create new dataset and select
-- Select the prediction variable and upload the dataset.
-- Selection of level of measurement in the Data Understanding step
-- Creating the order of ordinal data and uploading the unique values of the variables in the Data Understanding step""")
+if selected2 == 'Upload dataset':
+    st.info("If there is no dataset please open expander below and create dataset.")
+
     with st.expander("Create new dataset"):
-        new_dataset = st.text_input("Insert Dataset name")
-        if st.button("Create new Dataset"):
+        new_dataset = st.text_input("Insert dataset name")
+        if st.button("Create new dataset"):
             headers = {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                        'Authorization': 'Basic $(echo -n admin:password | base64)'}
             r = requests.post(host_dataset_first_initialize, data=f"dbName={new_dataset.replace(' ', '')}&dbType=tdb",
@@ -188,7 +180,7 @@ if st.session_state.fuseki_database=="None":
 
 
 
-if selected2 == "Database":
+if selected2 == "Select dataset":
     st.markdown("#### Process of reliability of predictions based on CRISP-DM")
     st.markdown("""CRISP-DM stands for Cross Industry Standard for Data Mining Processes. In this Web App you will be able to reproduce the process of reliability of predictions based on CRISP-DM. The process is divided into 6 steps: 
     """)
@@ -217,28 +209,29 @@ if selected2 == "Database":
     if page:
         switch_page("Deployment")
 
-
-
-    # # if 'dataset_name' not in st.session_state:
-    # #     st.session_state['dataset_name'] = 'None'
-    # data = None
-    # # if 'unique_values_dict' not in st.session_state:
-    # #     with open('unique_values.json') as f:
-    # #         st.session_state['unique_values_dict'] = json.load(f)
-    #
-    # st.stop()
-
-if selected2 == 'Upload':
-
+if selected2 == 'Upload dataset':
+    st.write("---------------------")
     upload_option = st.radio(label ="Select upload option",options=["JSON", "CSV"])
 
 
     if upload_option == "JSON":
 
-        uploaded_file = st.file_uploader("Upload file to the server", accept_multiple_files=False,
+        with st.expander("File needs to follow this schema"):
+            st.json("""{
+      "FeatureName1": {"levelOfScale": "Cardinal", 	"uniqueValues": ["minValue", "maxValue"]},
+      "FeatureName2": {"levelOfScale": "Nominal", 	"uniqueValues": ["x", "y","z"]},
+      "FeatureName3": {"levelOfScale": "Ordinal", 	"uniqueValues": ["1", "2", "3"]}
+    }
+    """)
+
+
+
+        uploaded_file = st.file_uploader(f"Upload JSON file", accept_multiple_files=False,
                                          on_change=set_database)
         if not uploaded_file:
             st.stop()
+
+        st.info("When data is uploaded via JSON, the steps Determination of level of scale and Creation of order of ordinal data are automatically created and unique values are uploaded.")
 
 
         import json
@@ -256,7 +249,7 @@ if selected2 == 'Upload':
         name = 'Feature'
         rprovName = 'Feature'
 
-        if st.button("Upload dataset to the server", type='primary'):
+        if st.button(f"Upload dataset to {st.session_state.fuseki_database}", type='primary'):
             # insert first RDF into graph
             data = open('example_upload.ttl').read()
             headers = {'Content-Type': 'text/turtle;charset=utf-8'}
@@ -366,8 +359,6 @@ if selected2 == 'Upload':
 
     if upload_option == "CSV":
 
-
-
         uploaded_file = st.file_uploader("Upload file to the server", accept_multiple_files=False,on_change=set_database)
 
         if not uploaded_file:
@@ -376,6 +367,18 @@ if selected2 == 'Upload':
 
         if uploaded_file is not None:
             uploaded_file_df = pd.read_csv(uploaded_file)
+
+        st.info("""If data is uploaded via CSV, the steps Determination of level of scale and Creation of order of ordinal data must be created manually and unique values uploaded.
+The following steps are necessary for this:
+
+1) Select Target variable
+2) Upload features to server
+
+The data is forwarded to the data understanding step, where the following steps must be taken:
+
+3) Determination of scale
+4) Determination of order for ordinal data
+5) Upload unique values """)
         st.dataframe(uploaded_file_df,use_container_width=True)
         if 'dataset' not in st.session_state:
             st.session_state['dataset'] = 'None'
@@ -384,7 +387,7 @@ if selected2 == 'Upload':
             with st.form(key="formUploadFeatures"):
                 # Dataset will be split and saved in the database
                 # select target variable
-                y = st.selectbox('Choose target variable', uploaded_file_df.columns, index=len(uploaded_file_df.columns) - 1, help="By default, the last column is selected as the target variable.")
+                y = st.selectbox('Select target variable', uploaded_file_df.columns, index=len(uploaded_file_df.columns) - 1, help="By default, the last column is selected as the target variable.")
 
                 X = uploaded_file_df.drop(y, axis=1)
 
@@ -429,7 +432,7 @@ if selected2 == 'Upload':
 
 
 
-                if st.form_submit_button("Upload dataset to the server",type='primary'):
+                if st.form_submit_button(f"Upload dataset to {st.session_state.fuseki_database}",type='primary'):
                     # insert first RDF into graph
                     data = open('example_upload.ttl').read()
                     headers = {'Content-Type': 'text/turtle;charset=utf-8'}

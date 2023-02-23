@@ -8,26 +8,12 @@ import streamlit_nested_layout
 from functions.functions_Reliability import getDefault, getRestriction
 from functions.fuseki_connection import login, getAttributes, getTimestamp, uploadBinValues, determinationActivity, \
     deleteWasGeneratedByDPA, uploadMissingValues, getAttributesDataPreparation, getUniqueValuesSeq, get_feature_names, \
-    getDataRestrictionSeq
+    getDataRestrictionSeq, get_dataset
 
 login()
-try:
-    if st.session_state.username == "user":
-        st.stop()
-except:
-    st.warning("Please switch to Deployment Page")
-    st.stop()
 
+host, host_upload = get_dataset()
 
-try:
-    host = f"http://localhost:3030{st.session_state.fuseki_database}/sparql"
-    host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
-    if st.session_state.fuseki_database == "None":
-        st.error("Select dataset")
-        st.stop()
-except Exception as e:
-    st.info(e,"Please select a database first")
-    st.stop()
 
 try:
     getUniqueValuesSeq(host)
@@ -102,25 +88,22 @@ if data_preparation_options == "Binned Features":
                         if st.session_state[f"lower_border_{key}"] >= st.session_state[f"upper_border_{key}"]:
                             st.error("Lower bound range must be smaller than upper bound.")
                         else:
-                            bins = st.number_input("Select amount of bins", min_value=int(2), key=f"amount_bin_{key}")
+                            bins = st.number_input("Select amount of bins", min_value=int(1), key=f"amount_bin_{key}", help="Amount of bins has to be higher one in order to create bins")
                             step = (upper_border - lower_border) / (bins)
 
-                            if st.button("Save", key=f"bin_{key}_button"):
-                                if bins > 1:
-                                    st.session_state[f"bin_{key}"] = [
-                                        round(lower_border + n * step, 1) for n in
-                                        range(bins + 1)]
-                                    st.session_state["bin_dict"][key] = st.session_state[f"bin_{key}"]
-                                    st.success(f"Bin for {key} saved, please upload when finished.")
 
-                                else:
-                                    try:
-                                        del st.session_state["bin_dict"][key]
-                                    except:
-                                        pass
+                            if bins > 1:
+                                st.session_state[f"bin_{key}"] = [
+                                    round(lower_border + n * step, 1) for n in
+                                    range(bins + 1)]
+                                st.session_state["bin_dict"][key] = st.session_state[f"bin_{key}"]
+                                st.success(f"Bin for {key} saved, please upload when finished.")
 
-
-
+                            else:
+                                try:
+                                    del st.session_state["bin_dict"][key]
+                                except:
+                                    pass
                     except:
                         st.error("Lower bound range must be smaller than upper bound.")
 
@@ -129,24 +112,24 @@ if data_preparation_options == "Binned Features":
 
 
 
+        if st.session_state.bin_dict != {}:
+            st.write("------------------")
+            with st.expander("Show bins"):
+                st.write(st.session_state.bin_dict)
+            if st.button("Upload bins", key="button_bins", type="primary"):
+                determinationName = 'DocuOfRangeOfBinnedFeature'
+                label = '"DocuOfRangeOfBinnedFeature"@en'
 
-        st.write("------------------")
-        with st.expander("Show bins"):
-            st.write(st.session_state.bin_dict)
-        if st.button("Upload bins", key="button_bins", type="primary"):
-            determinationName = 'DocuOfRangeOfBinnedFeature'
-            label = '"DocuOfRangeOfBinnedFeature"@en'
+                name = 'RangeOfBinnedFeature'
+                rprovName = 'RangeOfBinnedFeature'
+                ending_time = getTimestamp()
 
-            name = 'RangeOfBinnedFeature'
-            rprovName = 'RangeOfBinnedFeature'
-            ending_time = getTimestamp()
+                starting_time = getTimestamp()
 
-            starting_time = getTimestamp()
-
-            uuid_determinationBin = determinationActivity(host_upload, determinationName, label, starting_time,
-                                                              ending_time)
-            uploadBinValues(host_upload, host, st.session_state["bin_dict"], uuid_determinationBin, rprovName)
-            st.experimental_rerun()
+                uuid_determinationBin = determinationActivity(host_upload, determinationName, label, starting_time,
+                                                                  ending_time)
+                uploadBinValues(host_upload, host, st.session_state["bin_dict"], uuid_determinationBin, rprovName)
+                st.experimental_rerun()
     else:
         st.markdown("""
                        **Here you can see how bins were generated for each feature**
@@ -212,20 +195,21 @@ elif data_preparation_options == "Missing Values":
                         st.session_state[f'missingValues_{key}'] = st.text_input("How were missing values replaced?", value=st.session_state[f'missingValues_{key}'],key=(f'missingValues_{key}_widget'))
                         if st.session_state[f'missingValues_{key}'] != "":
                             st.session_state["missingValues_of_features_dic"][key]=st.session_state[f'missingValues_{key}']
-        st.write("------------------")
-        with st.expander("Show missing values"):
-            st.write(st.session_state["missingValues_of_features_dic"])
-        if st.button("Submit", type="primary"):
-            uuid_DocuOfHandlingOfMissingValues = determinationActivity(host_upload, determinationName,
-                                                                 label,
-                                                                 starting_time, ending_time)
+        if st.session_state["missingValues_of_features_dic"]!= {}:
+            st.write("------------------")
+            with st.expander("Show missing values"):
+                st.write(st.session_state["missingValues_of_features_dic"])
+            if st.button("Submit", type="primary"):
+                uuid_DocuOfHandlingOfMissingValues = determinationActivity(host_upload, determinationName,
+                                                                     label,
+                                                                     starting_time, ending_time)
 
-            name = "HandlingOfMissingValues"
+                name = "HandlingOfMissingValues"
 
-            uploadMissingValues(host_upload, host, st.session_state["missingValues_of_features_dic"],
-                      uuid_DocuOfHandlingOfMissingValues, name)
-            st.session_state.loaded_missingValues_of_features_dic = st.session_state["missingValues_of_features_dic"]
-            st.experimental_rerun()
+                uploadMissingValues(host_upload, host, st.session_state["missingValues_of_features_dic"],
+                          uuid_DocuOfHandlingOfMissingValues, name)
+                st.session_state.loaded_missingValues_of_features_dic = st.session_state["missingValues_of_features_dic"]
+                st.experimental_rerun()
     else:
         st.markdown("""
                 **Here you can see how missing values were replaced for each feature**

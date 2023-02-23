@@ -1,3 +1,4 @@
+import os
 import pickle
 
 import pandas as pd
@@ -10,32 +11,48 @@ from sklearn.model_selection import train_test_split
 from streamlit_extras.switch_page_button import switch_page
 
 from functions.functions import add_parameter_ui, get_classifier
-from functions.fuseki_connection import login
+from functions.fuseki_connection import login_analyst, get_dataset
 
-login()
-# try:
-#     if st.session_state.username == "user":
-#         page = st.button("Deployment")
-#         if page:
-#             switch_page("Deployment")
-#         st.stop()
-# except:
-#     st.warning("Please Login")
-#     st.stop()
+login_analyst()
 
-try:
-    host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
-    host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
-    if st.session_state.fuseki_database == "None":
-        st.error("Select dataset")
-        st.stop()
-except:
+host, host_upload = get_dataset()
 
-    st.stop()
 
 
 
 tab1, tab2 = st.tabs(["Data", "Model"])
+
+with tab1:
+    option=st.radio(label="Select",options=["Select", "Upload"])
+    if option=="Select":
+        models = os.listdir("/Users/pascal/Studium/Masterthesis/model")
+        st.write(models)
+        loaded_model2 = st.selectbox(label="Select model", options = models)
+
+    else:
+        st.markdown("Upload Model")
+        if "model" in st.session_state:
+            st.write(st.session_state['model'].feature_names_in_)
+        loaded_model2 = st.file_uploader("Upload Model")
+        model_name = st.text_input("Insert name of model")
+        if model_name != "":
+            with open(os.path.join("/Users/pascal/Studium/Masterthesis/model", ""), 'wb') as f:
+                pickle.dump(f, loaded_model2)
+
+
+    if loaded_model2 is not None:
+        # loaded_model = pickle.load(loaded_model2)
+        with open(os.path.join("/Users/pascal/Studium/Masterthesis/model", loaded_model2), 'rb') as f:
+            loaded_model = pickle.load(f)
+        # loaded_model = pickle.loads(os.path.join("/Users/pascal/Studium/Masterthesis/model", loaded_model2))
+        st.success("Model uploaded")
+        st.session_state.model = loaded_model
+        with st.expander("Show model information:"):
+            st.write(type(loaded_model))
+            st.write(loaded_model.feature_names_in_)
+
+
+
 
 
 with tab2:
@@ -49,7 +66,7 @@ with tab2:
         ordinal = [key for key, value in st.session_state.level_of_measurement_dic.items() if value == 'Ordinal']
         cardinal = [key for key, value in st.session_state.level_of_measurement_dic.items() if value == 'Cardinal']
 
-        # st.write(df[[key for key, value in st.session_state.level_of_measurement_dic.items() if value == 'Nominal']])
+        # pipeline for transforming ordinal, cardinal and nominal values
         ct = ColumnTransformer(transformers=[("OneHot", OneHotEncoder(handle_unknown='ignore'), nominal),
                                              ("Ordinal", OrdinalEncoder(handle_unknown='error'), ordinal),
                                              ("Cardinal", SimpleImputer(strategy='median'), cardinal)],
@@ -65,7 +82,7 @@ with tab2:
 
         X_train, X_test, y_train, y_test = train_test_split(x_trans_df, st.session_state['y'], test_size=0.2,
                                                             random_state=1234)
-        #
+
         st.markdown("Define Model")
         # Select classifier
         classifier_name = st.sidebar.selectbox(
@@ -80,29 +97,21 @@ with tab2:
         #
         clf = get_classifier(st.session_state['classifier_name'], params)
         # #### CLASSIFICATION ####
-        # # TODO: Encode Nominal and Ordinal Values and decode them again to visualize the results
-
 
         clf.fit(X_train, y_train)
         st.session_state['model']  = clf
         y_pred = pd.DataFrame(clf.predict(X_test))
-        #
-        #
+
         df_result = pd.DataFrame(X_test.reset_index(), columns=ct.get_feature_names_out())
 
-        # if df_result not in st.session_state:
-        #     st.session_state['df_result'] = None
         df_result["Prediction"] = y_pred
         st.write(df_result)
-        # st.session_state['df_result'] = df_result
-        #
-        #
+
         acc = accuracy_score(y_test, y_pred)
 
         st.write(f'Classifier = {st.session_state["classifier_name"]}')
         st.write(f'Accuracy =', acc)
-        #
-        #
+
         filename = st.text_input("Enter the name of the model", ".sav")
 
         if st.button("Save Model"):
@@ -114,17 +123,9 @@ with tab2:
 
 
 
-with tab1:
-    st.markdown("Upload Model")
-    if "model" in st.session_state:
-        st.write(st.session_state['model'].feature_names_in_)
-    loaded_model2 = st.file_uploader("Upload Model")
 
-    if loaded_model2 is None:
-        pass
-    else:
-        loaded_model = pickle.load(loaded_model2)
-        st.write(type(loaded_model))
-        st.write(loaded_model.feature_names_in_)
-        st.session_state.model = loaded_model
+
+
+
+
 

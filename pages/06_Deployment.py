@@ -19,32 +19,17 @@ from functions.functions_Reliability import getDefault, getPerturbationOptions, 
     changePerturbationOption, getRestriction, defaultValuesCardinalRestriction, defaultValuesOrdinalRestriction, \
     defaultValuesNominalRestriction, deleteTable
 from functions.functions_deployment import get_perturbation_level, color_map
-from functions.fuseki_connection import login, getAttributes, getDataRestrictionSeqDeployment, \
+from functions.fuseki_connection import getAttributes, getDataRestrictionSeqDeployment, \
     getFeatureVolatilityDeployment, getMissingValuesDeployment, getTimestamp, determinationActivity, \
     uploadPerturbationAssessment, uploadClassificationCase, getAttributesDeployment, getBinValuesSeq, getBinsDeployment, \
-    getUniqueValuesSeq
+    getUniqueValuesSeq, login_analyst, get_dataset
 from functions.perturbation_algorithms_ohne_values import percentage_perturbation, sensorPrecision, fixedAmountSteps, \
     perturbRange, perturbInOrder, perturbAllValues
 pd.set_option("styler.render.max_elements", 999_999_999_999)
 
-login()
+login_analyst()
 
-try:
-    if st.session_state.username == "user":
-        pass
-except:
-    st.warning("Please Login")
-    st.stop()
-
-try:
-    host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
-    host_upload: SPARQLWrapper = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
-    if st.session_state.fuseki_database == "None":
-        st.error("Select dataset")
-        st.stop()
-except:
-    st.stop()
-# ------------------------------------------------------------------------------------------------------------------------
+host, host_upload = get_dataset()
 
 try:
     getUniqueValuesSeq(host)
@@ -120,7 +105,7 @@ if menu_perturbation == 'Perturbation Option':
         st.session_state.perturbationOptions_settings = {}
 
         # save all information for the selected perturbation options in a dictionary
-        st.session_state.assessmentPerturbationOptions = {}  # pd.DataFrame(columns=savedPerturbationOptions.columns)
+        st.session_state.assessmentPerturbationOptions = {}
         st.session_state.df_test = pd.DataFrame()
         # save default values for each feature
         st.session_state.perturbationOptions = {}
@@ -269,7 +254,8 @@ if menu_perturbation == 'Perturbation Option':
                                 settings["PerturbationLevel"] = keys[index + 1]
 
                                 if row["PerturbationOption"] in settingList:
-                                    settingList[row["PerturbationOption"]].append(settings)
+                                    st.warning(f"""Equal {row["PerturbationOption"]} selected. Only the last one will be used.""")
+                                    settingList[row["PerturbationOption"]].update(settings)
                                 else:
                                     settingList[row["PerturbationOption"]] = settings
 
@@ -282,13 +268,6 @@ if menu_perturbation == 'Perturbation Option':
 
                             if len(st.session_state.perturbationOptions_settings[feature_names]) > 1:
                                 st.info("If Perturbation Options differ in Perturbation Level, first one is used for visualization purposes.")
-                            # elif len(st.session_state.perturbationOptions_settings[feature_names]) == 0:
-                            #
-                            #
-                            #     st.session_state.data_restriction_final_deployment[feature_names]=[float(st.session_state.unique_values_dict[feature_names][0]),
-                            #                                  float(st.session_state.unique_values_dict[feature_names][-1])]
-
-
 
 
 
@@ -766,20 +745,7 @@ if menu_perturbation == 'Perturbation Option':
     try:
         savedRestrictions = getRestriction(host)
 
-
-        # data_restriction = st.selectbox("Select Data Restriction", options=savedRestrictions["DataRestrictionActivity"].unique())
         st.session_state["data_restriction_final_deployment"] = st.session_state.unique_values_dict.copy()
-
-        # for feature_name, level_of_scale in st.session_state["level_of_measurement_dic"].items():
-        #     # gets unique values for each feature and updates if data restriction is applicable
-        #     if level_of_scale == "Cardinal":
-        #         defaultValuesCardinalRestriction(feature_name)
-        #     if level_of_scale == "Ordinal":
-        #         defaultValuesOrdinalRestriction(feature_name)
-        #     if level_of_scale == "Nominal":
-        #         defaultValuesNominalRestriction(feature_name)
-
-        # look in assessmentPerturbationOptions if there are data restrictions for the feature and if so, update the data_restriction_dict
 
 
         for feature_name in st.session_state.assessmentPerturbationOptions.keys():
@@ -838,9 +804,6 @@ if menu_perturbation == 'Perturbation Option':
                     del st.session_state.perturbationOptions_settings[feature]
         except Exception as e:
             st.error(e)
-
-        # st.session_state.assessmentPerturbationOptions
-        # st.write(st.session_state.perturbationOptions_settings)
 
 
     with st.expander("Show Data Restriction values"):
@@ -1030,10 +993,6 @@ try:
                       alwaysShowHorizontalScroll=True,
                       theme='streamlit')
 
-        # TODO: Create Entity from selected rows, Values: PerturbedTestCase
-        # Naming? Labeling?
-        # Values Testcase? These are the predicted perturbed rows
-
         selected_rows = data["selected_rows"]
         selected_rows_DF = pd.DataFrame(selected_rows,
                                         columns=st.session_state.dataframe_feature_names["featureName.value"])
@@ -1180,7 +1139,7 @@ try:
                                     if k == column:
                                         for algorithm_keys in method.keys():
 
-                                            if algorithm_keys == 'Percentage perturbation':
+                                            if algorithm_keys == 'Percentage Perturbation':
 
                                                 perturbedList[algorithm_keys] = (
                                                     percentage_perturbation(method[algorithm_keys]["steps"],
@@ -1189,7 +1148,7 @@ try:
                                                                                 column]))
 
 
-                                            elif algorithm_keys == '5% perturbation':
+                                            elif algorithm_keys == '5% Perturbation':
                                                 try:
                                                     perturbedList[algorithm_keys] = (
                                                         percentage_perturbation(5, selected_rows[i][k][0],
@@ -1198,31 +1157,31 @@ try:
                                                 except Exception as e:
                                                     st.error(f"ERROR! Please change! {e}")
 
-                                            elif algorithm_keys == '10% perturbation':
+                                            elif algorithm_keys == '10% Perturbation':
                                                 perturbedList[algorithm_keys] = (
                                                     percentage_perturbation(10, selected_rows[i][k][0],
                                                                             st.session_state.data_restriction_final_deployment[
                                                                                 column]))
 
-                                            elif algorithm_keys == 'Sensor Precision':
+                                            elif algorithm_keys == 'Sensor Precision Perturbation':
                                                 perturbedList[algorithm_keys] = (
                                                     sensorPrecision(method[algorithm_keys]["sensorPrecision"],
                                                                     method[algorithm_keys]["steps"],
                                                                     selected_rows[i][k][0],
                                                                     st.session_state.data_restriction_final_deployment[column]))
-                                            elif algorithm_keys == 'Fixed amount':
+                                            elif algorithm_keys == 'Fixed Amount Perturbation':
                                                 perturbedList[algorithm_keys] = (
                                                     fixedAmountSteps(method[algorithm_keys]["amount"],
                                                                      method[algorithm_keys]["steps"],
                                                                      selected_rows[i][k][0],
                                                                      st.session_state.data_restriction_final_deployment[column]))
-                                            elif algorithm_keys == 'Range perturbation':
+                                            elif algorithm_keys == 'Range Perturbation':
                                                 perturbedList[algorithm_keys] = (
                                                     perturbRange(method[algorithm_keys]["lowerBound"],
                                                                  method[algorithm_keys]["upperBound"],
                                                                  method[algorithm_keys]["steps"]))
 
-                                            elif algorithm_keys == "Bin perturbation":
+                                            elif algorithm_keys == "Bin Perturbation":
                                                 try:
                                                     for j in range(len(st.session_state.loaded_bin_dict[k]) - 1):
                                                         if float(st.session_state.loaded_bin_dict[k][j]) <= float(
@@ -1241,12 +1200,12 @@ try:
 
 
 
-                                            elif algorithm_keys == 'Perturb in order':
+                                            elif algorithm_keys == 'Perturb in rder':
                                                 try:
                                                     perturbedList[algorithm_keys] = (
                                                         perturbInOrder(method[algorithm_keys]["steps"],
                                                                        selected_rows[i][k][0],
-                                                                       st.session_state.data_restriction_final_deploymental[
+                                                                       st.session_state.data_restriction_final_deployment[
                                                                            column]))
 
 
@@ -1332,7 +1291,7 @@ try:
                             x_filled[columns] = x_filled[columns].astype(str)
                     except:
                         pass
-                # x_filled
+
                 try:
                     x_trans_df = pd.DataFrame(ct.fit_transform(x_filled).toarray(), columns=ct.get_feature_names_out()).reset_index(
                     drop=True)
@@ -1351,29 +1310,12 @@ try:
                 result_df["perturbation"] = y_pred
 
 
-                # KG: DEPLOYMENT
-                # KG
-
-                # Todo: Perturbation Assessment --> contains info which is handed over to the anaylst: testcases (which also could be in the ClassificationCase)
-                # try:
-                #     with st.expander("3: get prediction for perturbed cases"):
-                #         st.write(result_df.style.apply(lambda x: ["background-color: #FF4B4B"
-                #                                   if (v != x.iloc[0])
-                #                                   else "" for i, v in enumerate(x)], axis=0))
-                # except Exception as e:
-                #     st.error(e)
-
                 try:
                     st.session_state["dfs"] = [value for key, value in result_df.groupby('Case')]
                 except Exception as e:
                     st.error(e)
 
                 for i, df in enumerate(st.session_state["dfs"]):
-
-                    # KG: DEPLOYMENT
-                    # KG: ClassificationCase
-                    # KG: selected_rows are ClassificationCase Entity
-                    # TODO: Create Entity from selected rows, Values: PerturbedTestCase
 
                     ending_time = getTimestamp()
                     starting_time = getTimestamp()

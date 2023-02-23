@@ -7,13 +7,8 @@ from streamlit_extras.switch_page_button import switch_page
 
 from functions.fuseki_connection import login
 
+
 login()
-try:
-    if st.session_state.username == "user":
-        st.stop()
-except:
-    st.warning("Please switch to Deployment Page")
-    st.stop()
 
 try:
     host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")

@@ -8,6 +8,10 @@ credentials:
       email: Admin
       name: Admin
       password: $2b$12$xz8StMRUS3e7wUM7G0raYuk6vapX6AnOi9aAVWUghfwfx./zPXfTu
+    analyst:
+      email: analyst@test.de
+      name: Analyst
+      password: $2b$12$VGUjzcKGPGGj/z.vZYZs5.Dti3n2Zo.9iYk4EnH0DrGE2EmXjTOAS
     mel:
       email: melsby@gmail.com
       name: Mel

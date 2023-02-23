@@ -14,29 +14,15 @@ from functions.functions_Reliability import getDefault, changeAlgorithm, getRest
     defaultValuesCardinalRestriction, defaultValuesOrdinalRestriction, defaultValuesNominalRestriction, update_steps, \
     update_perturbation_level, update_additional_value, upper_lower_bound, update_value_perturbate
 from functions.fuseki_connection import login, getAttributes, getDataRestrictionSeq, getUniqueValuesSeq, \
-    get_connection_fuseki, prefix, getApproach, uploadApproach, getTimestamp, determinationActivity
+    get_connection_fuseki, prefix, getApproach, uploadApproach, getTimestamp, determinationActivity, get_dataset
 from functions.perturbation_algorithms_ohne_values import percentage_perturbation_settings, sensorPrecision_settings, \
     fixedAmountSteps_settings, perturbRange_settings, perturbRange, perturbBin_settings, perturbInOrder_settings, \
     perturbAllValues_settings, perturbAllValues
 
 login()
-try:
-    if st.session_state.username == "user":
-        st.stop()
-except:
-    st.warning("Please switch to Deployment Page")
-    st.stop()
 
-try:
-    host = (f"http://localhost:3030{st.session_state.fuseki_database}/sparql")
-    host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
-    if st.session_state.fuseki_database == "None":
-        st.error("Select dataset")
-        st.stop()
-except:
+host, host_upload = get_dataset()
 
-    st.stop()
-# ------------------------------------------------------------------------------------------------------------------------
 
 try:
     getUniqueValuesSeq(host)
@@ -74,12 +60,12 @@ if "data_restrictions_dict" not in st.session_state:
 if st.session_state.dataframe_feature_names.empty:
     st.stop()
 # horizontal menu
-selected2 = option_menu(None, ["Choose Algorithms", "Define Perturbation Options"],
-                        icons=['house', 'gear'],
+selected2 = option_menu(None, ["Choose Perturbation Option", "Define Perturbation Options"],
+                        icons=['check2-circle', 'gear'],
                         orientation="horizontal")
 # Algorithm Options
-options_cardinal = ['5% perturbation', '10% perturbation', 'Percentage perturbation', 'Sensor Precision',
-                    'Fixed amount', 'Range perturbation', 'Bin perturbation']
+options_cardinal = ['5% Perturbation', '10% Perturbation', 'Percentage Perturbation',
+                    'Fixed Amount Perturbation', 'Range Perturbation', 'Sensor Precision Perturbation','Bin Perturbation']
 options_ordinal = ['Perturb in order', 'Perturb all values']
 options_nominal = ['Perturb all values']
 
@@ -91,12 +77,11 @@ if "default" not in st.session_state:
     for columns in st.session_state.dataframe_feature_names["featureName.value"]:
         st.session_state.default[columns] = []
 
-if selected2 == 'Choose Algorithms':
-    # t1, t2 = st.tabs(["Algorithms", "Data Restriction"])
-    # with t1:
+if selected2 == 'Choose Perturbation Option':
+
     colored_header(
-        label="Choose Algorithms",
-        description="Here you can select the algorithms for the perturbation options per feature.",
+        label="Choose Perturbation Option per feature",
+        description="Here you can select which algorithms should be used for the perturbation options per feature.",
         color_name="red-50",
     )
     tab1, tab2, tab3 = st.tabs(["Cardinal", "Ordinal", "Nominal"])
@@ -124,15 +109,13 @@ if selected2 == 'Choose Algorithms':
                                                                            on_change=changeAlgorithm,
                                                                            args=(columns,))
                         st.session_state.cardinal_val[columns] = st.session_state.default[columns]
-                        # TODO create dictionary similar to settingList in order to reuse code                           # settinglist[method] = [configurations]
-                        st.write(st.session_state.cardinal_val[columns])
+
 
                     except Exception as e:
-                        st.write(e)
                         st.info('No Cardinal Values', icon="ℹ️")
 
                     try:
-                        if "Sensor Precision" in st.session_state.cardinal_val[columns]:
+                        if "Sensor Precision Perturbation" in st.session_state.cardinal_val[columns]:
                             if columns not in st.session_state.loaded_feature_sensor_precision_dict.keys():
                                 st.error(
                                     f"No Sensor Precision for {columns} in Data Understanding step determined. Go to Data Understanding and determine sensor precision for this feature.")
@@ -142,7 +125,7 @@ if selected2 == 'Choose Algorithms':
                     except:
                         pass
                     try:
-                        if "Bin perturbation" in st.session_state.cardinal_val[columns]:
+                        if "Bin Perturbation" in st.session_state.cardinal_val[columns]:
                             if columns not in st.session_state.loaded_bin_dict.keys():
                                 st.error(
                                     f"No Bin determined for feature {columns} in Data Preparation step determined. Go to Data Preparation and determine sensor precision for this feature.")
@@ -226,107 +209,9 @@ if selected2 == 'Choose Algorithms':
         except:
             st.info("If you select algorithms, they will be shown here", icon="ℹ️")
 
-    # Select and Deselect Data Restriction
-    # with t2:
-    #
-    #     colored_header(
-    #         label="Data Restriction",
-    #         description="Here you can select the Data Restrictions which were defined in the Data Understanding step.",
-    #         color_name="red-50",
-    #     )
-    #     try:
-    #         uploaded_DataRestriction = getRestriction(host)
-    #         if "data_restriction_URN" not in st.session_state:
-    #             st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
-    #         # if st.session_state.data_restriction_URN.empty:
-    #         #     st.error("No Data Restriction selected for this perturbation option selected")
-    #         # else:
-    #         #     st.success("Data Restriction option selected")
-    #
-    #         with st.expander("Show selected Data Restriction:"):
-    #             colored_header(
-    #                 label="Data Restriction",
-    #                 description="",
-    #                 color_name="red-50",
-    #             )
-    #             st.dataframe(st.session_state.data_restriction_URN[["Feature", "Value"]].reset_index(drop=True),
-    #                          use_container_width=True)
-    #
-    #         try:
-    #             uploaded_DataRestriction = getRestriction(host)
-    #             data_restriction = st.selectbox("Select Data Restriction",
-    #                                             options=uploaded_DataRestriction["Comment"].unique())
-    #
-    #             data_restriction_activity = uploaded_DataRestriction.loc[
-    #                 uploaded_DataRestriction["Comment"] == data_restriction].reset_index(drop=True)
-    #
-    #             st.dataframe(data_restriction_activity[["Label", "Feature", "Comment", "Value"]].reset_index(drop=True),
-    #                          use_container_width=True)
-    #
-    #             if st.button("Select Restriction", type="primary"):
-    #                 st.session_state.data_restriction_URN = data_restriction_activity
-    #                 try:
-    #                     for key, value in st.session_state["level_of_measurement_dic"].items():
-    #                         if value == "Cardinal":
-    #                             defaultValuesCardinalRestriction(key)
-    #                         if value == "Ordinal":
-    #                             defaultValuesOrdinalRestriction(key)
-    #                         if value == "Nominal":
-    #                             defaultValuesNominalRestriction(key)
-    #                     st.write(data_restriction_activity["DataRestrictionActivity"])
-    #                     st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(
-    #                         data_restriction_activity["DataRestrictionActivity"][0], host)
-    #
-    #                     st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-    #
-    #                     st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
-    #                     # st.session_state["flag_data_restriction"] = True
-    #
-    #                     st.experimental_rerun()
-    #
-    #
-    #
-    #
-    #
-    #
-    #                 except Exception as e:
-    #                     st.write(e)
-    #                     st.info("Dont forget to upload unique values")
-    #
-    #             if st.button("Deselect Restriction"):
-    #                 try:
-    #                     st.session_state["data_restrictions_dict"] = dict()
-    #                     st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-    #                     st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
-    #                     # st.session_state["flag_data_restriction"] = False
-    #                     st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
-    #                     st.experimental_rerun()
-    #                 except Exception as e:
-    #                     st.write(e)
-    #                     st.write("Didnt work")
-    #
-    #
-    #
-    #         except Exception as e:
-    #             st.write(e)
-    #
-    #
-    #     except Exception as e:
-    #         st.info("No Data Restriction defined")
-    #         st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-    #         st.session_state.data_restriction_URN = pd.DataFrame(
-    #             columns=['DataRestrictionActivity', 'DataRestrictionEntity', 'Label', 'Feature', 'Value'])
-
-# Define Algorithmns
-
 
 try:
     if selected2 == 'Define Perturbation Options':
-
-
-
-
-
 
         if "entities" not in st.session_state:
             st.session_state.entities = dict()
@@ -336,8 +221,6 @@ try:
         settings = dict()
         options_perturbation_level = ["Red", "Orange", "Green"]
         with tab1:
-
-
             # check if algorithm for level of scale is chosen
             is_empty = True
             for values in st.session_state['cardinal_val'].values():
@@ -347,20 +230,101 @@ try:
             if is_empty:
                 st.info("No Algorithm for cardinal feature chosen")
 
-            for key, value in st.session_state['cardinal_val'].items():
+            for key, values in st.session_state['cardinal_val'].items():
 
 
                 if "settingList" not in st.session_state:
                     st.session_state.settingList = dict()
 
                 settingList = dict()
-                # if "perturbedList" not in st.session_state:
-                #     st.session_state.perturbedList = dict()
-                # perturbedList = dict()
+
 
                 with st.expander(f"Settings for feature {key}"):
-                    for method in value:
+                    try:
+                        if values:
 
+                            query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
+                                                    ?featureID rdf:type rprov:Feature .
+                                                     ?featureID rdfs:label '{key}'.
+                                                     ?DataUnderstandingEntityID rprov:toFeature ?featureID.
+                                                    ?DataUnderstandingEntityID rdf:type ?rprov.
+                                                     ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
+                             ?DataUnderstandingEntityID rdfs:label ?label.
+                                                     FILTER(?rprov!=owl:NamedIndividual)
+
+                                                     FILTER(?rprov!=rprov:ScaleOfFeature)  
+                                                     FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
+                                                     FILTER(?rprov!=rprov:RangeOfBinnedFeature)
+                                                     FILTER(?rprov!=rprov:UniqueValuesOfFeature)
+                                                     FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
+
+                             }}"""
+
+                            try:
+                                results_update = get_connection_fuseki(host, (prefix + query))
+
+                                # get Activities for PerturbationOption
+                                result_2 = pd.json_normalize(results_update["results"]["bindings"])
+                                entities_selection = result_2["label.value"].tolist()
+
+                                if len(entities_selection) > 0:
+                                    entities = st.multiselect(
+                                        label="Select entities which should be included in the perturbation option",
+                                        options=entities_selection, default=entities_selection)
+
+
+                            except Exception as e:
+                                entities = []
+                                st.info("No Level of volatility, Data Restrictions or missing values determined")
+
+                            query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
+                                                                            ?featureID rdf:type rprov:Feature .
+                                                                             ?featureID rdfs:label '{key}'.
+                                                                             ?DataUnderstandingEntityID rprov:toFeature ?featureID.
+                                                                            ?DataUnderstandingEntityID rdf:type ?rprov.
+                                                                             ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
+                                                     ?DataUnderstandingEntityID rdfs:label ?label.
+                                                                             FILTER(?rprov!=owl:NamedIndividual)
+                                                                             FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
+                                                                             FILTER(?rprov!=rprov:RangeOfBinnedFeature)
+                                                                             FILTER(?rprov!=rprov:UniqueValuesOfFeature)
+                                                                             FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
+
+                                                     }}"""
+
+                            try:
+                                results_update = get_connection_fuseki(host, (prefix + query))
+                                # get Activities for PerturbationOption
+                                result_2 = pd.json_normalize(results_update["results"]["bindings"])
+                                entities.append(result_2["label.value"][0])
+                            except Exception as e:
+                                st.error(e)
+
+                            try:
+                                st.session_state["entities"][key] = (result_2[result_2['label.value'].isin(entities)])[
+                                    "DataUnderstandingEntityID.value"].tolist()
+                                st.write(result_2[result_2['label.value'].isin(entities)])
+
+                                flag = False
+
+                                for value in entities:
+                                    if value.startswith("restriction"):
+                                        flag = True
+                                if flag == True:
+                                    st.session_state.data_restriction_final[key] = \
+                                    st.session_state.data_restrictions_dict[key]
+
+                                else:
+
+                                    st.session_state.data_restriction_final[key] = (
+                                    st.session_state.unique_values_dict[key])
+                                st.session_state.data_restriction_final[key]
+                            except Exception as e:
+                                st.error(e)
+                    except Exception as e:
+                        st.error(e)
+                    for method in values:
+                        st.write(method)
                         if f"steps_{key}_{method}" not in st.session_state:
                             st.session_state[f"steps_{key}_{method}"] = 1
 
@@ -389,7 +353,7 @@ try:
                         if "upper_bound" not in st.session_state:
                             st.session_state[f"upper_bound{key}_{method}"] = 0
 
-                        if method == 'Percentage perturbation':
+                        if method == 'Percentage Perturbation':
                             st.markdown(f"##### {method}")
 
                             st.session_state[f"steps_{key}_{method}"] = int(
@@ -410,7 +374,7 @@ try:
                                                                      f"assignedPerturbationLevel_{key}_{method}"]))
                             st.write("---------------")
 
-                        if method == "5% perturbation":
+                        if method == "5% Perturbation":
                             st.markdown(f"##### {method}")
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
                                 "Select Perturbation Level", options=options_perturbation_level,
@@ -424,7 +388,7 @@ try:
                                     f"assignedPerturbationLevel_{key}_{method}"]))
                             st.write("---------------")
 
-                        if method == "10% perturbation":
+                        if method == "10% Perturbation":
                             st.markdown(f"##### {method}")
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
                                 "Select Perturbation Level", options=options_perturbation_level,
@@ -439,7 +403,7 @@ try:
                                     f"assignedPerturbationLevel_{key}_{method}"]))
                             st.write("---------------")
 
-                        elif method == 'Sensor Precision':
+                        elif method == 'Sensor Precision Perturbation':
                             try:
                                 if key not in st.session_state.loaded_feature_sensor_precision_dict:
                                     st.warning("Sensor Precision is not determined in Data Understanding Step")
@@ -461,59 +425,38 @@ try:
                                 st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
                                     "Select Perturbation Level", options=options_perturbation_level,
                                     index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
-                                    help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
+                                    help="Determines whether the prediction with this perturbation option is allowed to change: "
+                                         "Red means thet the prediction for that perturbation option should not change. "
+                                         "Orange means that prediction might change. Green means that prediction is expected to change",
                                     key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                     on_change=update_perturbation_level,
                                     args=(key, method))
 
-                                # st.session_state[f"additional_value_{key}_{method}"] = round(float(
-                                #     st.number_input("Sensor Precision", min_value=float(0.01), max_value=float(100),
-                                #               value=float(st.session_state[f"additional_value_{key}_{method}"]),
-                                #               key=f"additional_value_widget_{key}_{method}",#step=float(step)
-                                #               on_change=update_additional_value, args=(key, method))),2)
-
                                 st.write(
                                     f"Sensor Precision: **{st.session_state.loaded_feature_sensor_precision_dict[key]}**")
 
-                                # st.session_state[f"steps_{key}_{method}"] = int(
-                                #     st.number_input("Steps", min_value=int(1), step=int(1),
-                                #               value=int(st.session_state[f"steps_{key}_{method}"]),
-                                #               key=f"steps_widget_{key}_{method}", on_change=update_steps,
-                                #               args=(key, method)))
-
                                 settingList[method] = (
                                     sensorPrecision_settings(st.session_state[f"additional_value_{key}_{method}"],
-                                                             st.session_state[f"steps_{key}_{method}"],
-                                                             st.session_state[
-                                                                 f"assignedPerturbationLevel_{key}_{method}"]))
+                                                         st.session_state[f"steps_{key}_{method}"],
+                                                         st.session_state[f"assignedPerturbationLevel_{key}_{method}"]))
 
                             except Exception as e:
-                                st.write(
-                                    "Sensor Precision for this feature should be determined in Data Understanding step.")
-
-
-                                # st.write(e)
+                                st.write("Sensor Precision for this feature should be determined in Data Understanding step.")
                             st.write("---------------")
 
-                        elif method == 'Fixed amount':
+                        elif method == 'Fixed Amount Perturbation':
                             st.markdown(f"##### Define settings for algorithm: {method}")
                             st.session_state[f"additional_value_{key}_{method}"] = float(st.number_input("Amount",
-                                                                                                         value=float(
-                                                                                                             st.session_state[
-                                                                                                                 f"additional_value_{key}_{method}"]),
-                                                                                                         min_value=float(0),
-                                                                                                         max_value=float(
-                                                                                                             st.session_state.data_restriction_final[
-                                                                                                                 key][
-                                                                                                                 1]),
-                                                                                                         key=f"additional_value_widget_{key}_{method}",
-                                                                                                         on_change=update_additional_value,
-                                                                                                         args=(
-                                                                                                         key, method)))
+                                                value=float(st.session_state[f"additional_value_{key}_{method}"]),
+                                                min_value=float(0),
+                                                max_value=float(st.session_state.data_restriction_final[key][1]),
+                                                key=f"additional_value_widget_{key}_{method}",
+                                                on_change=update_additional_value,
+                                                args=(key, method)))
 
 
                             st.session_state[f"steps_{key}_{method}"] = int(
-                                st.number_input("Steps",  # min_value=int(1), max_value=int(100), step=int(1),
+                                st.number_input("Steps",
                                                 value=st.session_state[f"steps_{key}_{method}"],
                                                 key=f"steps_widget_{key}_{method}", on_change=update_steps,
                                                 args=(key, method)))
@@ -521,7 +464,9 @@ try:
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
                                 "Select Perturbation Level", options=options_perturbation_level,
                                 index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
-                                help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
+                                help="Determines whether the prediction with this perturbation option is allowed to change: "
+                                     "Red means thet the prediction for that perturbation option should not change. "
+                                     "Orange means that prediction might change. Green means that prediction is expected to change",
                                 key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                 on_change=update_perturbation_level,
                                 args=(key, method))
@@ -533,7 +478,7 @@ try:
 
                             st.write("---------------")
 
-                        elif method == 'Range perturbation':
+                        elif method == 'Range Perturbation':
                             st.markdown(f"##### Define settings for algorithm: {method}")
 
                             if f"additional_value_{key}_{method}_bound" not in st.session_state:
@@ -541,56 +486,54 @@ try:
                                     float(st.session_state.data_restriction_final[key][0]),
                                     float(st.session_state.data_restriction_final[key][-1])]
 
-                            with st.form(f"Input values {key}"):
+                            # with st.form(f"Input values {key}"):
 
-                                lower_border = st.number_input("Select lower border",
-                                                               value=float(
-                                                                   st.session_state.data_restriction_final[key][0]),
-                                                               min_value=float(
-                                                                   st.session_state.data_restriction_final[key][0]),
-                                                               max_value=float(
-                                                                   st.session_state.data_restriction_final[key][-1]),
-                                                               key=f"lower_border_range_perturbation_{key}")
-                                upper_border = st.number_input("Select upper border", value=float(
-                                    st.session_state.unique_values_dict[key][-1]), max_value=float(
-                                    st.session_state.unique_values_dict[key][-1]),
-                                                               key=f"upper_border_range_perturbation_{key}")
+                            lower_border = round(st.number_input("Select lower border",
+                                value=float(st.session_state.data_restriction_final[key][0]),
+                                min_value=float(st.session_state.data_restriction_final[key][0]),
+                                max_value=float(st.session_state.data_restriction_final[key][-1]),
+                                key=f"lower_border_range_perturbation_{key}"),2)
 
-                                # lower = st.number_input("Input lower value", )
-                                # upper = st.number_input("Input upper value",max_value=float(
-                                #     st.session_state.data_restriction_final[key][-1]))
-                                if st.form_submit_button("Upload"):
-                                    if st.session_state[f"lower_border_range_perturbation_{key}"] >= st.session_state[
-                                        f"upper_border_range_perturbation_{key}"]:
-                                        st.error("Lower bound range must be smaller than upper bound.")
-                                    else:
-                                        st.session_state[f"additional_value_{key}_{method}_bound"] = [
-                                            float(lower_border),
-                                            float(upper_border)]
+                            upper_border = round(st.number_input("Select upper border",
+                                value=float(st.session_state.data_restriction_final[key][-1]),
+                                                                 min_value=lower_border,
+                                max_value=float(st.session_state.data_restriction_final[key][-1]),
+                                key=f"upper_border_range_perturbation_{key}"),2)
 
-                            st.session_state[f"additional_value_{key}_{method}_bound"] = (
-                                st.slider("Amount", min_value=float(
-                                    st.session_state.data_restriction_final[key][0]), max_value=float(
-                                    st.session_state.data_restriction_final[key][-1]),
-                                          value=st.session_state[f"additional_value_{key}_{method}_bound"],
-                                          key=f"additional_value_widget_{key}_{method}",
-                                          on_change=upper_lower_bound,
-                                          args=(key, method)))
+
+                            # if st.form_submit_button("Upload"):
+                            if st.session_state[f"lower_border_range_perturbation_{key}"] \
+                                    >= st.session_state[f"upper_border_range_perturbation_{key}"]:
+                                st.error("Lower bound range must be smaller than upper bound.")
+                                st.stop()
+                            else:
+                                st.session_state[f"additional_value_{key}_{method}_bound"] = \
+                                    [float(lower_border),float(upper_border)]
+
+                            # st.session_state[f"additional_value_{key}_{method}_bound"] = (st.slider("Amount",
+                            #         min_value=float(st.session_state.data_restriction_final[key][0]),
+                            #         max_value=float(st.session_state.data_restriction_final[key][-1]),
+                            #         value=st.session_state[f"additional_value_{key}_{method}_bound"],
+                            #         key=f"additional_value_widget_{key}_{method}",
+                            #         on_change=upper_lower_bound,
+                            #         args=(key, method)))
 
                             if st.session_state[f"steps_{key}_{method}"] == 0:
                                 st.session_state[f"steps_{key}_{method}"] = 1
 
-                            st.session_state[f"steps_{key}_{method}"] = int(
-                                st.number_input("Steps", step=int(1),
-                                                # min_value=int(1), max_value=int(100), step=int(1),
-                                                value=st.session_state[f"steps_{key}_{method}"],
-                                                key=f"steps_widget_{key}_{method}", on_change=update_steps,
-                                                args=(key, method)))
+                            st.session_state[f"steps_{key}_{method}"] = int(st.number_input("Steps",
+                                    step=int(1),
+                                    value=st.session_state[f"steps_{key}_{method}"],
+                                    key=f"steps_widget_{key}_{method}", on_change=update_steps,
+                                    args=(key, method)))
 
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                "Select Perturbation Level", options=options_perturbation_level,
+                                "Select Perturbation Level",
+                                options=options_perturbation_level,
                                 index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
-                                help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
+                                help="Determines whether the prediction with this perturbation option is allowed to change: "
+                                     "Red means thet the prediction for that perturbation option should not change. "
+                                     "Orange means that prediction might change. Green means that prediction is expected to change",
                                 key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                 on_change=update_perturbation_level,
                                 args=(key, method))
@@ -602,9 +545,9 @@ try:
                                                       st.session_state[f"assignedPerturbationLevel_{key}_{method}"]))
 
                             st.write("---------------")
-                            st.write("---------------")
 
-                        elif method == 'Bin perturbation':
+
+                        elif method == 'Bin Perturbation':
                             st.markdown(f"##### Define settings for algorithm: {method}")
                             try:
                                 if key not in st.session_state.loaded_bin_dict:
@@ -625,9 +568,9 @@ try:
                                                         args=(key, method)))
 
                                     st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                        "Select Perturbation Level", options=options_perturbation_level,
-                                        index=options_perturbation_level.index(
-                                            st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
+                                        "Select Perturbation Level",
+                                        options=options_perturbation_level,
+                                        index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
                                         help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                         key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                         on_change=update_perturbation_level,
@@ -641,91 +584,93 @@ try:
                             except Exception as e:
                                 st.write(
                                     "Binning for this feature should be determined in Data Preparation step.")
-                    try:
-
-                        if value:
-
-
-                            query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
-                                                    ?featureID rdf:type rprov:Feature .
-                                                     ?featureID rdfs:label '{key}'.
-                                                     ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                                                    ?DataUnderstandingEntityID rdf:type ?rprov.
-                                                     ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
-                             ?DataUnderstandingEntityID rdfs:label ?label.
-                                                     FILTER(?rprov!=owl:NamedIndividual)
-        
-                                                     FILTER(?rprov!=rprov:ScaleOfFeature)  
-                                                     FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
-                                                     FILTER(?rprov!=rprov:RangeOfBinnedFeature)
-                                                     FILTER(?rprov!=rprov:UniqueValuesOfFeature)
-                                                     FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
-        
-                             }}"""
-
-                                                     # FILTER(?rprov!=rprov:scale)
-                            try:
-                                results_update = get_connection_fuseki(host, (prefix + query))
-                                # get Activities for PerturbationOption
-                                result_2 = pd.json_normalize(results_update["results"]["bindings"])
-                                entities_selection = result_2["label.value"].tolist()
-
-
-                                if len(entities_selection) > 0:
-                                    entities = st.multiselect(
-                                        label="Select entities which should be included in the perturbation option",
-                                        options=entities_selection, default=entities_selection)
-
-                            except Exception as e:
-                                entities = []
-                                st.info("No Level of volatility, Data Restrictions or missing values determined")
-
-
-                            query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
-                                                                            ?featureID rdf:type rprov:Feature .
-                                                                             ?featureID rdfs:label '{key}'.
-                                                                             ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                                                                            ?DataUnderstandingEntityID rdf:type ?rprov.
-                                                                             ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
-                                                     ?DataUnderstandingEntityID rdfs:label ?label.
-                                                                             FILTER(?rprov!=owl:NamedIndividual)
-                                                                             FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
-                                                                             FILTER(?rprov!=rprov:RangeOfBinnedFeature)
-                                                                             FILTER(?rprov!=rprov:UniqueValuesOfFeature)
-                                                                             FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
-    
-                                                     }}"""
-
-                            # FILTER(?rprov!=rprov:scale)
-                            try:
-                                results_update = get_connection_fuseki(host, (prefix + query))
-                                # get Activities for PerturbationOption
-                                result_2 = pd.json_normalize(results_update["results"]["bindings"])
-                                entities.append(result_2["label.value"][0])
-                            except Exception as e:
-                                st.error(e)
-
-
-                            try:
-                                st.session_state["entities"][key] = (result_2[result_2['label.value'].isin(entities)])["DataUnderstandingEntityID.value"].tolist()
-                                st.write(result_2[result_2['label.value'].isin(entities)])
-
-                                flag = False
-
-                                for value in entities:
-                                    if value.startswith("restriction"):
-                                        flag = True
-                                if flag == True:
-                                    st.session_state.data_restriction_final[key]=st.session_state.data_restrictions_dict[key]
-
-                                else:
-
-                                    st.session_state.data_restriction_final[key] = (st.session_state.unique_values_dict[key])
-
-                            except Exception as e:
-                                st.error(e)
-                    except Exception as e:
-                        st.error(e)
+                    # try:
+                    #
+                    #     if value:
+                    #
+                    #
+                    #         query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
+                    #                                 ?featureID rdf:type rprov:Feature .
+                    #                                  ?featureID rdfs:label '{key}'.
+                    #                                  ?DataUnderstandingEntityID rprov:toFeature ?featureID.
+                    #                                 ?DataUnderstandingEntityID rdf:type ?rprov.
+                    #                                  ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
+                    #          ?DataUnderstandingEntityID rdfs:label ?label.
+                    #                                  FILTER(?rprov!=owl:NamedIndividual)
+                    #
+                    #                                  FILTER(?rprov!=rprov:ScaleOfFeature)
+                    #                                  FILTER(?rprov!=rprov:SensorPrecisionOfFeature)
+                    #                                  FILTER(?rprov!=rprov:RangeOfBinnedFeature)
+                    #                                  FILTER(?rprov!=rprov:UniqueValuesOfFeature)
+                    #                                  FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
+                    #
+                    #          }}"""
+                    #
+                    #         try:
+                    #             results_update = get_connection_fuseki(host, (prefix + query))
+                    #
+                    #             # get Activities for PerturbationOption
+                    #             result_2 = pd.json_normalize(results_update["results"]["bindings"])
+                    #             entities_selection = result_2["label.value"].tolist()
+                    #             st.session_state.data_restriction_final
+                    #
+                    #
+                    #             if len(entities_selection) > 0:
+                    #                 entities = st.multiselect(
+                    #                     label="Select entities which should be included in the perturbation option",
+                    #                     options=entities_selection, default=entities_selection)
+                    #
+                    #             st.session_state.data_restriction_final
+                    #
+                    #         except Exception as e:
+                    #             entities = []
+                    #             st.info("No Level of volatility, Data Restrictions or missing values determined")
+                    #
+                    #
+                    #         query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
+                    #                                                         ?featureID rdf:type rprov:Feature .
+                    #                                                          ?featureID rdfs:label '{key}'.
+                    #                                                          ?DataUnderstandingEntityID rprov:toFeature ?featureID.
+                    #                                                         ?DataUnderstandingEntityID rdf:type ?rprov.
+                    #                                                          ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
+                    #                                  ?DataUnderstandingEntityID rdfs:label ?label.
+                    #                                                          FILTER(?rprov!=owl:NamedIndividual)
+                    #                                                          FILTER(?rprov!=rprov:SensorPrecisionOfFeature)
+                    #                                                          FILTER(?rprov!=rprov:RangeOfBinnedFeature)
+                    #                                                          FILTER(?rprov!=rprov:UniqueValuesOfFeature)
+                    #                                                          FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
+                    #
+                    #                                  }}"""
+                    #
+                    #         try:
+                    #             results_update = get_connection_fuseki(host, (prefix + query))
+                    #             # get Activities for PerturbationOption
+                    #             result_2 = pd.json_normalize(results_update["results"]["bindings"])
+                    #             entities.append(result_2["label.value"][0])
+                    #         except Exception as e:
+                    #             st.error(e)
+                    #
+                    #
+                    #         try:
+                    #             st.session_state["entities"][key] = (result_2[result_2['label.value'].isin(entities)])["DataUnderstandingEntityID.value"].tolist()
+                    #             st.write(result_2[result_2['label.value'].isin(entities)])
+                    #
+                    #             flag = False
+                    #
+                    #             for value in entities:
+                    #                 if value.startswith("restriction"):
+                    #                     flag = True
+                    #             if flag == True:
+                    #                 st.session_state.data_restriction_final[key]=st.session_state.data_restrictions_dict[key]
+                    #
+                    #             else:
+                    #
+                    #                 st.session_state.data_restriction_final[key] = (st.session_state.unique_values_dict[key])
+                    #             st.session_state.data_restriction_final[key]
+                    #         except Exception as e:
+                    #             st.error(e)
+                    # except Exception as e:
+                    #     st.error(e)
 
 
 
@@ -748,14 +693,90 @@ try:
             if is_empty:
                 st.info("No Algorithm for ordinal feature chosen")
 
-            for key, value in st.session_state['ordinal_val'].items():
+            for key, values in st.session_state['ordinal_val'].items():
                 if "settingList" not in st.session_state:
                     st.session_state.settingList = dict()
                 settingList = dict()
 
                 with st.expander(f"Settings for column {key}"):
+                    try:
+                        if values:
+                            query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
+                                                    ?featureID rdf:type rprov:Feature .
+                                                     ?featureID rdfs:label '{key}'.
+                                                     ?DataUnderstandingEntityID rprov:toFeature ?featureID.
+                                                    ?DataUnderstandingEntityID rdf:type ?rprov.
+                                                     ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
+                             ?DataUnderstandingEntityID rdfs:label ?label.
+                                                     FILTER(?rprov!=owl:NamedIndividual)
 
-                    for method in value:
+                                                     FILTER(?rprov!=rprov:ScaleOfFeature)  
+                                                     FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
+                                                     FILTER(?rprov!=rprov:RangeOfBinnedFeature)
+                                                     FILTER(?rprov!=rprov:UniqueValuesOfFeature)
+                                                     FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
+
+                             }}"""
+
+                            try:
+                                results_update = get_connection_fuseki(host, (prefix + query))
+                                # get Activities for PerturbationOption
+                                result_2 = pd.json_normalize(results_update["results"]["bindings"])
+                                entities_selection = result_2["label.value"].tolist()
+
+                                if len(entities_selection) > 0:
+                                    entities = st.multiselect(
+                                        label="Select entities which should be included in the perturbation option",
+                                        options=entities_selection, default=entities_selection)
+
+                            except:
+                                entities = []
+                                st.info("No Level of volatility, Data Restrictions or missing values determined")
+
+                            query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
+                                                                            ?featureID rdf:type rprov:Feature .
+                                                                             ?featureID rdfs:label '{key}'.
+                                                                             ?DataUnderstandingEntityID rprov:toFeature ?featureID.
+                                                                             ?DataUnderstandingEntityID rdf:type ?rprov.
+                                                                             ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
+                                                                             ?DataUnderstandingEntityID rdfs:label ?label.
+                                                                             FILTER(?rprov!=owl:NamedIndividual)
+                                                                             FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
+                                                                             FILTER(?rprov!=rprov:RangeOfBinnedFeature)
+                                                                             FILTER(?rprov!=rprov:UniqueValuesOfFeature)
+                                                                             FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
+
+                                                     }}"""
+
+                            try:
+                                results_update = get_connection_fuseki(host, (prefix + query))
+
+                                # get Activities for PerturbationOption
+                                result_2 = pd.json_normalize(results_update["results"]["bindings"])
+                                entities.append(result_2["label.value"][0])
+                            except:
+                                pass
+
+                            st.session_state["entities"][key] = (result_2[result_2['label.value'].isin(entities)])[
+                                "DataUnderstandingEntityID.value"].tolist()
+                            st.write(result_2[result_2['label.value'].isin(entities)])
+
+                            flag = False
+
+                            for value in entities:
+                                if value.startswith("restriction"):
+                                    flag = True
+
+                            if flag == True:
+                                st.session_state.data_restriction_final[key] = st.session_state.data_restrictions_dict[
+                                    key]
+
+                            else:
+                                st.session_state.data_restriction_final[key] = (
+                                st.session_state.unique_values_dict[key])
+                    except Exception as e:
+                        st.error(e)
+                    for method in values:
                         if f"assignedPerturbationLevel_{key}_{method}" not in st.session_state:
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = "Red"
                         if f"steps_{key}_{method}" not in st.session_state:
@@ -783,7 +804,8 @@ try:
                                               args=(key, method)))
 
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                "Select Perturbation Level", options=options_perturbation_level,
+                                "Select Perturbation Level",
+                                options=options_perturbation_level,
                                 index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
                                 help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                 key=f"assignedPerturbationLevel_widget_{key}_{method}",
@@ -798,12 +820,15 @@ try:
 
                         if method == "Perturb all values":
                             st.markdown(f"##### Define settings for algorithm: {method}")
+                            with st.expander("Show all values:"):
+                                st.session_state.data_restriction_final[key]
 
                             with st.expander("Show all values:"):
                                 st.session_state.data_restriction_final[key]
 
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
-                                "Select Perturbation Level", options=options_perturbation_level,
+                                "Select Perturbation Level",
+                                options=options_perturbation_level,
                                 index=options_perturbation_level.index(st.session_state[f"assignedPerturbationLevel_{key}_{method}"]),
                                 help="Determines whether the prediction with this perturbation option is allowed to change: Red means thet the prediction for that perturbation option should not change. Orange means that prediction might change. Green means that prediction is expected to change",
                                 key=f"assignedPerturbationLevel_widget_{key}_{method}",
@@ -816,85 +841,10 @@ try:
 
 
                             st.write("---------------")
+                if settingList:
+                    settings[key] = settingList
 
-                    if value:
-                        query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
-                                                ?featureID rdf:type rprov:Feature .
-                                                 ?featureID rdfs:label '{key}'.
-                                                 ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                                                ?DataUnderstandingEntityID rdf:type ?rprov.
-                                                 ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
-                         ?DataUnderstandingEntityID rdfs:label ?label.
-                                                 FILTER(?rprov!=owl:NamedIndividual)
-
-                                                 FILTER(?rprov!=rprov:ScaleOfFeature)  
-                                                 FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
-                                                 FILTER(?rprov!=rprov:RangeOfBinnedFeature)
-                                                 FILTER(?rprov!=rprov:UniqueValuesOfFeature)
-                                                 FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
-
-                         }}"""
-
-                        # FILTER(?rprov!=rprov:scale)
-                        try:
-                            results_update = get_connection_fuseki(host, (prefix + query))
-                            # get Activities for PerturbationOption
-                            result_2 = pd.json_normalize(results_update["results"]["bindings"])
-                            entities_selection = result_2["label.value"].tolist()
-
-                            if len(entities_selection) > 0:
-                                entities = st.multiselect(
-                                    label="Select entities which should be included in the perturbation option",
-                                    options=entities_selection, default=entities_selection)
-
-                        except:
-                            entities = []
-                            st.info("No Level of volatility, Data Restrictions or missing values determined")
-
-                        query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
-                                                                        ?featureID rdf:type rprov:Feature .
-                                                                         ?featureID rdfs:label '{key}'.
-                                                                         ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                                                                        ?DataUnderstandingEntityID rdf:type ?rprov.
-                                                                         ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
-                                                 ?DataUnderstandingEntityID rdfs:label ?label.
-                                                                         FILTER(?rprov!=owl:NamedIndividual)
-                                                                         FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
-                                                                         FILTER(?rprov!=rprov:RangeOfBinnedFeature)
-                                                                         FILTER(?rprov!=rprov:UniqueValuesOfFeature)
-                                                                         FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
-
-                                                 }}"""
-
-                        # FILTER(?rprov!=rprov:scale)
-                        try:
-                            results_update = get_connection_fuseki(host, (prefix + query))
-                            # get Activities for PerturbationOption
-                            result_2 = pd.json_normalize(results_update["results"]["bindings"])
-                            entities.append(result_2["label.value"][0])
-                        except:
-                            pass
-
-                        st.session_state["entities"][key] = (result_2[result_2['label.value'].isin(entities)])[
-                            "DataUnderstandingEntityID.value"].tolist()
-                        st.write(result_2[result_2['label.value'].isin(entities)])
-
-                        flag = False
-
-                        for value in entities:
-                            if value.startswith("restriction"):
-                                flag = True
-
-                        if flag == True:
-                            st.session_state.data_restriction_final[key] = st.session_state.data_restrictions_dict[key]
-
-                        else:
-                            st.session_state.data_restriction_final[key] = (st.session_state.unique_values_dict[key])
-
-                    if settingList:
-                        settings[key] = settingList
-
-                st.session_state['settings'] = settings
+            st.session_state['settings'] = settings
 
 
         with tab3:
@@ -907,15 +857,93 @@ try:
             if is_empty:
                 st.info("No Algorithm for nominal feature chosen")
 
-            for key, value in st.session_state['nominal_val'].items():
+            for key, values in st.session_state['nominal_val'].items():
                 if "settingList" not in st.session_state:
                     st.session_state.settingList = dict()
                 settingList = dict()
 
                 with st.expander(f"Settings for column {key}"):
+                    try:
 
+                        if values:
+                            query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
+                                                    ?featureID rdf:type rprov:Feature .
+                                                     ?featureID rdfs:label '{key}'.
+                                                     ?DataUnderstandingEntityID rprov:toFeature ?featureID.
+                                                    ?DataUnderstandingEntityID rdf:type ?rprov.
+                                                     ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
+                             ?DataUnderstandingEntityID rdfs:label ?label.
+                                                     FILTER(?rprov!=owl:NamedIndividual)
 
-                    for method in value:
+                                                     FILTER(?rprov!=rprov:ScaleOfFeature)  
+                                                     FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
+                                                     FILTER(?rprov!=rprov:RangeOfBinnedFeature)
+                                                     FILTER(?rprov!=rprov:UniqueValuesOfFeature)
+                                                     FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
+
+                             }}"""
+
+                            try:
+                                results_update = get_connection_fuseki(host, (prefix + query))
+
+                                # get Activities for PerturbationOption
+                                result_2 = pd.json_normalize(results_update["results"]["bindings"])
+                                entities_selection = result_2["label.value"].tolist()
+
+                                if len(entities_selection) > 0:
+                                    entities = st.multiselect(
+                                        label="Select entities which should be included in the perturbation option",
+                                        options=entities_selection, default=entities_selection)
+
+                            except:
+                                entities = []
+                                st.info("No Level of volatility, Data Restrictions or missing values determined")
+
+                            query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
+                                                                            ?featureID rdf:type rprov:Feature .
+                                                                             ?featureID rdfs:label '{key}'.
+                                                                             ?DataUnderstandingEntityID rprov:toFeature ?featureID.
+                                                                            ?DataUnderstandingEntityID rdf:type ?rprov.
+                                                                             ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
+                                                     ?DataUnderstandingEntityID rdfs:label ?label.
+                                                                             FILTER(?rprov!=owl:NamedIndividual)
+                                                                             FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
+                                                                             FILTER(?rprov!=rprov:RangeOfBinnedFeature)
+                                                                             FILTER(?rprov!=rprov:UniqueValuesOfFeature)
+                                                                             FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
+
+                                                     }}"""
+
+                            try:
+                                results_update = get_connection_fuseki(host, (prefix + query))
+
+                                # get Activities for PerturbationOption
+                                result_2 = pd.json_normalize(results_update["results"]["bindings"])
+                                entities.append(result_2["label.value"][0])
+                            except:
+                                pass
+
+                            st.session_state["entities"][key] = (result_2[result_2['label.value'].isin(entities)])[
+                                "DataUnderstandingEntityID.value"].tolist()
+                            st.write(result_2[result_2['label.value'].isin(entities)])
+
+                            flag = False
+
+                            for value in entities:
+                                if value.startswith("restriction"):
+                                    flag = True
+
+                            if flag == True:
+                                st.session_state.data_restriction_final[key] = st.session_state.data_restrictions_dict[
+                                    key]
+
+                            else:
+                                st.session_state.data_restriction_final[key] = (
+                                st.session_state.unique_values_dict[key])
+                    except:
+                        pass
+
+                    for method in values:
                         if f"assignedPerturbationLevel_{key}_{method}" not in st.session_state:
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = "Red"
                         if f"steps_{key}_{method}" not in st.session_state:
@@ -928,9 +956,9 @@ try:
 
                         if method == "Perturb all values":
                             st.markdown(f"##### Define settings for algorithm: {method}")
-
                             with st.expander("Show all values:"):
                                 st.session_state.data_restriction_final[key]
+
 
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
                                 "Select Perturbation Level", options=options_perturbation_level,
@@ -945,85 +973,10 @@ try:
                                                               f"assignedPerturbationLevel_{key}_{method}"]))  # st.session_state.data_restriction_final[key],st.session_state[f"value_perturbate{key}_{method}"]))#,st.session_state.data_restriction_final[key]))
 
                             st.write("---------------")
+                if settingList:
+                    settings[key] = settingList
 
-                    if value:
-                        query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
-                                                ?featureID rdf:type rprov:Feature .
-                                                 ?featureID rdfs:label '{key}'.
-                                                 ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                                                ?DataUnderstandingEntityID rdf:type ?rprov.
-                                                 ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
-                         ?DataUnderstandingEntityID rdfs:label ?label.
-                                                 FILTER(?rprov!=owl:NamedIndividual)
-
-                                                 FILTER(?rprov!=rprov:ScaleOfFeature)  
-                                                 FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
-                                                 FILTER(?rprov!=rprov:RangeOfBinnedFeature)
-                                                 FILTER(?rprov!=rprov:UniqueValuesOfFeature)
-                                                 FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
-
-                         }}"""
-
-                        # FILTER(?rprov!=rprov:scale)
-                        try:
-                            results_update = get_connection_fuseki(host, (prefix + query))
-                            # get Activities for PerturbationOption
-                            result_2 = pd.json_normalize(results_update["results"]["bindings"])
-                            entities_selection = result_2["label.value"].tolist()
-
-                            if len(entities_selection) > 0:
-                                entities = st.multiselect(
-                                    label="Select entities which should be included in the perturbation option",
-                                    options=entities_selection, default=entities_selection)
-
-                        except:
-                            entities = []
-                            st.info("No Level of volatility, Data Restrictions or missing values determined")
-
-                        query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
-                                                                        ?featureID rdf:type rprov:Feature .
-                                                                         ?featureID rdfs:label '{key}'.
-                                                                         ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                                                                        ?DataUnderstandingEntityID rdf:type ?rprov.
-                                                                         ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
-                                                 ?DataUnderstandingEntityID rdfs:label ?label.
-                                                                         FILTER(?rprov!=owl:NamedIndividual)
-                                                                         FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
-                                                                         FILTER(?rprov!=rprov:RangeOfBinnedFeature)
-                                                                         FILTER(?rprov!=rprov:UniqueValuesOfFeature)
-                                                                         FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
-
-                                                 }}"""
-
-                        # FILTER(?rprov!=rprov:scale)
-                        try:
-                            results_update = get_connection_fuseki(host, (prefix + query))
-                            # get Activities for PerturbationOption
-                            result_2 = pd.json_normalize(results_update["results"]["bindings"])
-                            entities.append(result_2["label.value"][0])
-                        except:
-                            pass
-
-                        st.session_state["entities"][key] = (result_2[result_2['label.value'].isin(entities)])[
-                            "DataUnderstandingEntityID.value"].tolist()
-                        st.write(result_2[result_2['label.value'].isin(entities)])
-
-                        flag = False
-
-                        for value in entities:
-                            if value.startswith("restriction"):
-                                flag = True
-
-                        if flag == True:
-                            st.session_state.data_restriction_final[key] = st.session_state.data_restrictions_dict[key]
-
-                        else:
-                            st.session_state.data_restriction_final[key] = (st.session_state.unique_values_dict[key])
-
-                    if settingList:
-                        settings[key] = settingList
-
-                st.session_state['settings'] = settings
+            st.session_state['settings'] = settings
 
 
         if st.session_state['settings'] != {}:
@@ -1031,17 +984,8 @@ try:
             with st.expander("Show Perturbation Setting"):
                 st.write(st.session_state['settings'])
 
-                # todo ausgliedern
-                # kann auch implementiert werden bei predict --> dadurch verpflichtend
-
-            # if st.session_state.data_restriction_URN["DataRestrictionEntity"].empty:
-            #     st.info("No Data Restriction selected for this perturbation option selected")
-            # else:
-            #     st.info("Data Restriction selected")
-
-            with st.form("Insert additional label for the defined Perturbation Options"):
-                st.info(
-                    "This label be shown in the options for the Deployment. Therefore it is advised to add as much information as possible.")
+            with st.form("Insert label for the defined Perturbation Options"):
+                st.info("This label be shown in the options for the Deployment. Therefore it is advised to add as much information as possible.")
                 labelPerturbation = st.text_input("Insert label for the defined Perturbation Options",
                                                   help="Name your Perturbation Option in order to find it easier later.")
 
@@ -1072,17 +1016,7 @@ try:
                 else:
                     st.stop()
 
-            #if st.button("Save Modeling Activity to Database", type='primary', help="Save the Modeling Activity and Entity to the Database."):
-                # check if choice of assessment is defined
-
-
                 # Modeling Phase
-                # KG DEVELOPMENT
-                # KG: DefinitionOfPertubartionOption
-                # KG: Define ModelingActivity and then create PerturbationOption Entity with BUA, DUA, DPA as input
-
-                ending_time = getTimestamp()
-
                 starting_time = getTimestamp()
                 # KG label nötig? Um die PerturbationOption zu identifizieren?
 
@@ -1099,70 +1033,19 @@ try:
 
                 # TODO ausgliedern
                 try:
-    #                 query = (f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?DUA WHERE{{
-    # 			            ?featureID rdf:type rprov:Feature .
-    #                         ?featureID rdfs:label ?featureName.
-    #                         ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-    # 						?DataUnderstandingEntityID rdf:type ?rprov.
-    #                         ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
-    #                         FILTER(?rprov!=owl:NamedIndividual)
-    #                         FILTER(?rprov!=rprov:DataRestriction)
-    #                         FILTER(?rprov!=rprov:SensorPrecisionOfFeature)
-    #                         FILTER(?rprov!=rprov:RangeOfBinnedFeature)
-    #                         FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
-    #
-    # }}""")
-    #
-    #                 try:
-    #                     results_update = get_connection_fuseki(host, (prefix + query))
-    #                     # get Activities for PerturbationOption
-    #                     result_2 = pd.json_normalize(results_update["results"]["bindings"])
-    #                     result_2 = result_2.groupby(["featureID.value", "featureName.value"], as_index=False)[
-    #                         "DataUnderstandingEntityID.value"].agg(list)
-    #                 except:
-    #                     st.info("No Level of volatility, missing values determined")
-
-                    # for key in st.session_state['settings']:
-                    # TODO Decide whether PerturbationOption is generated for each feature or all together
-                    # upload ModelingActivity to fueski
-
-                    ####################################################################################################
-
+                    ending_time = getTimestamp()
                     uuid_DefinitionOfPerturbationOption = determinationActivity(host_upload, determinationName,
                                                                                 label,
                                                                                 starting_time, ending_time)
-                    ####################################################################################################
+
 
                     # if feature is in perturbation settings
                     # create list with activities an loop in order to insert them as modelingEntityWasDerivedFrom
 
                     for key in st.session_state['settings']:
-                        # try:
-                        #     if key in result_2["featureName.value"].values:
-                        #         uploaded_entities = (result_2[result_2["featureName.value"] == key])
-                        #
-                        #         # TODO delete data restcition if not chosen
-                        #
-                        #         # st.write(np.concatenate(
-                        #         #     uploaded_entities["DataUnderstandingEntityID.value"].values).tolist())
-                        #         liste = (np.concatenate(
-                        #             uploaded_entities["DataUnderstandingEntityID.value"].values).tolist())
-                        #         liste.append(business_understanding_entity)
-                        # except:
-                        #
-                        #     liste = list()
-                        #
                         featureID = st.session_state.DF_feature_scale_name[
                             st.session_state.DF_feature_scale_name["featureName.value"] == key]
-                        #
-                        # try:
-                        #     if key in st.session_state.data_restriction_URN["Feature"].values:
-                        #         data_restriction = st.session_state.data_restriction_URN[
-                        #             st.session_state.data_restriction_URN["Feature"] == key][
-                        #             "DataRestrictionEntity"].reset_index(drop=True)
-                        #         liste.append(data_restriction[0])
-                        # except Exception as e:
-                        #     st.write(e)
+
 
 
                         # create another loop in order to get different UUIDs for PerturbationOptions
@@ -1171,13 +1054,13 @@ try:
                             uuid_PerturbationOption = uuid.uuid4()
                             liste_new = st.session_state["entities"][key].copy()
 
-                            if method == "Bin perturbation":
+                            if method == "Bin Perturbation":
                                 bin_entity = \
                                 st.session_state.DF_bin_dict[st.session_state.DF_bin_dict["label.value"] == key][
                                     "DPE.value"].reset_index(drop=True)
                                 liste_new.append(bin_entity[0])
 
-                            if method == "Sensor Precision":
+                            if method == "Sensor Precision Perturbation":
                                 sensor_precision = st.session_state.DF_feature_sensor_precision[
                                     st.session_state.DF_feature_sensor_precision["featureName.value"] == key][
                                     "DataUnderstandingEntityID.value"].reset_index(drop=True)
@@ -1194,18 +1077,6 @@ try:
                                 perturbationOptionlabel = perturbationOptionlabel.replace("'", "").replace("{",
                                                                                                            "").replace(
                                     "}", "")
-
-                                # if method == "Perturb all values":
-                                #     query = (
-                                #         f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
-                                #                                                                  rprov:perturbedFeature <{featureID["featureID.value"].values[0]}>;
-                                #                                                                  rprov:generationAlgorithm "{method}";
-                                #                                                                  rprov:values "{perturbationOption}"@en;
-                                #                                                                  rprov:modelingEntityWasDerivedFrom <{entities}>;
-                                #                                                                  rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
-                                #                                                                  rdfs:label "{labelPerturbation}-{method}"@en.
-                                #                                                                }}""")  ##{st.session_state['settings'][key]}rprov:values "{perturbationOption}"@en;
-                                # else:
 
                                 query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
                                                       rprov:perturbedFeature <{featureID["featureID.value"].values[0]}>;

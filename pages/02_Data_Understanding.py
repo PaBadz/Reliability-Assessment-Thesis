@@ -1,41 +1,24 @@
+import time
+
 import pandas as pd
 import streamlit as st
-from SPARQLWrapper import SPARQLWrapper
 from streamlit_extras.colored_header import colored_header
+from streamlit_extras.no_default_selectbox import selectbox
 from streamlit_option_menu import option_menu
 from streamlit_sortables import sort_items
-import time
-import streamlit_nested_layout
 
-from functions.functions import switch_page
 from functions.functions_DataUnderstanding import update_feature_sensor_precision, defaultValuesCardinal, \
     update_data_restrictions_cardinal, defaultValuesOrdinal, update_data_restrictions_ordinal, defaultValuesNominal, \
     update_data_restrictions_nominal
 from functions.functions_Reliability import defaultValuesCardinalRestriction, defaultValuesOrdinalRestriction, \
     defaultValuesNominalRestriction, getRestriction
 from functions.functions_Reliability import getDefault
-from streamlit_extras.no_default_selectbox import selectbox
-from functions.fuseki_connection import login, getAttributes, getTimestamp, determinationActivity, uploadDUE, \
+from functions.fuseki_connection import login, getTimestamp, determinationActivity, uploadDUE, \
     deleteWasGeneratedByDUA, getUniqueValuesSeq, uploadDR, getSensorPrecision, uploadUniqueValues, \
-    getDataRestrictionSeq, getAttributesDataUnderstanding, get_feature_names
+    getDataRestrictionSeq, getAttributesDataUnderstanding, get_feature_names, get_dataset
 
 login()
-try:
-    if st.session_state.username == "user":
-        st.stop()
-except:
-    st.warning("Please switch to Deployment Page")
-    st.stop()
-try:
-    host = f"http://localhost:3030{st.session_state.fuseki_database}/sparql"
-    host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
-    if st.session_state.fuseki_database == "None":
-        st.error("Select dataset")
-        st.stop()
-except Exception as e:
-    st.info(e,"Please select a database first")
-    st.stop()
-
+host, host_upload = get_dataset()
 
 try:
     st.session_state.dataframe_feature_names = get_feature_names(host)
@@ -45,11 +28,10 @@ except Exception as e:
 if st.session_state.dataframe_feature_names.empty:
     st.stop()
 
-
-optionsDataUnderstanding = option_menu("Data Understanding Options", ["Scale", "Volatility", "Data Restrictions", "Feature Sensor Precision"],
-                                       icons=['collection', 'arrow-down-up', 'slash-circle'],
+optionsDataUnderstanding = option_menu("Data Understanding Options",
+                                       ["Scale", "Volatility", "Data Restrictions", "Feature Sensor Precision"],
+                                       icons=['collection', 'arrow-down-up', 'slash-circle', 'broadcast'],
                                        menu_icon="None", default_index=0, orientation="horizontal")
-
 
 with st.expander("Show information"):
     try:
@@ -69,10 +51,8 @@ with st.expander("Show information"):
     except:
         pass
 
-
 # Hier kann die scale ausgewählt werden
 if optionsDataUnderstanding == "Scale":
-
 
     determinationName = 'DeterminationOfScaleOfFeature'
     label = '"detScaleOfFeature"@en'
@@ -80,18 +60,17 @@ if optionsDataUnderstanding == "Scale":
     name = 'ScaleOfFeature'
     rprovName = 'scale'
 
-
-
     # wenn noch keine scale in fuseki bestimmt wurde, erstelle Form mit auswahl von scales
     if st.session_state["level_of_measurement_dic"] == {}:
-        st.warning("Please insert level of scale for each feature! This is an important step and cannot be changed afterwards.")
+        st.warning(
+            "Please insert level of scale for each feature! This is an important step and cannot be changed after uploading unique values.")
         with st.expander("Click here to changes scale of features"):
             st.markdown(
-                     """
-                     - **Cardinal**: only minimum and maximum values are saved. **:red[Must be numerical]**
-                     - **Ordinal**: the order of all values are saved, order can be arranged in the next step
-                     - **Nominal**: all values are saved with no further ordering"""
-                     )
+                """
+                - **Cardinal**: only minimum and maximum values are saved. **:red[Must be numerical]**
+                - **Ordinal**: ordered values, which can be arranged in the next step
+                - **Nominal**: all values are saved with no further ordering"""
+            )
             starting_time = getTimestamp()
 
             with st.form("Change level of measurement for features"):
@@ -101,13 +80,10 @@ if optionsDataUnderstanding == "Scale":
                     if f'level_of_measurement_{row}' not in st.session_state:
                         st.session_state[f'level_of_measurement_{row}'] = ' '
                     # wenn level of measurement dictionary nicht leer ist gibt es die level of measurement an
-                    #st.session_state.level_of_measurement_dic[row] = st.selectbox(f"**{row}**", options=options, index=0,key=f'level_of_measurement_{row}_widget',format_func=lambda x: 'Select an option' if x == '' else x)
 
+                    st.session_state.level_of_measurement_dic[row] = selectbox(f"**{row}**", options=options,
+                                                                               key=f'level_of_measurement_{row}_widget')
 
-
-                    st.session_state.level_of_measurement_dic[row] = selectbox(f"**{row}**", options=options,key=f'level_of_measurement_{row}_widget')
-
-                st.session_state.level_of_measurement_dic
                 # submit selected scale of measurements
                 if st.form_submit_button("Submit", type="primary"):
 
@@ -116,8 +92,9 @@ if optionsDataUnderstanding == "Scale":
                         st.stop()
                     ending_time = getTimestamp()
                     uuid_determinationScale = determinationActivity(host_upload, determinationName, label,
-                                                               starting_time, ending_time)
-                    uploadDUE(host_upload,host,st.session_state["level_of_measurement_dic"], uuid_determinationScale, name,
+                                                                    starting_time, ending_time)
+                    uploadDUE(host_upload, host, st.session_state["level_of_measurement_dic"], uuid_determinationScale,
+                              name,
                               rprovName)
                     st.experimental_rerun()
 
@@ -133,16 +110,15 @@ if optionsDataUnderstanding == "Scale":
 
             if st.session_state.unique_values_dict == {}:
                 if st.button("Change level of measurement", type="primary"):
-
                     del st.session_state["level_of_measurement_dic"]
-                    deleteWasGeneratedByDUA(host_upload,st.session_state["DF_feature_scale_name"])
+                    deleteWasGeneratedByDUA(host_upload, st.session_state["DF_feature_scale_name"])
                     st.experimental_rerun()
                 st.error(
                     "Please define order of ordinal features and upload!")
                 st.warning(
                     "If these steps are not completed at the beginning, this will result in errors and the app will not run properly.!")
         colored_header(
-            label="Upload features",
+            label="Unique feature values",
             description="""Open the expander for the feature to change the order and upload unique values afterwards!
                         """,
             color_name="red-70",
@@ -152,9 +128,11 @@ if optionsDataUnderstanding == "Scale":
             getUniqueValuesSeq(host)
 
         except Exception as e:
+
+
             for feature, scale in st.session_state["level_of_measurement_dic"].items():
                 starting_time = getTimestamp()
-                #data_restrictions_dic = dict()
+                # data_restrictions_dic = dict()
                 data = list()
                 if scale == "Cardinal":
                     try:
@@ -180,15 +158,14 @@ if optionsDataUnderstanding == "Scale":
                         else:
                             data = st.session_state[f'order_of_ordinal_{feature}']
 
+                        st.session_state[f'order_of_ordinal_{feature}'] = sort_items(data,
+                                                                                     key=f"order_{feature}_widget")
 
-                        st.session_state[f'order_of_ordinal_{feature}'] = sort_items(data, key = f"order_{feature}_widget")
-
-                        st.session_state['first_unique_values_dict'][feature] = st.session_state[f'order_of_ordinal_{feature}']
+                        st.session_state['first_unique_values_dict'][feature] = st.session_state[
+                            f'order_of_ordinal_{feature}']
                         # st.session_state[f'data_restrictions_{feature}_ordinal'] = st.session_state[f'order_of_ordinal_{feature}']
-
-
-            if st.button("Upload values",help="All values must be uploaded for further processing.",type="primary"):
-                st.info("This process may take a while")
+            st.error("Please define order of ordinal features and upload!")
+            if st.button("Upload values", help="All values must be uploaded for further processing.", type="primary"):
                 determinationNameUUID = 'DeterminationOfUniqueValuesOfFeature_'
                 determinationName = 'DeterminationOfUniqueValuesOfFeature'
                 label = '"detUniqueValuesOfFeature"@en'
@@ -197,22 +174,21 @@ if optionsDataUnderstanding == "Scale":
                 rprovName = 'uniqueValues'
                 try:
                     ending_time = getTimestamp()
-                    uuid_determinationUniqueValues = determinationActivity(host_upload,determinationName, label, starting_time, ending_time)
-                    uploadUniqueValues(host_upload,host,st.session_state["first_unique_values_dict"], st.session_state["level_of_measurement_dic"], uuid_determinationUniqueValues, name,
-                              rprovName)
+                    uuid_determinationUniqueValues = determinationActivity(host_upload, determinationName, label,
+                                                                           starting_time, ending_time)
+                    uploadUniqueValues(host_upload, host, st.session_state["first_unique_values_dict"],
+                                       st.session_state["level_of_measurement_dic"], uuid_determinationUniqueValues,
+                                       name,
+                                       rprovName)
                     time = getTimestamp()
-                    st.experimental_rerun()
+
                 except Exception as e:
                     st.write(e)
+                st.experimental_rerun()
         if st.session_state.unique_values_dict != {}:
             st.success("Unique values uploaded")
-            if st.button("Show ordered unique values"):
+            with st.expander("Show ordered unique values"):
                 st.write(st.session_state['unique_values_dict'])
-
-
-
-
-
 
 if optionsDataUnderstanding == "Volatility":
 
@@ -230,8 +206,6 @@ if optionsDataUnderstanding == "Volatility":
     name = 'VolatilityOfFeature'
     rprovName = 'volatilityLevel'
 
-
-
     if st.session_state["volatility_of_features_dic"] == {}:
         st.markdown("""
         **So far no levels are set for the individual features**
@@ -245,26 +219,28 @@ if optionsDataUnderstanding == "Volatility":
             with st.form("Change level of volatility for features"):
 
                 for index, row in st.session_state.dataframe_feature_names["featureName.value"].items():
-                    st.session_state["volatility_of_features_dic"][row] = selectbox(row, options=options, key=f'volatility_of_features_{row}')
+                    st.session_state["volatility_of_features_dic"][row] = selectbox(row, options=options,
+                                                                                    key=f'volatility_of_features_{row}')
 
                 if st.form_submit_button("Submit", type="primary"):
                     if None in st.session_state["volatility_of_features_dic"].values():
                         st.error("Please select a volatility level for all features")
                         st.stop()
                     ending_time = getTimestamp()
-                    uuid_determinationVolatility = determinationActivity(host_upload, determinationName, label,starting_time, ending_time)
-                    uploadDUE(host_upload,host,st.session_state["volatility_of_features_dic"], uuid_determinationVolatility, name,
+                    uuid_determinationVolatility = determinationActivity(host_upload, determinationName, label,
+                                                                         starting_time, ending_time)
+                    uploadDUE(host_upload, host, st.session_state["volatility_of_features_dic"],
+                              uuid_determinationVolatility, name,
                               rprovName)
 
 
     else:
-        st.markdown("""
-        **Here you can see which volatility levels are chosen for each feature**
-
-        If you want to change the volatility levels click on the button below.
-        """)
-        st.write(st.session_state["volatility_of_features_dic"])
-        if st.button("Delete Volatility",on_click=deleteWasGeneratedByDUA,args=(host_upload,st.session_state["DF_feature_volatility_name"]),help="Old values will be invalid and new volatility levels can be created"):
+        st.markdown("**Here you can see the Volatility  for each feature**")
+        with st.expander("Show Volatility"):
+            st.write(st.session_state["volatility_of_features_dic"])
+        if st.button("Delete Volatility", on_click=deleteWasGeneratedByDUA,
+                     args=(host_upload, st.session_state["DF_feature_volatility_name"]),
+                     help="Old values will be invalid and new volatility levels can be created"):
             pass
 if optionsDataUnderstanding == "Data Restrictions":
     try:
@@ -273,23 +249,18 @@ if optionsDataUnderstanding == "Data Restrictions":
     except Exception as e:
         st.error("Please upload feature values in Data Understanding Step")
         st.stop()
-    st.markdown("""
-    **Here you can see set the data restrictions for each feature**
 
-    Based on the level of measurement different options are available.
-    * Cardinal: Must be numerical
-    * Ordinal: You must create an order for the features first
-    * Nominal: All values are included
-    """)
     uploaded_DataRestriction = getRestriction(host)
     if "data_restrictions_dict" not in st.session_state:
         st.session_state.data_restrictions_dict = dict()
     if st.session_state['data_restrictions_dict'] is None:
         st.session_state['data_restrictions_dict'] = dict()
     if uploaded_DataRestriction.empty:
+        st.markdown("""
+        **Here you can set the Data Restrictions for each feature**
+        """)
         tab1, tab2, tab3 = st.tabs(["Cardinal", "Ordinal", "Nominal"])
         for key, values in st.session_state.level_of_measurement_dic.items():
-
 
             data_restrictions_dic = dict()
             data = list()
@@ -302,8 +273,6 @@ if optionsDataUnderstanding == "Data Restrictions":
                             # mit is digit prüfen ob int oder float
                             if f'data_restrictions_{key}_cardinal' not in st.session_state:
                                 defaultValuesCardinal(key)
-
-
 
                             try:
                                 if key in st.session_state.data_restrictions_dict.keys():
@@ -318,7 +287,7 @@ if optionsDataUnderstanding == "Data Restrictions":
                                 defaultValuesCardinal(key)
 
                             try:
-                                lower = round(st.number_input("Input value", min_value=float(
+                                lower = round(st.number_input("Input lower value", min_value=float(
                                     st.session_state.unique_values_dict[key][0]), key=f"lower_{key}", value=float(
                                     st.session_state[f'data_restrictions_{key}_cardinal'][0])), 2)
                                 upper = round(st.number_input("Input upper value", key=f"upper_{key}", min_value=lower,
@@ -327,7 +296,7 @@ if optionsDataUnderstanding == "Data Restrictions":
                                                               value=float(
                                                                   st.session_state[f'data_restrictions_{key}_cardinal'][
                                                                       -1])), 2)
-                                if st.button("Save", key=f"data_restriction_ok_widget_{key}", type="primary"):
+                                if st.button("Ok", key=f"data_restriction_ok_widget_{key}", type="primary"):
                                     if st.session_state[f"lower_{key}"] >= st.session_state[f"upper_{key}"]:
                                         st.error("Lower bound range must be smaller than upper bound.")
                                     else:
@@ -386,8 +355,7 @@ if optionsDataUnderstanding == "Data Restrictions":
                             args=(key,))
                         st.markdown("""---""")
 
-
-    # TODO insert option for ordinal data to be selected with slider
+        # TODO insert option for ordinal data to be selected with slider
         if st.session_state['data_restrictions_dict'] == {}:
             st.stop()
         else:
@@ -403,6 +371,9 @@ if optionsDataUnderstanding == "Data Restrictions":
                 st.experimental_rerun()
 
     else:
+        st.markdown("""
+        **Here you can see the Data Restrictions for each feature**
+        """)
 
         for key, value in st.session_state["level_of_measurement_dic"].items():
             if value == "Cardinal":
@@ -411,113 +382,23 @@ if optionsDataUnderstanding == "Data Restrictions":
                 defaultValuesOrdinalRestriction(key)
             if value == "Nominal":
                 defaultValuesNominalRestriction(key)
-        # st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(
-        #     uploaded_DataRestriction["DUA.value"][0], host)
 
-        st.write(uploaded_DataRestriction["DUA.value"])
 
         st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
 
         st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
 
-        with st.expander("Show Data Restriction:"):
+        with st.expander("Show Data Restriction"):
             st.write(st.session_state.data_restrictions_dict)
 
-
-        st.session_state["data_restrictions_dict"]
-
-
-        if st.button("Delete Data Restriction", help="Delete Data Restriction in order to create a new Data Restriction"):
+        if st.button("Delete Data Restriction",
+                     help="Delete Data Restriction in order to create a new Data Restriction"):
             deleteWasGeneratedByDUA(host_upload, uploaded_DataRestriction)
             del st.session_state["data_restrictions_dict"]
             del st.session_state.data_restriction_final
             st.session_state.data_restriction_final = st.session_state.unique_values_dict.copy()
             uploaded_DataRestriction = pd.DataFrame()
             st.experimental_rerun()
-
-
-
-
-    # if "data_restrictions_dict" not in st.session_state:
-    #     st.session_state["data_restrictions_dict"] = dict()
-
-    # try:
-    #     # if "data_restriction_URN" not in st.session_state:
-    #     #     st.session_state.data_restriction_URN = pd.DataFrame(columns=uploaded_DataRestriction.columns)
-    #     # if st.session_state.data_restriction_URN.empty:
-    #     #     st.error("No Data Restriction selected determined")
-    #     # else:
-    #     #     st.success("Data Restriction option selected")
-    #
-    #     st.write(uploaded_DataRestriction)
-    #
-    #     try:
-    #         for key, value in st.session_state["level_of_measurement_dic"].items():
-    #             if value == "Cardinal":
-    #                 defaultValuesCardinalRestriction(key)
-    #             if value == "Ordinal":
-    #                 defaultValuesOrdinalRestriction(key)
-    #             if value == "Nominal":
-    #                 defaultValuesNominalRestriction(key)
-    #         st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(
-    #             uploaded_DataRestriction["DataRestrictionActivity"][0], host)
-    #
-    #         st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-    #
-    #         st.session_state.data_restriction_final.update(st.session_state.data_restrictions_dict)
-    #         st.experimental_rerun()
-    #
-    #
-    #
-    #
-    #
-    #
-    #     except Exception as e:
-    #         st.write(e)
-    #         st.info("Dont forget to upload unique values")
-    #
-    #     if st.button("Delete Restriction"):
-    #         try:
-    #             deleteWasGeneratedByDUA(host_upload, uploaded_DataRestriction)
-    #             # del st.session_state["loaded_bin_dict"]
-    #             # del st.session_state["DF_bin_dict"]
-    #             st.session_state["data_restrictions_dict"] = dict()
-    #             st.session_state["data_restriction_final"] = st.session_state.unique_values_dict.copy()
-    #             st.experimental_rerun()
-    #         except Exception as e:
-    #             st.write(e)
-    #             st.write("Didnt work")
-    #
-    #
-    # except Exception as e:
-    #     st.write(e)
-    #     st.info("No Data Restrictions defined")
-    # starting_time = getTimestamp()
-
-
-    placeholder = st.empty()
-
-
-    #
-    #
-    # is_unique = False
-    #
-
-    #     with placeholder.container():
-    #
-    #         st.info("This label will be shown for the defined Data Restrictions. If a label is used more than once it might lead to problems.")
-    #         comment_data_restriction = st.text_input("Insert label for the defined Data Restrictions",
-    #                                           help="Name your Data Restrictions in order to find it easier later.")
-    #
-    #         if st.button("Upload Data Restrictions", type="primary", help="Upload the defined Data Restrictions."):
-    #             starting_time = getTimestamp()
-    #             uploadDR(starting_time, host_upload, host, comment_data_restriction)
-    #
-    #
-    #             dr_success = st.success("Data Restriction uploaded")
-    #             dr_success.empty()
-
-
 
 
 
@@ -539,16 +420,9 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
 
     starting_time = getTimestamp()
 
-
-
-
-
-
     if st.session_state["loaded_feature_sensor_precision_dict"] == {}:
         st.markdown("""
-        **So far no levels are set for the individual features**
-
-        If you want to change the volatility click on the expander below.
+        **Here you can set the Sensor Precision for each feature**
         """)
 
         # TODO muss noch in fuseki gespeichert werden
@@ -564,51 +438,51 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
 
                     if key in st.session_state["feature_sensor_precision_dict"]:
                         st.session_state[f'feature_sensor_precision_{key}'] = \
-                        st.session_state["feature_sensor_precision_dict"][key]
+                            st.session_state["feature_sensor_precision_dict"][key]
                     else:
                         st.session_state[f'feature_sensor_precision_{key}'] = 0
 
-                    st.session_state[f'feature_sensor_precision_{key}'] = round(st.number_input("Define sensor precision",
-                                                                                          min_value=float(0.00),
-                                                                                          max_value=float(100),
-                                                                                          value=float(st.session_state[
-                                                                                                          f'feature_sensor_precision_{key}']),
-                                                                                          key=f'feature_sensor_precision_{key}_widget',
-                                                                                          on_change=update_feature_sensor_precision,
-                                                                                          args=(key,),help="the measured value is correct within the defined percentage range"),2)
-        try:
-            st.info("Sensor precision for feature will be uploaded if bigger 0.00")
-        except:
-            st.info("No Cardinal values determined in this dataset")
-        if st.button("Submit", type="primary"):
-            uuid_determinationSensorPrecision = determinationActivity(host_upload, determinationName,
-                                                                 label,
-                                                                 starting_time, ending_time)
-            uploadDUE(host_upload, host, st.session_state["feature_sensor_precision_dict"],
-                      uuid_determinationSensorPrecision, name,
-                      rprovName)
-            st.session_state["loaded_feature_sensor_precision_dict"] = st.session_state["feature_sensor_precision_dict"]
-            Sensor_success = st.success("Sensor Precision uploaded")
-            time.sleep(2)
-            Sensor_success.empty()
-            st.experimental_rerun()
+                    st.session_state[f'feature_sensor_precision_{key}'] = round(
+                        st.number_input("Define sensor precision",
+                                        min_value=float(0.00),
+                                        max_value=float(100),
+                                        value=float(st.session_state[
+                                                        f'feature_sensor_precision_{key}']),
+                                        key=f'feature_sensor_precision_{key}_widget',
+                                        on_change=update_feature_sensor_precision,
+                                        args=(key,),
+                                        help="the measured value is correct within the defined percentage range"), 2)
+        st.write("----------------------")
+        if st.session_state["feature_sensor_precision_dict"] != {}:
+            with st.expander("Show Feature Sensor Precision"):
+                st.session_state["feature_sensor_precision_dict"]
+
+            if st.button("Upload Feature Sensor Precision", type="primary"):
+                uuid_determinationSensorPrecision = determinationActivity(host_upload, determinationName,
+                                                                          label,
+                                                                          starting_time, ending_time)
+                uploadDUE(host_upload, host, st.session_state["feature_sensor_precision_dict"],
+                          uuid_determinationSensorPrecision, name,
+                          rprovName)
+                st.session_state["loaded_feature_sensor_precision_dict"] = st.session_state["feature_sensor_precision_dict"]
+                Sensor_success = st.success("Sensor Precision uploaded")
+                time.sleep(2)
+                Sensor_success.empty()
+                st.experimental_rerun()
 
 
     else:
         st.markdown("""
-        **Here you can see which sensor precisions are chosen for each feature**
-
-        If you want to change the sensor precisions click on the button below.
+        **Here you can see the Sensor Precision for each feature**
         """)
-        st.write(st.session_state["loaded_feature_sensor_precision_dict"])
-        st.write(st.session_state["DF_feature_sensor_precision"])
+        with st.expander("Show Feature Sensor Precision"):
+            st.write(st.session_state["loaded_feature_sensor_precision_dict"])
 
-        if st.button("Change Sensor Precision"):
+        if st.button("Delete Sensor Precision"):
+            st.session_state["loaded_feature_sensor_precision_dict"], st.session_state[
+                "DF_feature_sensor_precision"] = getSensorPrecision(host)
 
-
-            st.session_state["loaded_feature_sensor_precision_dict"], st.session_state["DF_feature_sensor_precision"] = getSensorPrecision(host)
-
-            deleteWasGeneratedByDUA(host_upload,st.session_state["DF_feature_sensor_precision"])
+            deleteWasGeneratedByDUA(host_upload, st.session_state["DF_feature_sensor_precision"])
 
             del st.session_state["loaded_feature_sensor_precision_dict"]
 
