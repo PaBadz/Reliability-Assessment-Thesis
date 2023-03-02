@@ -135,13 +135,14 @@ colored_header(
         description="Design and Implementation of a web-based User Interface for the guided Assessment of Reliability of Classification Results using the Perturbation Approach",
         color_name="red-70"
     )
-st.write('--------------')
-st.markdown("**In Order to continue please upload a dataset to the server or choose a dataset from the database**")
+
 
 success = False
 selected2 = option_menu(None, ["Select dataset", "Upload dataset"],
                         icons=['nothing','cloud-upload'],
                         menu_icon="", default_index=0, orientation="horizontal")
+st.write('--------------')
+# st.markdown("**In Order to continue please upload a dataset to the server or choose a dataset from the database**")
 
 if selected2 == 'Upload dataset':
     st.info("If there is no dataset please open expander below and create dataset.")

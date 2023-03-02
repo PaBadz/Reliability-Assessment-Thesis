@@ -12,6 +12,10 @@ credentials:
       email: analyst@test.de
       name: Analyst
       password: $2b$12$VGUjzcKGPGGj/z.vZYZs5.Dti3n2Zo.9iYk4EnH0DrGE2EmXjTOAS
+    developer:
+      email: developer
+      name: Developer
+      password: $2b$12$j9wK2Y.4phV0x/jHDwQY.eW1cxCWDwNE1RonS7XvlB/2YVxClyygy
     mel:
       email: melsby@gmail.com
       name: Mel
@@ -25,4 +29,4 @@ credentials:
       name: User
       password: $2b$12$2S7eTDjJSIa7ZSsSowPxCO20YmaXX/kTyFx5laEpKWRRdxTMkGi0O
 preauthorized:
-  emails: pascal@badzura.de rainhard@schwarz.de tobias@meier.de
+  emails: developer

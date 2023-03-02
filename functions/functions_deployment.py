@@ -10,7 +10,7 @@ color_map = {
 def get_perturbation_level(col_name, value):
     plevel = {}
     try:
-        if col_name == "perturbation":
+        if col_name == "prediction":
             return "Blue"
 
         for key, value in st.session_state.perturbationOptions_settings.items():

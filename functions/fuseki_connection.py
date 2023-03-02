@@ -59,7 +59,6 @@ def login():
             st.warning('Please enter your username and password')
             st.stop()
     except:
-        st.warning("Please Login")
         st.stop()
 
 
@@ -78,7 +77,7 @@ def login_analyst():
             st.warning('Please enter your username and password')
             st.stop()
     except:
-        st.warning("Please Login")
+        st.stop()
 
 
 
@@ -598,7 +597,7 @@ def uploadPerturbationAssessment(host_upload,uuid_PerturbationAssessment, label,
     time = getTimestamp()
     for key in perturbationOptions_settings.keys():
         for perturbationOption in assessmentPerturbationOptions[key][
-            "DataUnderstandingEntity"]:
+            "PerturbationOptionID"]:
             # for perturbationOption in st.session_state.assessmentPerturbationOptions[key]["DataUnderstandingEntity"].values():
             query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationAssessment}> rdf:type rprov:PerturbationAssessment, owl:NamedIndividual;
                         rdfs:label "{label}"@en ;
@@ -768,7 +767,7 @@ def getAttributes(host):
         st.session_state["volatility_of_features_dic"], st.session_state[
             "DF_feature_volatility_name"] = getFeatureVolatility(host)
     except Exception as e:
-        st.warning("No volatility level defined")
+        st.warning("No volatility level determined")
         st.session_state["volatility_of_features_dic"] = dict()
 
 
@@ -875,7 +874,7 @@ def getAttributesDataUnderstanding(host):
         st.session_state["volatility_of_features_dic"], st.session_state[
             "DF_feature_volatility_name"] = getFeatureVolatility(host)
     except Exception as e:
-        st.warning("No volatility level defined")
+        st.warning("No volatility level determined")
         st.session_state["volatility_of_features_dic"] = dict()
 
 

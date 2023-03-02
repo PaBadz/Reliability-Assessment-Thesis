@@ -37,6 +37,10 @@ try:
     getDefault(host)
 except:
     st.error("Couldn't load unique values. If already inserted refresh page.")
+# horizontal menu
+selected2 = option_menu(None, ["Choose Perturbation Option", "Define Perturbation Options"],
+                        icons=['check2-circle', 'gear'],
+                        orientation="horizontal")
 with st.expander("Show information"):
     try:
         getAttributes(host)
@@ -59,10 +63,7 @@ if "data_restrictions_dict" not in st.session_state:
     st.session_state["data_restrictions_dict"] = dict()
 if st.session_state.dataframe_feature_names.empty:
     st.stop()
-# horizontal menu
-selected2 = option_menu(None, ["Choose Perturbation Option", "Define Perturbation Options"],
-                        icons=['check2-circle', 'gear'],
-                        orientation="horizontal")
+
 # Algorithm Options
 options_cardinal = ['5% Perturbation', '10% Perturbation', 'Percentage Perturbation',
                     'Fixed Amount Perturbation', 'Range Perturbation', 'Sensor Precision Perturbation','Bin Perturbation']
@@ -448,7 +449,7 @@ try:
                             st.markdown(f"##### Define settings for algorithm: {method}")
                             st.session_state[f"additional_value_{key}_{method}"] = float(st.number_input("Amount",
                                                 value=float(st.session_state[f"additional_value_{key}_{method}"]),
-                                                min_value=float(0),
+                                                min_value=float(0.01),
                                                 max_value=float(st.session_state.data_restriction_final[key][1]),
                                                 key=f"additional_value_widget_{key}_{method}",
                                                 on_change=update_additional_value,
@@ -457,6 +458,8 @@ try:
 
                             st.session_state[f"steps_{key}_{method}"] = int(
                                 st.number_input("Steps",
+                                                min_value=int(1),
+                                                step=int(1),
                                                 value=st.session_state[f"steps_{key}_{method}"],
                                                 key=f"steps_widget_{key}_{method}", on_change=update_steps,
                                                 args=(key, method)))
@@ -510,18 +513,13 @@ try:
                                 st.session_state[f"additional_value_{key}_{method}_bound"] = \
                                     [float(lower_border),float(upper_border)]
 
-                            # st.session_state[f"additional_value_{key}_{method}_bound"] = (st.slider("Amount",
-                            #         min_value=float(st.session_state.data_restriction_final[key][0]),
-                            #         max_value=float(st.session_state.data_restriction_final[key][-1]),
-                            #         value=st.session_state[f"additional_value_{key}_{method}_bound"],
-                            #         key=f"additional_value_widget_{key}_{method}",
-                            #         on_change=upper_lower_bound,
-                            #         args=(key, method)))
+
 
                             if st.session_state[f"steps_{key}_{method}"] == 0:
                                 st.session_state[f"steps_{key}_{method}"] = 1
 
                             st.session_state[f"steps_{key}_{method}"] = int(st.number_input("Steps",
+                                    min_value=int(1),
                                     step=int(1),
                                     value=st.session_state[f"steps_{key}_{method}"],
                                     key=f"steps_widget_{key}_{method}", on_change=update_steps,
@@ -562,10 +560,12 @@ try:
                                               range(len(st.session_state.loaded_bin_dict[key]) - 1)])
 
                                     st.session_state[f"steps_{key}_{method}"] = int(
-                                        st.number_input("Steps",  # min_value=int(1), max_value=int(100), step=int(1),
+                                        st.number_input("Steps",  min_value=int(1), step=int(1),
                                                         value=st.session_state[f"steps_{key}_{method}"],
                                                         key=f"steps_widget_{key}_{method}", on_change=update_steps,
                                                         args=(key, method)))
+
+
 
                                     st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
                                         "Select Perturbation Level",
@@ -796,12 +796,12 @@ try:
                                 st.session_state[f"steps_{key}_{method}"] = 2
                             else:
                                 st.session_state[f"steps_{key}_{method}"] = int(
-                                    st.slider("Steps", min_value=int(1),
-                                              max_value=int(len(st.session_state.data_restriction_final[key]) - 1),
-                                              step=int(1),
-                                              value=st.session_state[f"steps_{key}_{method}"],
-                                              key=f"steps_widget_{key}_{method}", on_change=update_steps,
-                                              args=(key, method)))
+                                    st.number_input("Steps",
+                                                    min_value=int(1), step=int(1),
+                                                    value=st.session_state[f"steps_{key}_{method}"],
+                                                    key=f"steps_widget_{key}_{method}", on_change=update_steps,
+                                                    args=(key, method)))
+
 
                             st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.selectbox(
                                 "Select Perturbation Level",

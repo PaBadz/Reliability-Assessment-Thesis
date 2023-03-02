@@ -11,11 +11,20 @@ from sklearn.model_selection import train_test_split
 from streamlit_extras.switch_page_button import switch_page
 
 from functions.functions import add_parameter_ui, get_classifier
-from functions.fuseki_connection import login_analyst, get_dataset
+from functions.fuseki_connection import login_analyst, get_dataset, getUniqueValuesSeq
 
 login_analyst()
 
 host, host_upload = get_dataset()
+
+try:
+    getUniqueValuesSeq(host)
+
+except Exception as e:
+    st.error("Please upload feature values in Data Understanding step")
+    if st.button("Data Understanding"):
+        switch_page("Data Understanding")
+    st.stop()
 
 
 

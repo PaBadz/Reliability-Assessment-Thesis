@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 from streamlit_extras.colored_header import colored_header
 from streamlit_extras.no_default_selectbox import selectbox
+from streamlit_extras.switch_page_button import switch_page
 from streamlit_option_menu import option_menu
 from streamlit_sortables import sort_items
 
@@ -26,7 +27,18 @@ except Exception as e:
     st.error(e)
 
 if st.session_state.dataframe_feature_names.empty:
+    try:
+        getUniqueValuesSeq(host)
+
+    except Exception as e:
+        st.error("Please upload dataset in Home")
+        if st.button("Home"):
+            switch_page("Home")
+        if "first_unique_values_dict" not in st.session_state:
+            st.error("No unique values available, please upload dataset again.")
+        st.stop()
     st.stop()
+
 
 optionsDataUnderstanding = option_menu("Data Understanding Options",
                                        ["Scale", "Volatility", "Data Restrictions", "Feature Sensor Precision"],
@@ -127,7 +139,12 @@ if optionsDataUnderstanding == "Scale":
         try:
             getUniqueValuesSeq(host)
 
+
+
         except Exception as e:
+            if "first_unique_values_dict" not in st.session_state:
+                st.error("No unique values available, please upload dataset again.")
+            st.stop()
 
 
             for feature, scale in st.session_state["level_of_measurement_dic"].items():
@@ -135,6 +152,9 @@ if optionsDataUnderstanding == "Scale":
                 # data_restrictions_dic = dict()
                 data = list()
                 if scale == "Cardinal":
+
+
+
                     try:
                         float(min(st.session_state['first_unique_values_dict'][feature]))
                     except:

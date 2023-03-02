@@ -58,7 +58,6 @@ menu_perturbation = option_menu(None, ["Perturbation Option", 'Perturbation Mode
 try:
     savedPerturbationOptions = getPerturbationOptions(host)
 except Exception as e:
-    st.write(e)
     st.info("There are no Perturbation Options to select at the moment.")
     st.stop()
 
@@ -254,8 +253,10 @@ if menu_perturbation == 'Perturbation Option':
                                 settings["PerturbationLevel"] = keys[index + 1]
 
                                 if row["PerturbationOption"] in settingList:
-                                    st.warning(f"""Equal {row["PerturbationOption"]} selected. Only the last one will be used.""")
-                                    settingList[row["PerturbationOption"]].update(settings)
+                                    st.warning(
+                                        f"""Another {row["PerturbationOption"]} already chosen. First one will be used!""")
+                                    # st.warning(f"""Equal {row["PerturbationOption"]} selected. Only the last one will be used.""")
+                                    # settingList[row["PerturbationOption"]].update(settings)
                                 else:
                                     settingList[row["PerturbationOption"]] = settings
 
@@ -297,7 +298,7 @@ if menu_perturbation == 'Perturbation Option':
 
 
                                         volatility_entity = getFeatureVolatilityDeployment(data_understanding_entity,
-                                                                                           featureID, host)
+                                                                                             featureID, host)
 
                                         try:
                                             if volatility_entity["volatilityLevel.value"][0] == 'High Volatility':
@@ -328,7 +329,7 @@ if menu_perturbation == 'Perturbation Option':
 
 
 
-                                        if st.session_state.assessmentPerturbationOptions[feature_names]["PerturbationOption"][i_perturbationOptions] == "Bin perturbation":
+                                        if st.session_state.assessmentPerturbationOptions[feature_names]["PerturbationOption"][i_perturbationOptions] == "Bin Perturbation":
                                             st.success(f"Bins determined for this Perturbation Option:")
                                             bin_values_entity = getBinsDeployment(data_understanding_entity,featureID, host)
                                             bin_values_entity_list = bin_values_entity["item.value"].tolist()
@@ -475,7 +476,8 @@ if menu_perturbation == 'Perturbation Option':
                                 settings["PerturbationLevel"] = keys[index + 1]
 
                                 if row["PerturbationOption"] in settingList:
-                                    settingList[row["PerturbationOption"]].append(settings)
+                                    st.warning(f"""Another {row["PerturbationOption"]} already chosen. First one will be used!""")
+                                    #settingList[row["PerturbationOption"]].append(settings)
                                 else:
                                     settingList[row["PerturbationOption"]] = settings
 
@@ -666,7 +668,9 @@ if menu_perturbation == 'Perturbation Option':
 
                                 settings["PerturbationLevel"] = keys[index + 1]
                                 if row["PerturbationOption"] in settingList:
-                                    settingList[row["PerturbationOption"]].append(settings)
+                                    st.warning(
+                                        f"""Another {row["PerturbationOption"]} already chosen. First one will be used!""")
+                                    #settingList[row["PerturbationOption"]].append(settings)
 
                                 else:
                                     settingList[row["PerturbationOption"]] = settings
@@ -748,6 +752,7 @@ if menu_perturbation == 'Perturbation Option':
         st.session_state["data_restriction_final_deployment"] = st.session_state.unique_values_dict.copy()
 
 
+
         for feature_name in st.session_state.assessmentPerturbationOptions.keys():
             st.session_state["data_restriction_deployment"] = [(st.session_state.unique_values_dict[feature_names][0]),
                                                              (st.session_state.unique_values_dict[feature_names][-1])]
@@ -781,14 +786,16 @@ if menu_perturbation == 'Perturbation Option':
 
 
     colored_header(
-        label="Show Algorithms",
-        description="Define level of scale for each feature",
+        label="Show Perturbation Option",
+        description="Show chosen Perturbation Option per feature",
         color_name="red-50",
     )
     with st.expander("Show chosen Perturbation Options"):
         # delete empty dictionaries
-        st.dataframe(df_test[["FeatureName","PerturbationOption","Settings","DataRestrictionEntities","group"]].reset_index(drop=True),use_container_width=True)
+
+        st.dataframe(df_test[["FeatureName","PerturbationOptionID","PerturbationOption","Settings","group"]].reset_index(drop=True),use_container_width=True)
         st.session_state.df_test = df_test
+        st.write(st.session_state.df_test)
 
         try:
 
@@ -1104,6 +1111,7 @@ try:
                 # reset index for y_pred in order to be able to insert it to result
                 result["prediction"] = y_pred.iloc[len(df):].reset_index(drop=True)
 
+
                 # change values in selected rows to list in order to extend the list with perturbated values
                 # this is done because we need to explode it later
                 for row in selected_rows:
@@ -1307,7 +1315,7 @@ try:
                 y_pred = y_pred.iloc[len(df):].reset_index(drop=True)
                 # reset index in order to be able to insert y_pred correctly
                 result_df = result_df.reset_index(drop=True)
-                result_df["perturbation"] = y_pred
+                result_df["prediction"] = y_pred
 
 
                 try:
@@ -1350,6 +1358,7 @@ try:
                         expand_option_case = False
                     else:
                         expand_option_case = True
+
                     with st.expander(f"Get prediction for perturbed **case: {label_list[i]}**",expanded=expand_option_case):
                         df = df.drop(columns=["Case"])
                         if len(df.index) > 2500:
@@ -1364,7 +1373,8 @@ try:
 
                         different_pred = df.iloc[:1]
 
-                        different_pred2 = df[df['prediction'] != df['perturbation']]
+                        different_pred2 = df[df['prediction'] != df['prediction'][0]]
+
                         # shows the first original prediction
                         different_pred3 = pd.concat([different_pred, different_pred2]).reset_index(drop=True)
 

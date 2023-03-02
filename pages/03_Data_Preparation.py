@@ -28,6 +28,18 @@ try:
 except:
     st.error("Please select other dataset or refresh page")
     st.stop()
+
+
+
+if "data_restriction_final" not in st.session_state:
+    st.session_state.data_restriction_final = st.session_state.unique_values_dict
+
+if st.session_state.dataframe_feature_names.empty:
+    st.stop()
+
+data_preparation_options = option_menu("Data Preparation Options", ["Binned Features", "Missing Values"],
+                                       icons=['collection', 'slash-circle'],
+                                       menu_icon="None", default_index=0, orientation="horizontal")
 with st.expander("Show Information"):
     try:
         getAttributesDataPreparation(host)
@@ -45,18 +57,6 @@ with st.expander("Show Information"):
     except:
         st.warning("No Data Restrictions determined")
 
-
-
-
-if "data_restriction_final" not in st.session_state:
-    st.session_state.data_restriction_final = st.session_state.unique_values_dict
-
-if st.session_state.dataframe_feature_names.empty:
-    st.stop()
-
-data_preparation_options = option_menu("Data Preparation Options", ["Binned Features", "Missing Values"],
-                                       icons=['collection', 'slash-circle'],
-                                       menu_icon="None", default_index=0, orientation="horizontal")
 
 
 if data_preparation_options == "Binned Features":
