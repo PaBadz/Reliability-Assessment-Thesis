@@ -47,7 +47,7 @@ with st.expander("Show Information"):
         st.error("Please select other dataset or refresh page")
         st.stop()
     try:
-        # TODO include data restriction in getAttributes
+
         uploaded_DataRestriction = getRestriction(host)
         st.session_state["data_restrictions_dict"] = getDataRestrictionSeq(
             uploaded_DataRestriction["DUA.value"][0], host)
@@ -60,7 +60,8 @@ with st.expander("Show Information"):
 
 
 if data_preparation_options == "Binned Features":
-    if "Cardinal" not in set(st.session_state.DF_feature_scale_name["scale.value"].to_list()):
+
+    if "http://www.dke.uni-linz.ac.at/rprov#Cardinal" not in set(st.session_state.DF_feature_scale_name["scale.value"].to_list()):
         st.info("No Cardinal values determined in this dataset, therefore no binning can be performed")
 
     colored_header(
@@ -124,9 +125,8 @@ if data_preparation_options == "Binned Features":
                 rprovName = 'RangeOfBinnedFeature'
                 ending_time = getTimestamp()
 
-                starting_time = getTimestamp()
 
-                uuid_determinationBin = determinationActivity(host_upload, determinationName, label, starting_time,
+                uuid_determinationBin = determinationActivity(host_upload, determinationName, label,
                                                                   ending_time)
                 uploadBinValues(host_upload, host, st.session_state["bin_dict"], uuid_determinationBin, rprovName)
                 st.experimental_rerun()
@@ -152,8 +152,6 @@ elif data_preparation_options == "Missing Values":
     label = 'MissingValues'
 
     ending_time = getTimestamp()
-
-    starting_time = getTimestamp()
 
     colored_header(
         label="Missing values of features",
@@ -201,8 +199,7 @@ elif data_preparation_options == "Missing Values":
                 st.write(st.session_state["missingValues_of_features_dic"])
             if st.button("Submit", type="primary"):
                 uuid_DocuOfHandlingOfMissingValues = determinationActivity(host_upload, determinationName,
-                                                                     label,
-                                                                     starting_time, ending_time)
+                                                                     label, ending_time)
 
                 name = "HandlingOfMissingValues"
 

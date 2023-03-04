@@ -6,7 +6,6 @@ def percentage_perturbation(percentage_steps, value, data_restriction):
     # feature is increased and decreased in percentage steps
     # perturbation level is orange
     perturbedList = list()
-    # perturbedList.append(value)
     for i in range(-percentage_steps, percentage_steps+1):
         if i == 0:
             pass
@@ -18,15 +17,13 @@ def percentage_perturbation(percentage_steps, value, data_restriction):
                 pass
     return perturbedList
 
-def percentage_perturbation_settings(percentage_steps, perturbation_level):
+def percentage_perturbation_settings(percentage_steps):
     settings = dict()
     settings['steps'] = percentage_steps
-    settings['PerturbationLevel'] = perturbation_level
     return settings
 
 def sensorPrecision(sensorPrecision: float, steps: int, value, data_restriction):
     perturbedList = list()
-    # perturbedList.append(value)
     for i in range(-steps, steps + 1):
         if i == 0:
             pass
@@ -37,16 +34,15 @@ def sensorPrecision(sensorPrecision: float, steps: int, value, data_restriction)
 
     return perturbedList
 
-def sensorPrecision_settings(sensorPrecision, steps, perturbation_level):
+def sensorPrecision_settings(sensorPrecision, steps):
     settings = dict()
     settings['sensorPrecision'] = sensorPrecision
     settings['steps'] = steps
-    settings['PerturbationLevel'] = perturbation_level
     return settings
 
 def fixedAmountSteps(amount, steps, value, data_restriction):
     perturbedList = list()
-    # perturbedList.append(value)
+
     for i in range(-steps, steps + 1):
         if i == 0:
             pass
@@ -54,14 +50,12 @@ def fixedAmountSteps(amount, steps, value, data_restriction):
             perturbed_value = round(value + amount * i,2)
             if float(data_restriction[0]) <= float(perturbed_value) <= float(data_restriction[1]):
                 perturbedList.append(float(perturbed_value))
-            # print(perturbed_value)
     return perturbedList
 
-def fixedAmountSteps_settings(amount, steps, perturbation_level):
+def fixedAmountSteps_settings(amount, steps):
     settings = dict()
     settings['amount'] = amount
     settings['steps'] = steps
-    settings['PerturbationLevel'] = perturbation_level
     return settings
 
 def perturbRange(lowerBound, upperBound, steps):
@@ -71,21 +65,19 @@ def perturbRange(lowerBound, upperBound, steps):
     for i in range(0, steps + 1):
         perturbed_value = round(lowerBound + (range_ / steps * i),2)
         perturbedList.append(perturbed_value)
-        # print(perturbed_value)
     return perturbedList
 
-def perturbRange_settings(lowerBound, upperBound, steps, perturbation_level):
+def perturbRange_settings(lowerBound, upperBound, steps):
     settings = dict()
     settings['lowerBound'] = lowerBound
     settings['upperBound'] = upperBound
     settings['steps'] = steps
-    settings['PerturbationLevel'] = perturbation_level
+
     return settings
 
-def perturbBin_settings(steps,perturbation_level):
+def perturbBin_settings(steps):
     settings = dict()
     settings['steps'] = steps
-    settings['PerturbationLevel'] = perturbation_level
     return settings
 
 
@@ -95,24 +87,22 @@ def perturbInOrder(steps, value, values):
     size = len(values)
 
     ind = values.index(value)
-    # perturbedList.append(value)
     for i in range(1, steps + 1):
         if ind - i >= 0:
             perturbedList.append(values[ind - i])
-            # print(values[ind - i])
+
     for i in range(1, steps + 1):
         if ind + i < size:
             perturbedList.append(values[ind + i])
-            # print(values[ind + i])
+
 
 
     return perturbedList
 
-def perturbInOrder_settings(steps,perturbation_level):
+def perturbInOrder_settings(steps):
     settings = dict()
     settings['steps'] = steps
-    settings['PerturbationLevel'] = perturbation_level
-    #settings['values'] = values
+
     return settings
 
 
@@ -124,7 +114,6 @@ def perturbAllValues(value, values):
     size = len(values)
 
     ind = values.index(value)
-    #perturbedList.append((value))
     for i in range(1, size + 1):
         if ind - i >= 0:
             perturbedList.append(values[ind - i])
@@ -135,9 +124,7 @@ def perturbAllValues(value, values):
 
     return perturbedList
 
-def perturbAllValues_settings(perturbation_level):#value
+def perturbAllValues_settings():
     settings = dict()
-    # settings['value'] = value
-    settings['PerturbationLevel'] = perturbation_level
-    # settings['values'] = values
+
     return settings

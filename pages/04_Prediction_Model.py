@@ -43,17 +43,15 @@ with tab1:
         if "model" in st.session_state:
             st.write(st.session_state['model'].feature_names_in_)
         loaded_model2 = st.file_uploader("Upload Model")
-        model_name = st.text_input("Insert name of model")
+        model_name = st.session_state.fuseki_database
         if model_name != "":
             with open(os.path.join("/Users/pascal/Studium/Masterthesis/model", ""), 'wb') as f:
                 pickle.dump(f, loaded_model2)
 
 
     if loaded_model2 is not None:
-        # loaded_model = pickle.load(loaded_model2)
         with open(os.path.join("/Users/pascal/Studium/Masterthesis/model", loaded_model2), 'rb') as f:
             loaded_model = pickle.load(f)
-        # loaded_model = pickle.loads(os.path.join("/Users/pascal/Studium/Masterthesis/model", loaded_model2))
         st.success("Model uploaded")
         st.session_state.model = loaded_model
         with st.expander("Show model information:"):
@@ -121,14 +119,11 @@ with tab2:
         st.write(f'Classifier = {st.session_state["classifier_name"]}')
         st.write(f'Accuracy =', acc)
 
-        filename = st.text_input("Enter the name of the model", ".sav")
+        st.download_button("Download Model", data=pickle.dumps(clf), file_name=str(st.session_state.fuseki_database+".pkl"))
+    except:
+        st.info("Model generation only available with training data")
 
-        if st.button("Save Model"):
-            pickle.dump(clf, open(filename, 'wb'))
-        st.download_button("Download Model", data=pickle.dumps(clf), file_name="model.pkl")
-    except Exception as e:
-        st.write(e)
-        pass
+
 
 
 

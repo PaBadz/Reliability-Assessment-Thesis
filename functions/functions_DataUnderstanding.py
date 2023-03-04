@@ -35,11 +35,6 @@ def defaultValuesCardinal(key):
 
 
 def defaultValuesOrdinal(key):
-    # Slider für ordinal values:
-    # try:
-    #     st.session_state[f'data_restrictions_{key}_ordinal'] = [float(st.session_state.unique_values_dict[key][0]),
-    #                                                          float(st.session_state.unique_values_dict[key][-1])]
-    # except:
     st.session_state[f'data_restrictions_{key}_ordinal'] = st.session_state.unique_values_dict[key]
 
     try:
@@ -54,6 +49,3 @@ def defaultValuesNominal(key):
         del st.session_state["data_restrictions_dict"][key]
     except:
         st.info("Default values already selected")
-    # st.session_state["data_restrictions_dict"][key] = st.session_state.unique_values_dict[key]
-
-

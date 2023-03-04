@@ -25,6 +25,8 @@ from functions.fuseki_connection import getAttributes, getDataRestrictionSeqDepl
     getUniqueValuesSeq, login_analyst, get_dataset
 from functions.perturbation_algorithms_ohne_values import percentage_perturbation, sensorPrecision, fixedAmountSteps, \
     perturbRange, perturbInOrder, perturbAllValues
+
+# Set render max elements higher so that all perturbed values can be seen
 pd.set_option("styler.render.max_elements", 999_999_999_999)
 
 login_analyst()
@@ -58,6 +60,7 @@ menu_perturbation = option_menu(None, ["Perturbation Option", 'Perturbation Mode
 try:
     savedPerturbationOptions = getPerturbationOptions(host)
 except Exception as e:
+    st.write(e)
     st.info("There are no Perturbation Options to select at the moment.")
     st.stop()
 
@@ -246,17 +249,16 @@ if menu_perturbation == 'Perturbation Option':
                                     if key == "steps":
                                         settings[key] = int(value)
                                     elif key == "PerturbationLevel":
-                                        index = keys.index(key)
+                                        pass
                                     else:
                                         settings[key] = float(value)
 
-                                settings["PerturbationLevel"] = keys[index + 1]
+                                settings["PerturbationLevel"]=chosen_perturbationOptions_feature["PerturbationLevel"][index]
 
                                 if row["PerturbationOption"] in settingList:
                                     st.warning(
                                         f"""Another {row["PerturbationOption"]} already chosen. First one will be used!""")
-                                    # st.warning(f"""Equal {row["PerturbationOption"]} selected. Only the last one will be used.""")
-                                    # settingList[row["PerturbationOption"]].update(settings)
+
                                 else:
                                     settingList[row["PerturbationOption"]] = settings
 
@@ -275,7 +277,7 @@ if menu_perturbation == 'Perturbation Option':
                             if feature_names in st.session_state.assessmentPerturbationOptions.keys() and \
                                     st.session_state.perturbationOptions[feature_names] != []:
                                 st.table(chosen_perturbationOptions_feature[
-                                             ["FeatureName", "PerturbationOption", "Settings", "label"]])
+                                             ["FeatureName", "PerturbationOption", "Settings", "PerturbationLevel", "label"]])
                                 for i_perturbationOptions in range(0, len(
                                         st.session_state.perturbationOptions[feature_names])):
                                     with st.expander(f"Settings for Perturbation Option {i_perturbationOptions+1}"):
@@ -438,28 +440,13 @@ if menu_perturbation == 'Perturbation Option':
                                 savedPerturbationOptions.loc[(savedPerturbationOptions['label'].isin(
                                     st.session_state.perturbationOptions[feature_names])) & (savedPerturbationOptions[
                                                                                                  'FeatureName'] == feature_names)])
-                            # st.write(chosen_perturbationOptions_feature)
+
                             df_test = pd.concat([df_test, chosen_perturbationOptions_feature])
-
-
-                            # st.session_state.assessmentPerturbationOptions[feature_names] = chosen_perturbationOptions_feature()
                             st.session_state.assessmentPerturbationOptions[
                                 feature_names] = chosen_perturbationOptions_feature.to_dict("list")
-                            # st.write(st.session_state.assessmentPerturbationOptions[feature_names])
 
-                            #
-                            # st.session_state.perturbationOptions[feature_names] = st.selectbox(f'{feature_names}',
-                            #                                                                      options=options,
-                            #                                                                      # default=
-                            #                                                                      # st.session_state.perturbationOptions[
-                            #                                                                      #     feature_names],
-                            #                                                                      key=f"perturbationOption_{feature_names}",
-                            #                                                                      on_change=changePerturbationOption,
-                            #                                                                      args=(feature_names,))
 
                             for index, row in chosen_perturbationOptions_feature.iterrows():
-                                # st.write(index)
-
                                 keys = re.findall("'(.*?)'", row["Settings"])
                                 values = re.findall(': (.*?)(?:,|})', row["Settings"])
 
@@ -471,13 +458,14 @@ if menu_perturbation == 'Perturbation Option':
                                     if key == "steps":
                                         settings[key] = int(value)
                                     elif key == "PerturbationLevel":
-                                        index = keys.index(key)
+                                        pass
 
-                                settings["PerturbationLevel"] = keys[index + 1]
+                                settings["PerturbationLevel"] = chosen_perturbationOptions_feature["PerturbationLevel"][
+                                    index]
+
 
                                 if row["PerturbationOption"] in settingList:
                                     st.warning(f"""Another {row["PerturbationOption"]} already chosen. First one will be used!""")
-                                    #settingList[row["PerturbationOption"]].append(settings)
                                 else:
                                     settingList[row["PerturbationOption"]] = settings
 
@@ -489,7 +477,7 @@ if menu_perturbation == 'Perturbation Option':
                             if feature_names in st.session_state.assessmentPerturbationOptions.keys() and \
                                     st.session_state.perturbationOptions[feature_names] != []:
                                 st.table(chosen_perturbationOptions_feature[
-                                             ["FeatureName", "PerturbationOption", "Settings", "label"]])
+                                             ["FeatureName", "PerturbationOption", "Settings", "PerturbationLevel", "label"]])
                                 for i_perturbationOptions in range(0, len(
                                         st.session_state.perturbationOptions[feature_names])):
                                     with st.expander(f"Settings for Perturbation Option {i_perturbationOptions + 1}"):
@@ -557,8 +545,9 @@ if menu_perturbation == 'Perturbation Option':
                 with tab3:
                     with st.expander(label=f"Algorithms for ***{feature_names}***"):
                         settingList = {}
-
                         settings = {}
+
+
                         with st.expander("Show past perturbation options"):
                             try:
                                 if recommendations[recommendations["featureName.value"] == feature_names].empty:
@@ -651,26 +640,23 @@ if menu_perturbation == 'Perturbation Option':
                             for index, row in chosen_perturbationOptions_feature.iterrows():
 
                                 keys = re.findall("'(.*?)'", row["Settings"])
-                                values = re.findall(': \[(.*?)\]', row["Settings"])
-
-                                keys = re.findall("'(.*?)'", row["Settings"])
                                 values = re.findall(': (.*?)(?:,|})', row["Settings"])
 
                                 # create nested dictionary with column name as key and keys as second key and values as values
-                                settings_ = (dict(zip(keys, values)))
+                                settings = (dict(zip(keys, values)))
 
                                 # convert values to float except if the key is step
-                                for key, value in settings_.items():
+                                for key, value in settings.items():
                                     if key == "steps":
                                         settings[key] = int(value)
                                     elif key == "PerturbationLevel":
-                                        index = keys.index(key)
+                                        pass
+                                settings["PerturbationLevel"] = chosen_perturbationOptions_feature["PerturbationLevel"][
+                                    index]
 
-                                settings["PerturbationLevel"] = keys[index + 1]
                                 if row["PerturbationOption"] in settingList:
                                     st.warning(
                                         f"""Another {row["PerturbationOption"]} already chosen. First one will be used!""")
-                                    #settingList[row["PerturbationOption"]].append(settings)
 
                                 else:
                                     settingList[row["PerturbationOption"]] = settings
@@ -684,7 +670,7 @@ if menu_perturbation == 'Perturbation Option':
                             if feature_names in st.session_state.assessmentPerturbationOptions.keys() and \
                                     st.session_state.perturbationOptions[feature_names] != []:
                                 st.table(chosen_perturbationOptions_feature[
-                                             ["FeatureName", "PerturbationOption", "Settings", "label"]])
+                                             ["FeatureName", "PerturbationOption", "Settings", "PerturbationLevel", "label"]])
                                 for i_perturbationOptions in range(0, len(
                                         st.session_state.perturbationOptions[feature_names])):
                                     with st.expander(f"Settings for Perturbation Option {i_perturbationOptions + 1}"):
@@ -791,11 +777,10 @@ if menu_perturbation == 'Perturbation Option':
         color_name="red-50",
     )
     with st.expander("Show chosen Perturbation Options"):
-        # delete empty dictionaries
 
-        st.dataframe(df_test[["FeatureName","PerturbationOptionID","PerturbationOption","Settings","group"]].reset_index(drop=True),use_container_width=True)
-        st.session_state.df_test = df_test
-        st.write(st.session_state.df_test)
+
+        st.dataframe(df_test[["FeatureName","PerturbationOption","Settings","PerturbationLevel"]].reset_index(drop=True),use_container_width=True)
+
 
         try:
 
@@ -850,7 +835,7 @@ if menu_perturbation == 'Perturbation Mode':
     if pertubation_mode == "Prioritized":
         st.session_state.pertubation_mode = "Prioritized"
 
-        st.session_state.perturb_mode_values = sort_items(st.session_state.df_test["FeatureName"].tolist())
+        st.session_state.perturb_mode_values = sort_items(st.session_state.df_test["FeatureName"].unique().tolist())
 
     if pertubation_mode == "Selected":
         st.session_state.perturb_mode_values = "Selected Perturbation Mode"
@@ -1039,37 +1024,6 @@ try:
 
         if st.button("Predict", type="primary"):
 
-            def uploadPerturbationMode():
-                st.session_state.perturb_mode_values = feature_names
-                """ACTIVITY
-                <http://www.semanticweb.org/dke/ontologies/2021/6/25_7273>
-                rdf:type            rprov:DefinitionOfPerturbationMode , owl:NamedIndividual ;
-                rdfs:label          "defPertMode"@en ;
-                prov:endedAtTime    "0000-00-00T00:00:00Z" ;
-                prov:startedAtTime  "0000-00-00T00:00:00Z" .
-                """
-
-                """ENTITY
-                <http://www.semanticweb.org/dke/ontologies/2021/6/25_7283>
-                rdf:type                rprov:PerturbationMode , owl:NamedIndividual ;
-                rprov:pertModeValue           "{st.session_state.pertubation_mode}"@en ;
-                rprov:pertModeValueSeq  <urn:uuid:{uuid_PerturbationModeSeq}>
-                rprov:wasGeneratedByMA  <http://www.semanticweb.org/dke/ontologies/2021/6/25_7273> ;
-                prov:generatedAtTime    "0000-00-00T00:00:00Z" .
-                """
-
-                '''
-                i = 0
-                for values in value:
-                    query = ((f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationModeSeq}> rdf:type rdf:Seq, owl:NamedIndividual;
-                                          rdf:_{i}  '{values}';}}"""))
-                    sparqlupdate.setQuery(prefix + query)
-                    sparqlupdate.setMethod(POST)
-                    sparqlupdate.query()
-                    i = i + 1
-                '''
-
-
             try:
                 if "perturbedList" not in st.session_state:
                     st.session_state.perturbedList = dict()
@@ -1208,8 +1162,9 @@ try:
 
 
 
-                                            elif algorithm_keys == 'Perturb in rder':
+                                            elif algorithm_keys == 'Perturb in order':
                                                 try:
+
                                                     perturbedList[algorithm_keys] = (
                                                         perturbInOrder(method[algorithm_keys]["steps"],
                                                                        selected_rows[i][k][0],
@@ -1224,7 +1179,7 @@ try:
 
                                             elif algorithm_keys == 'Perturb all values':
                                                 perturbedList[algorithm_keys] = (
-                                                    perturbAllValues(  # method[algorithm_keys]["value"],
+                                                    perturbAllValues(
                                                         selected_rows[i][k][0],
                                                         st.session_state.data_restriction_final_deployment[column]))
                                 except Exception as e:
@@ -1241,9 +1196,6 @@ try:
                 try:
                     for i in range(0, len(selected_rows)):
                         for column, method in index_perturb[i].items():
-
-                            # for column, method in perturbed_values.items():
-                            #
                             if method:
                                 # ausgewählte methoden ist ein dictionary mit der methode als key und perturbated values als value
 
@@ -1326,8 +1278,6 @@ try:
                 for i, df in enumerate(st.session_state["dfs"]):
 
                     ending_time = getTimestamp()
-                    starting_time = getTimestamp()
-
                     determinationNameUUID = 'PerturbationOfClassificationCase'
                     determinationName = 'PerturbationOfClassificationCase'
 
@@ -1339,12 +1289,12 @@ try:
                         try:
                             uuid_DefinitionOfPerturbationOption = determinationActivity(host_upload, determinationName,
                                                                                         label_list[i],
-                                                                                        starting_time, ending_time)
+                                                                                        ending_time)
 
                             uploadPerturbationAssessment(host_upload, uuid_PerturbationAssessment, label_list[i],
                                                          uuid_DefinitionOfPerturbationOption,
                                                          st.session_state.perturbationOptions_settings,
-                                                         st.session_state.assessmentPerturbationOptions)
+                                                         st.session_state.assessmentPerturbationOptions, st.session_state.pertubation_mode, st.session_state.perturb_mode_values)
                             uuid_ClassificationCase = uuid.uuid4()
 
                             rows = selected_rows_DF.iloc[i].to_dict()
@@ -1365,7 +1315,7 @@ try:
                             st.info(f"There are more than 2500 new cases, this could lead to performance issues. {len(df.index)} rows are generated, if performance issues occur. Please select less perturbation options.")
 
                         try:
-                            st.dataframe(df[0:2000].style.apply(lambda x: ["background-color: {}".format(color_map.get(get_perturbation_level(x.name, v), "")) if v !=
+                            st.dataframe(df.style.apply(lambda x: ["background-color: {}".format(color_map.get(get_perturbation_level(x.name, v), "")) if v !=
                                                 x.iloc[0] else "" for i, v in enumerate(x)], axis=0),use_container_width=True)
                         except Exception as e:
                             st.dataframe(df)

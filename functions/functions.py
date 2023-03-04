@@ -1,22 +1,13 @@
-
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode, JsCode,ColumnsAutoSizeMode
 from streamlit_option_menu import option_menu
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 from sklearn.impute import  SimpleImputer
 from sklearn.compose import ColumnTransformer, make_column_selector
-
 import pandas as pd
-
 import streamlit as st
 import json
 import numpy as np
 from streamlit_option_menu import option_menu
-
-
-
-
-
-
 import pandas as pd
 import streamlit as st
 from sklearn.decomposition import PCA

@@ -26,7 +26,6 @@ host, host_upload = get_dataset()
 
 try:
     getUniqueValuesSeq(host)
-
 except Exception as e:
     st.error("Please upload feature values in Data Understanding step")
     if st.button("Data Understanding"):
@@ -90,7 +89,6 @@ if selected2 == 'Choose Perturbation Option':
     for columns, level in st.session_state.level_of_measurement_dic.items():
 
         if level == "Cardinal":
-            settingList = dict()
             with tab1:
 
                 with st.expander(label=f"Algorithms for ***{columns}***"):
@@ -140,7 +138,6 @@ if selected2 == 'Choose Perturbation Option':
                         pass
 
         if level == "Ordinal":
-            settingList = dict()
             with tab2:
                 with st.expander(label=f"Algorithms for ***{columns}***"):
                     try:
@@ -167,8 +164,6 @@ if selected2 == 'Choose Perturbation Option':
                         st.info('No Ordinal Values', icon="ℹ️")
 
         if level == "Nominal":
-            settingList = dict()
-
             with tab3:
                 with st.expander(label=f"Algorithms for ***{columns}***"):
                     try:
@@ -220,6 +215,7 @@ try:
 
         tab1, tab2, tab3 = st.tabs(["Cardinal", "Ordinal", "Nominal"])
         settings = dict()
+        perturbationLevel = dict()
         options_perturbation_level = ["Red", "Orange", "Green"]
         with tab1:
             # check if algorithm for level of scale is chosen
@@ -234,10 +230,8 @@ try:
             for key, values in st.session_state['cardinal_val'].items():
 
 
-                if "settingList" not in st.session_state:
-                    st.session_state.settingList = dict()
-
                 settingList = dict()
+                perturbationLevel_list = dict()
 
 
                 with st.expander(f"Settings for feature {key}"):
@@ -245,14 +239,13 @@ try:
                         if values:
 
                             query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
-                                                    ?featureID rdf:type rprov:Feature .
+                                                     ?featureID rdf:type rprov:Feature .
                                                      ?featureID rdfs:label '{key}'.
                                                      ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                                                    ?DataUnderstandingEntityID rdf:type ?rprov.
-                                                     ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
-                             ?DataUnderstandingEntityID rdfs:label ?label.
+                                                     ?DataUnderstandingEntityID rdf:type ?rprov.
+                                                     ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.   
+                                                     ?DataUnderstandingEntityID rdfs:label ?label.
                                                      FILTER(?rprov!=owl:NamedIndividual)
-
                                                      FILTER(?rprov!=rprov:ScaleOfFeature)  
                                                      FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
                                                      FILTER(?rprov!=rprov:RangeOfBinnedFeature)
@@ -279,19 +272,18 @@ try:
                                 st.info("No Level of volatility, Data Restrictions or missing values determined")
 
                             query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
-                                                                            ?featureID rdf:type rprov:Feature .
+                                                                             ?featureID rdf:type rprov:Feature .
                                                                              ?featureID rdfs:label '{key}'.
                                                                              ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                                                                            ?DataUnderstandingEntityID rdf:type ?rprov.
+                                                                             ?DataUnderstandingEntityID rdf:type ?rprov.
                                                                              ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
-                                                     ?DataUnderstandingEntityID rdfs:label ?label.
+                                                                             ?DataUnderstandingEntityID rdfs:label ?label.
                                                                              FILTER(?rprov!=owl:NamedIndividual)
                                                                              FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
                                                                              FILTER(?rprov!=rprov:RangeOfBinnedFeature)
                                                                              FILTER(?rprov!=rprov:UniqueValuesOfFeature)
                                                                              FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
-
-                                                     }}"""
+                                }}"""
 
                             try:
                                 results_update = get_connection_fuseki(host, (prefix + query))
@@ -370,9 +362,9 @@ try:
                                 key=f"assignedPerturbationLevel_widget_{key}_{method}",
                                 on_change=update_perturbation_level, args=(key, method))
                             settingList[method] = (
-                                percentage_perturbation_settings(st.session_state[f"steps_{key}_{method}"],
-                                                                 st.session_state[
-                                                                     f"assignedPerturbationLevel_{key}_{method}"]))
+                                percentage_perturbation_settings(st.session_state[f"steps_{key}_{method}"])                                                                )
+                            perturbationLevel_list[method] =  st.session_state[
+                                                                     f"assignedPerturbationLevel_{key}_{method}"]
                             st.write("---------------")
 
                         if method == "5% Perturbation":
@@ -385,8 +377,9 @@ try:
                                 on_change=update_perturbation_level,
                                 args=(key, method))
                             settingList[method] = (
-                                percentage_perturbation_settings(5, st.session_state[
-                                    f"assignedPerturbationLevel_{key}_{method}"]))
+                                percentage_perturbation_settings(5))
+                            perturbationLevel_list[method] =  st.session_state[
+                                                                     f"assignedPerturbationLevel_{key}_{method}"]
                             st.write("---------------")
 
                         if method == "10% Perturbation":
@@ -400,8 +393,9 @@ try:
                                 args=(key, method))
 
                             settingList[method] = (
-                                percentage_perturbation_settings(10, st.session_state[
-                                    f"assignedPerturbationLevel_{key}_{method}"]))
+                                percentage_perturbation_settings(10))
+                            perturbationLevel_list[method] =  st.session_state[
+                                                                     f"assignedPerturbationLevel_{key}_{method}"]
                             st.write("---------------")
 
                         elif method == 'Sensor Precision Perturbation':
@@ -438,8 +432,9 @@ try:
 
                                 settingList[method] = (
                                     sensorPrecision_settings(st.session_state[f"additional_value_{key}_{method}"],
-                                                         st.session_state[f"steps_{key}_{method}"],
-                                                         st.session_state[f"assignedPerturbationLevel_{key}_{method}"]))
+                                                         st.session_state[f"steps_{key}_{method}"]))
+                                perturbationLevel_list[method] = st.session_state[
+                                    f"assignedPerturbationLevel_{key}_{method}"]
 
                             except Exception as e:
                                 st.write("Sensor Precision for this feature should be determined in Data Understanding step.")
@@ -476,8 +471,9 @@ try:
 
                             settingList[method] = (
                                 fixedAmountSteps_settings(st.session_state[f"additional_value_{key}_{method}"],
-                                                          st.session_state[f"steps_{key}_{method}"], st.session_state[
-                                                              f"assignedPerturbationLevel_{key}_{method}"]))
+                                                          st.session_state[f"steps_{key}_{method}"]))
+                            perturbationLevel_list[method] =  st.session_state[
+                                                                     f"assignedPerturbationLevel_{key}_{method}"]
 
                             st.write("---------------")
 
@@ -489,7 +485,6 @@ try:
                                     float(st.session_state.data_restriction_final[key][0]),
                                     float(st.session_state.data_restriction_final[key][-1])]
 
-                            # with st.form(f"Input values {key}"):
 
                             lower_border = round(st.number_input("Select lower border",
                                 value=float(st.session_state.data_restriction_final[key][0]),
@@ -504,7 +499,6 @@ try:
                                 key=f"upper_border_range_perturbation_{key}"),2)
 
 
-                            # if st.form_submit_button("Upload"):
                             if st.session_state[f"lower_border_range_perturbation_{key}"] \
                                     >= st.session_state[f"upper_border_range_perturbation_{key}"]:
                                 st.error("Lower bound range must be smaller than upper bound.")
@@ -539,8 +533,9 @@ try:
                             settingList[method] = (
                                 perturbRange_settings(st.session_state[f"additional_value_{key}_{method}_bound"][0],
                                                       st.session_state[f"additional_value_{key}_{method}_bound"][1],
-                                                      st.session_state[f"steps_{key}_{method}"],
-                                                      st.session_state[f"assignedPerturbationLevel_{key}_{method}"]))
+                                                      st.session_state[f"steps_{key}_{method}"]))
+                            perturbationLevel_list[method] =  st.session_state[
+                                                                     f"assignedPerturbationLevel_{key}_{method}"]
 
                             st.write("---------------")
 
@@ -577,109 +572,22 @@ try:
                                         args=(key, method))
 
                                     settingList[method] = (
-                                        perturbBin_settings(st.session_state[f"steps_{key}_{method}"], st.session_state[
-                                            f"assignedPerturbationLevel_{key}_{method}"]))
+                                        perturbBin_settings(st.session_state[f"steps_{key}_{method}"]))
+                                    perturbationLevel_list[method] = st.session_state[
+                                        f"assignedPerturbationLevel_{key}_{method}"]
 
                                     st.write("---------------")
                             except Exception as e:
                                 st.write(
                                     "Binning for this feature should be determined in Data Preparation step.")
-                    # try:
-                    #
-                    #     if value:
-                    #
-                    #
-                    #         query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
-                    #                                 ?featureID rdf:type rprov:Feature .
-                    #                                  ?featureID rdfs:label '{key}'.
-                    #                                  ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                    #                                 ?DataUnderstandingEntityID rdf:type ?rprov.
-                    #                                  ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
-                    #          ?DataUnderstandingEntityID rdfs:label ?label.
-                    #                                  FILTER(?rprov!=owl:NamedIndividual)
-                    #
-                    #                                  FILTER(?rprov!=rprov:ScaleOfFeature)
-                    #                                  FILTER(?rprov!=rprov:SensorPrecisionOfFeature)
-                    #                                  FILTER(?rprov!=rprov:RangeOfBinnedFeature)
-                    #                                  FILTER(?rprov!=rprov:UniqueValuesOfFeature)
-                    #                                  FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
-                    #
-                    #          }}"""
-                    #
-                    #         try:
-                    #             results_update = get_connection_fuseki(host, (prefix + query))
-                    #
-                    #             # get Activities for PerturbationOption
-                    #             result_2 = pd.json_normalize(results_update["results"]["bindings"])
-                    #             entities_selection = result_2["label.value"].tolist()
-                    #             st.session_state.data_restriction_final
-                    #
-                    #
-                    #             if len(entities_selection) > 0:
-                    #                 entities = st.multiselect(
-                    #                     label="Select entities which should be included in the perturbation option",
-                    #                     options=entities_selection, default=entities_selection)
-                    #
-                    #             st.session_state.data_restriction_final
-                    #
-                    #         except Exception as e:
-                    #             entities = []
-                    #             st.info("No Level of volatility, Data Restrictions or missing values determined")
-                    #
-                    #
-                    #         query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
-                    #                                                         ?featureID rdf:type rprov:Feature .
-                    #                                                          ?featureID rdfs:label '{key}'.
-                    #                                                          ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                    #                                                         ?DataUnderstandingEntityID rdf:type ?rprov.
-                    #                                                          ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
-                    #                                  ?DataUnderstandingEntityID rdfs:label ?label.
-                    #                                                          FILTER(?rprov!=owl:NamedIndividual)
-                    #                                                          FILTER(?rprov!=rprov:SensorPrecisionOfFeature)
-                    #                                                          FILTER(?rprov!=rprov:RangeOfBinnedFeature)
-                    #                                                          FILTER(?rprov!=rprov:UniqueValuesOfFeature)
-                    #                                                          FILTER NOT EXISTS{{?DataUnderstandingEntityID prov:invalidatedAtTime ?time}}
-                    #
-                    #                                  }}"""
-                    #
-                    #         try:
-                    #             results_update = get_connection_fuseki(host, (prefix + query))
-                    #             # get Activities for PerturbationOption
-                    #             result_2 = pd.json_normalize(results_update["results"]["bindings"])
-                    #             entities.append(result_2["label.value"][0])
-                    #         except Exception as e:
-                    #             st.error(e)
-                    #
-                    #
-                    #         try:
-                    #             st.session_state["entities"][key] = (result_2[result_2['label.value'].isin(entities)])["DataUnderstandingEntityID.value"].tolist()
-                    #             st.write(result_2[result_2['label.value'].isin(entities)])
-                    #
-                    #             flag = False
-                    #
-                    #             for value in entities:
-                    #                 if value.startswith("restriction"):
-                    #                     flag = True
-                    #             if flag == True:
-                    #                 st.session_state.data_restriction_final[key]=st.session_state.data_restrictions_dict[key]
-                    #
-                    #             else:
-                    #
-                    #                 st.session_state.data_restriction_final[key] = (st.session_state.unique_values_dict[key])
-                    #             st.session_state.data_restriction_final[key]
-                    #         except Exception as e:
-                    #             st.error(e)
-                    # except Exception as e:
-                    #     st.error(e)
-
-
-
-
 
 
                 if settingList:
                     settings[key] = settingList
+                if perturbationLevel_list:
+                    perturbationLevel[key] = perturbationLevel_list
             st.session_state['settings'] = settings
+            st.session_state['perturbationLevel'] = perturbationLevel
 
 
         with tab2:
@@ -694,9 +602,10 @@ try:
                 st.info("No Algorithm for ordinal feature chosen")
 
             for key, values in st.session_state['ordinal_val'].items():
-                if "settingList" not in st.session_state:
-                    st.session_state.settingList = dict()
+                # if "settingList" not in st.session_state:
+                #     st.session_state.settingList = dict()
                 settingList = dict()
+                perturbationLevel_list = dict()
 
                 with st.expander(f"Settings for column {key}"):
                     try:
@@ -813,8 +722,9 @@ try:
                                 args=(key, method))
 
                             settingList[method] = (
-                                perturbInOrder_settings(st.session_state[f"steps_{key}_{method}"],
-                                                        st.session_state[f"assignedPerturbationLevel_{key}_{method}"]))
+                                perturbInOrder_settings(st.session_state[f"steps_{key}_{method}"]))
+                            perturbationLevel_list[method] = st.session_state[
+                                f"assignedPerturbationLevel_{key}_{method}"]
 
                             st.write("---------------")
 
@@ -836,15 +746,19 @@ try:
                                 args=(key, method))
 
                             settingList[method] = (
-                                perturbAllValues_settings(st.session_state[
-                                                              f"assignedPerturbationLevel_{key}_{method}"]))  # st.session_state[f"value_perturbate{key}_{method}"],
+                                perturbAllValues_settings())  # st.session_state[f"value_perturbate{key}_{method}"],
+                            perturbationLevel_list[method] = st.session_state[
+                                f"assignedPerturbationLevel_{key}_{method}"]
 
 
                             st.write("---------------")
+
                 if settingList:
                     settings[key] = settingList
-
+                if perturbationLevel_list:
+                    perturbationLevel[key] = perturbationLevel_list
             st.session_state['settings'] = settings
+            st.session_state['perturbationLevel'] = perturbationLevel
 
 
         with tab3:
@@ -861,18 +775,19 @@ try:
                 if "settingList" not in st.session_state:
                     st.session_state.settingList = dict()
                 settingList = dict()
+                perturbationLevel_list = dict()
 
                 with st.expander(f"Settings for column {key}"):
                     try:
 
                         if values:
                             query = f"""SELECT ?featureID ?featureName ?rprov ?DataUnderstandingEntityID ?label ?DUA WHERE{{
-                                                    ?featureID rdf:type rprov:Feature .
+                                                     ?featureID rdf:type rprov:Feature .
                                                      ?featureID rdfs:label '{key}'.
                                                      ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                                                    ?DataUnderstandingEntityID rdf:type ?rprov.
+                                                     ?DataUnderstandingEntityID rdf:type ?rprov.
                                                      ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
-                             ?DataUnderstandingEntityID rdfs:label ?label.
+                                                     ?DataUnderstandingEntityID rdfs:label ?label.
                                                      FILTER(?rprov!=owl:NamedIndividual)
 
                                                      FILTER(?rprov!=rprov:ScaleOfFeature)  
@@ -903,9 +818,9 @@ try:
                                                                             ?featureID rdf:type rprov:Feature .
                                                                              ?featureID rdfs:label '{key}'.
                                                                              ?DataUnderstandingEntityID rprov:toFeature ?featureID.
-                                                                            ?DataUnderstandingEntityID rdf:type ?rprov.
+                                                                             ?DataUnderstandingEntityID rdf:type ?rprov.
                                                                              ?DataUnderstandingEntityID rprov:wasGeneratedByDUA|rprov:wasGeneratedByDPA|rprov:wasGeneratedByBUA ?DUA.
-                                                     ?DataUnderstandingEntityID rdfs:label ?label.
+                                                                             ?DataUnderstandingEntityID rdfs:label ?label.
                                                                              FILTER(?rprov!=owl:NamedIndividual)
                                                                              FILTER(?rprov!=rprov:SensorPrecisionOfFeature)  
                                                                              FILTER(?rprov!=rprov:RangeOfBinnedFeature)
@@ -969,14 +884,17 @@ try:
                                 args=(key, method))
 
                             settingList[method] = (
-                                perturbAllValues_settings(st.session_state[
-                                                              f"assignedPerturbationLevel_{key}_{method}"]))  # st.session_state.data_restriction_final[key],st.session_state[f"value_perturbate{key}_{method}"]))#,st.session_state.data_restriction_final[key]))
-
+                                perturbAllValues_settings())
+                            perturbationLevel_list[method] = st.session_state[
+                                f"assignedPerturbationLevel_{key}_{method}"]
                             st.write("---------------")
+
                 if settingList:
                     settings[key] = settingList
-
+                if perturbationLevel_list:
+                    perturbationLevel[key] = perturbationLevel_list
             st.session_state['settings'] = settings
+            st.session_state['perturbationLevel'] = perturbationLevel
 
 
         if st.session_state['settings'] != {}:
@@ -1017,14 +935,13 @@ try:
                     st.stop()
 
                 # Modeling Phase
-                starting_time = getTimestamp()
+
                 # KG label nötig? Um die PerturbationOption zu identifizieren?
 
                 # First create ModelingActivity
-                label = "Definition of Perturbation Option"  # st.text_input("Definition of Perturbation Option",help="Insert a name for the perturbation option")
+                label = "Definition of Perturbation Option"
                 determinationNameUUID = 'DefinitionOfPerturbationOption'
                 determinationName = 'DefinitionOfPerturbationOption'
-
                 name = 'PerturbationOption'
                 rprovName = 'PerturbationOption'
 
@@ -1036,7 +953,7 @@ try:
                     ending_time = getTimestamp()
                     uuid_DefinitionOfPerturbationOption = determinationActivity(host_upload, determinationName,
                                                                                 label,
-                                                                                starting_time, ending_time)
+                                                                                ending_time)
 
 
                     # if feature is in perturbation settings
@@ -1051,42 +968,45 @@ try:
                         # create another loop in order to get different UUIDs for PerturbationOptions
                         # KG sollen die einzelnen Optionen einzeln oder gesammelt gespeichert werden
                         for method, perturbationOption in st.session_state['settings'][key].items():
+
                             uuid_PerturbationOption = uuid.uuid4()
-                            liste_new = st.session_state["entities"][key].copy()
+                            liste_entities = st.session_state["entities"][key].copy()
 
                             if method == "Bin Perturbation":
                                 bin_entity = \
                                 st.session_state.DF_bin_dict[st.session_state.DF_bin_dict["label.value"] == key][
                                     "DPE.value"].reset_index(drop=True)
-                                liste_new.append(bin_entity[0])
+                                liste_entities.append(bin_entity[0])
 
                             if method == "Sensor Precision Perturbation":
                                 sensor_precision = st.session_state.DF_feature_sensor_precision[
                                     st.session_state.DF_feature_sensor_precision["featureName.value"] == key][
                                     "DataUnderstandingEntityID.value"].reset_index(drop=True)
-                                liste_new.append(sensor_precision[0])
+                                liste_entities.append(sensor_precision[0])
 
                             # get dataunderstandingentity for sensor precision and if perturbation option contains sensor precision insert into list
                             # create new dataunderstandingentity if sensor precision is different?
                             # update dataunderstandingentity if sensor precision is different?
-                            st.write(liste_new)
 
-                            for entities in liste_new:
+
+
+                            for entities in liste_entities:
                                 perturbationOptionlabel = str(perturbationOption)
 
                                 perturbationOptionlabel = perturbationOptionlabel.replace("'", "").replace("{",
                                                                                                            "").replace(
                                     "}", "")
 
+
                                 query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationOption}> rdf:type rprov:{name}, owl:NamedIndividual;
                                                       rprov:perturbedFeature <{featureID["featureID.value"].values[0]}>;
                                                       rprov:generationAlgorithm "{method}";
-                                                      rprov:values "{perturbationOption}"@en;
+                                                      rprov:assignedPerturbationSettings "{perturbationOption}";
+                                                      rprov:assignedPerturbationLevel "{st.session_state['perturbationLevel'][key][method]}";
                                                       rprov:modelingEntityWasDerivedFrom <{entities}>;
                                                       rprov:wasGeneratedByMA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
                                                       rdfs:label "{labelPerturbation}-{method}: {perturbationOptionlabel}"@en.
                                                     }}""")
-                                st.write(query)
 
                                 host_upload.setQuery(prefix + query)
                                 host_upload.setMethod(POST)

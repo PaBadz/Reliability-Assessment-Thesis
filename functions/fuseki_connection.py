@@ -7,9 +7,6 @@ from datetime import datetime
 
 
 
-# sparqlupdate = SPARQLWrapper(f"http://localhost:3030/a/update")
-# host_upload = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/upload")
-#sparqlupdate = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
 
 # Fuseki Data
 host_dataset_first_initialize = "http://localhost:3030/$/datasets"
@@ -87,18 +84,121 @@ def getTimestamp():
 
 
 
-def determinationActivity(sparqlupdate, determinationName, label, starting_time, ending_time):
+def determinationActivity(sparqlupdate, determinationName, label, ending_time):
     uuid_Determination = uuid.uuid4()
-
-    #sparqlupdate = SPARQLWrapper(f"http://localhost:3030{st.session_state.fuseki_database}/update")
     query = (f"""INSERT DATA {{<urn:uuid:{uuid_Determination}> rdf:type rprov:{determinationName}, owl:NamedIndividual;
                 rdfs:label '{label}';
-                prov:endedAtTime    '{ending_time}'^^xsd:dateTime;
-                prov:startedAtTime  '{starting_time}'^^xsd:dateTime;.}}""")
+                prov:endedAtTime    '{ending_time}'^^xsd:dateTime.
+                }}""")
     sparqlupdate.setQuery(prefix+query)
     sparqlupdate.setMethod(POST)
     sparqlupdate.query()
     return uuid_Determination
+
+
+def uploadDUE_scale(sparqlupdate,host,dic , uuid_DeterminationOfScaleOfFeature, name, rprovName):
+    time = getTimestamp()
+    with st.spinner("Uploading..."):
+        for key, value in dic.items():
+            uuid_ScaleOfFeature = uuid.uuid4()
+            query = (f"""PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
+                        PREFIx rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                    SELECT ?subject WHERE {{?subject rdf:type rprov:Feature. ?subject rdfs:label '{key}'}}""")
+            results_update = get_connection_fuseki(host, query)
+
+            result_2 = pd.json_normalize(results_update["results"]["bindings"])
+
+
+            query = (f"""INSERT DATA {{<urn:uuid:{uuid_ScaleOfFeature}> rdf:type rprov:{name}, owl:NamedIndividual;
+                          rprov:{rprovName} rprov:{value};
+                          rdfs:label "{rprovName} {key}"@en;
+                          rprov:toFeature <{result_2["subject.value"][0]}>;
+                          rprov:wasGeneratedByDUA  <urn:uuid:{uuid_DeterminationOfScaleOfFeature}>;
+                          prov:generatedAtTime '{time}'^^xsd:dateTime.
+
+                        }}""")
+            sparqlupdate.setQuery(prefix+query)
+            sparqlupdate.setMethod(POST)
+            sparqlupdate.query()
+    #st.experimental_rerun()
+
+def uploadDUE_scale_JSON(sparqlupdate,host,dic , uuid_DeterminationOfScaleOfFeature, name, rprovName):
+    time = getTimestamp()
+    with st.spinner("Uploading..."):
+        for key, value in dic.items():
+            uuid_ScaleOfFeature = uuid.uuid4()
+            query = (f"""PREFIX rprov: <http://www.dke.uni-linz.ac.at/rprov#>
+                        PREFIx rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                    SELECT ?subject WHERE {{?subject rdf:type rprov:Feature. ?subject rdfs:label '{key}'}}""")
+            results_update = get_connection_fuseki(host, query)
+
+            result_2 = pd.json_normalize(results_update["results"]["bindings"])
+
+
+            query = (f"""INSERT DATA {{<urn:uuid:{uuid_ScaleOfFeature}> rdf:type rprov:ScaleOfFeature, owl:NamedIndividual;
+                          rprov:{rprovName} rprov:{value["levelOfScale"]};
+                          rdfs:label "{rprovName} {key}"@en;
+                          rprov:toFeature <{result_2["subject.value"][0]}>;
+                          rprov:wasGeneratedByDUA  <urn:uuid:{uuid_DeterminationOfScaleOfFeature}>;
+                          prov:generatedAtTime '{time}'^^xsd:dateTime.
+                        }}""")
+            sparqlupdate.setQuery(prefix+query)
+            sparqlupdate.setMethod(POST)
+            sparqlupdate.query()
+
+
+
+            determinationNameUUID = 'DeterminationOfUniqueValuesOfFeature_'
+            determinationName = 'DeterminationOfUniqueValuesOfFeature'
+            label = 'detUniqueValuesOfFeature@en'
+            dicName = 'unique_values_of_features_dic'
+            name = 'UniqueValuesOfFeature'
+            rprovName = 'uniqueValues'
+            try:
+                ending_time = getTimestamp()
+                uuid_determinationUniqueValues = determinationActivity(sparqlupdate,determinationName, label, time, time)
+
+                uuid_UniqueValues_entity = uuid.uuid4()
+                uuid_UniqueValues_seq = uuid.uuid4()
+
+                query = (f"""INSERT DATA {{<urn:uuid:{uuid_UniqueValues_entity}> rdf:type rprov:UniqueValuesOfFeature, owl:NamedIndividual;
+                                              rprov:uniqueValues <urn:uuid:{uuid_UniqueValues_seq}>;
+                                              rdfs:label "uniqueValues {key}";
+                                              rprov:toFeature <{result_2["subject.value"][0]}>;
+                                              rprov:wasGeneratedByDUA  <urn:uuid:{uuid_determinationUniqueValues}>;
+                                              prov:generatedAtTime '{ending_time}'^^xsd:dateTime;
+                                            }}""")
+                sparqlupdate.setQuery(prefix + query)
+                sparqlupdate.setMethod(POST)
+                sparqlupdate.query()
+
+                if dic[key]["levelOfScale"] == "Nominal":
+                    i = 0
+                    for values in dic[key]["uniqueValues"]:
+
+                        query = (f"""INSERT DATA {{<urn:uuid:{uuid_UniqueValues_seq}> rdf:type rdf:Bag, owl:NamedIndividual;
+                                                          rdf:_{i}  '{values}';}}""")
+                        sparqlupdate.setQuery(prefix + query)
+                        sparqlupdate.setMethod(POST)
+                        sparqlupdate.query()
+                        i = i + 1
+                else:
+                    i = 0
+                    for values in dic[key]["uniqueValues"]:
+
+                        query = (f"""INSERT DATA {{<urn:uuid:{uuid_UniqueValues_seq}> rdf:type rdf:Seq, owl:NamedIndividual;
+                                                          rdf:_{i}  '{values}';}}""")
+                        sparqlupdate.setQuery(prefix + query)
+                        sparqlupdate.setMethod(POST)
+                        sparqlupdate.query()
+                        i = i + 1
+            except Exception as e:
+                st.error(e)
+
+
+
 
 
 
@@ -116,7 +216,7 @@ def uploadDUE(sparqlupdate,host,dic , uuid_DeterminationOfScaleOfFeature, name, 
             result_2 = pd.json_normalize(results_update["results"]["bindings"])
 
             query = (f"""INSERT DATA {{<urn:uuid:{uuid_ScaleOfFeature}> rdf:type rprov:{name}, owl:NamedIndividual;
-                          rprov:{rprovName} "{value}";
+                          rprov:{rprovName} '{value}';
                           rdfs:label "{rprovName} {key}"@en;
                           rprov:toFeature <{result_2["subject.value"][0]}>;
                           rprov:wasGeneratedByDUA  <urn:uuid:{uuid_DeterminationOfScaleOfFeature}>;
@@ -178,10 +278,6 @@ def deleteWasGeneratedByDUA(sparqlupdate,df):
     sparqlupdate.query()
 
 
-
-
-
-# Features
 def upload_features(sparqlupdate, uuid_Feature, features, uuid_determinationFeature):
     query = (f"""INSERT DATA {{<urn:uuid:{uuid_Feature}> rdf:type rprov:Feature, owl:NamedIndividual;
                                         rdfs:label '{features}';
@@ -325,7 +421,6 @@ def uploadApproach(sparqlupdate, uuid_activity, uuid_entity):
     query = (f"""
                           INSERT DATA {{<urn:uuid:{uuid_activity}> rdf:type rprov:ChoiceOfAssessmentApproach, owl:NamedIndividual;
                           rdfs:label "choiceOfAssessment"@en;
-                          prov:startedAtTime '{time}'^^xsd:dateTime;
                           prov:endedAtTime '{time}'^^xsd:dateTime.}}""")
 
     sparqlupdate.setQuery(prefix + query)
@@ -371,7 +466,9 @@ def getFeatureScale(host):
     results_feature_scale = pd.json_normalize(results_feature_scale["results"]["bindings"])
 
     for _index, row in results_feature_scale.iterrows():
-        dictionary_scales[row["featureName.value"]] = row["scale.value"]
+        result_scale = row["scale.value"].partition("#")[2]
+        dictionary_scales[row["featureName.value"]] = result_scale
+
     return dictionary_scales, results_feature_scale
 
 # Volatility
@@ -593,19 +690,30 @@ def getBinsDeployment(bin,feature,host):
 
 
 def uploadPerturbationAssessment(host_upload,uuid_PerturbationAssessment, label,
-                                 uuid_DefinitionOfPerturbationOption,perturbationOptions_settings,assessmentPerturbationOptions):
+                                 uuid_DefinitionOfPerturbationOption,perturbationOptions_settings,assessmentPerturbationOptions, pertMode, pertModeValues):
     time = getTimestamp()
     for key in perturbationOptions_settings.keys():
         for perturbationOption in assessmentPerturbationOptions[key][
             "PerturbationOptionID"]:
-            # for perturbationOption in st.session_state.assessmentPerturbationOptions[key]["DataUnderstandingEntity"].values():
-            query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationAssessment}> rdf:type rprov:PerturbationAssessment, owl:NamedIndividual;
-                        rdfs:label "{label}"@en ;
-                        rprov:deploymentEntityWasDerivedFrom <{perturbationOption}>;
-                        rprov:perturbedTestCase "Saved as csv with name: {label}_{uuid_PerturbationAssessment}";
-                        rprov:wasGeneratedByDA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
-                        prov:generatedAtTime '{time}'^^xsd:dateTime.
-                                    }}""")
+
+            if pertMode =="Prioritized":
+                query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationAssessment}> rdf:type rprov:PerturbationAssessment, owl:NamedIndividual;
+                            rdfs:label "{label}"@en ;
+                            rprov:deploymentEntityWasDerivedFrom <{perturbationOption}>;
+                            rprov:perturbedTestCase "Saved as csv with name: {label}_{uuid_PerturbationAssessment}";
+                            rprov:wasGeneratedByDA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
+                            rprov:pertModeValue "{pertMode}: {pertModeValues}";
+                            prov:generatedAtTime '{time}'^^xsd:dateTime.
+                                        }}""")
+            else:
+                query = (f"""INSERT DATA {{<urn:uuid:{uuid_PerturbationAssessment}> rdf:type rprov:PerturbationAssessment, owl:NamedIndividual;
+                            rdfs:label "{label}"@en ;
+                            rprov:deploymentEntityWasDerivedFrom <{perturbationOption}>;
+                            rprov:perturbedTestCase "Saved as csv with name: {label}_{uuid_PerturbationAssessment}";
+                            rprov:wasGeneratedByDA  <urn:uuid:{uuid_DefinitionOfPerturbationOption}>;
+                            rprov:pertModeValue "{pertMode}";
+                            prov:generatedAtTime '{time}'^^xsd:dateTime.
+                                        }}""")
             host_upload.setQuery(prefix + query)
             host_upload.setMethod(POST)
             host_upload.query()
@@ -619,7 +727,6 @@ def uploadClassificationCase(host_upload,uuid_ClassificationCase, label, uuid_Pe
                                     rdfs:label "{label}"@en ;
                                     rprov:values "{rows}"@en;
                                     rprov:wasAssignedToDeploymentEntity <urn:uuid:{uuid_PerturbationAssessment}>;
-                                    prov:startedAtTime '{time}'^^xsd:dateTime;
                                     prov:endedAtTime '{time}'^^xsd:dateTime.
                                                 }}""")
 
@@ -666,7 +773,7 @@ def uploadDataRestrictionSeq(sparqlupdate,host,dic , uuid_DeterminationOfScaleOf
             sparqlupdate.query()
             i = i + 1
 
-def uploadDR(starting_time, host_upload, host):
+def uploadDR(host_upload, host):
     determinationNameUUID = 'DeterminationOfDataRestriction'
     determinationName = 'DeterminationOfDataRestriction'
     label = "detDataRestriction"
@@ -674,7 +781,7 @@ def uploadDR(starting_time, host_upload, host):
     rprovName = 'restriction'
     ending_time = getTimestamp()
     uuid_determinationDataRestriction = determinationActivity(host_upload, determinationName, label,
-                                                              starting_time, ending_time)
+                                                              ending_time)
     uploadDataRestrictionSeq(host_upload, host, st.session_state['data_restrictions_dict'],
                              uuid_determinationDataRestriction, name,
                              rprovName)

@@ -10,10 +10,6 @@ def deleteTable(key):
         st.session_state.df_aggrid_beginning = pd.DataFrame(
             columns=st.session_state.dataframe_feature_names["featureName.value"].tolist())
 
-# def update_steps(key, method):
-#     st.session_state[f"steps_{key}_{method}"] = st.session_state[
-#         f"assignedPerturbationLevel_widget_{key}_{method}"]
-
 def update_perturbation_level(key, method):
     st.session_state[f"assignedPerturbationLevel_{key}_{method}"] = st.session_state[
         f"assignedPerturbationLevel_widget_{key}_{method}"]
@@ -72,23 +68,14 @@ def getPerturbationRecommendations(host):
 
 
 def getPerturbationOptions(host):
-    # query = (f"""    SELECT ?featureID ?featureName ?PerturbationOptionID ?DUA ?values ?label{{
-    # ?featureID rdf:type rprov:Feature .
-    # ?featureID rdfs:label ?featureName.
-    # ?PerturbationOptionID rdf:type owl:NamedIndividual.
-	# ?PerturbationOptionID rprov:perturbedFeature ?featureID.
-    # ?PerturbationOptionID rprov:generationAlgorithm ?DUA.
-    # ?PerturbationOptionID rprov:values ?values.
-    # ?PerturbationOptionID rdfs:label ?label.
-    # }}
-    # """)
-    query = (f"""    SELECT ?featureID ?featureName ?PerturbationOptionID ?generationAlgo ?values ?label ?DataRestrictionEntities ?MA {{
+    query = (f"""    SELECT ?featureID ?featureName ?PerturbationOptionID ?generationAlgo ?settings ?level ?label ?DataRestrictionEntities ?MA {{
 ?featureID rdf:type rprov:Feature .
 ?featureID rdfs:label ?featureName .
 ?PerturbationOptionID rdf:type owl:NamedIndividual .
 ?PerturbationOptionID rprov:perturbedFeature ?featureID .
 ?PerturbationOptionID rprov:generationAlgorithm ?generationAlgo .
-?PerturbationOptionID rprov:values ?values .
+?PerturbationOptionID rprov:assignedPerturbationSettings ?settings .
+?PerturbationOptionID rprov:assignedPerturbationLevel ?level .
 ?PerturbationOptionID rdfs:label ?label .
 ?PerturbationOptionID rprov:wasGeneratedByMA ?MA
 OPTIONAL {{
@@ -104,14 +91,14 @@ OPTIONAL {{
 
 
     try:
-        results_feature_PerturbationOption = results_feature_PerturbationOption[["featureID.value","featureName.value","PerturbationOptionID.value","generationAlgo.value", "values.value", "label.value", "DataRestrictionEntities.value", "MA.value"]]
-        results_feature_PerturbationOption.columns = ['FeatureID','FeatureName', 'PerturbationOptionID', 'PerturbationOption', "Settings","label" ,"DataRestrictionEntities", "ModelingActivity"]
+        results_feature_PerturbationOption = results_feature_PerturbationOption[["featureID.value","featureName.value","PerturbationOptionID.value","generationAlgo.value", "settings.value", "level.value", "label.value", "DataRestrictionEntities.value", "MA.value"]]
+        results_feature_PerturbationOption.columns = ['FeatureID','FeatureName', 'PerturbationOptionID', 'PerturbationOption', "Settings","PerturbationLevel","label" ,"DataRestrictionEntities", "ModelingActivity"]
     except:
         results_feature_PerturbationOption = results_feature_PerturbationOption[
             ["featureID.value", "featureName.value", "PerturbationOptionID.value", "generationAlgo.value",
-             "values.value", "label.value", "MA.value"]]
+             "settings.value", "level.value", "label.value", "MA.value"]]
         results_feature_PerturbationOption.columns = ['FeatureID', 'FeatureName', 'PerturbationOptionID',
-                                                      'PerturbationOption', "Settings", "label",
+                                                      'PerturbationOption', "Settings", "PerturbationLevel", "label",
                                                       "ModelingActivity"]
 
 
@@ -122,7 +109,6 @@ OPTIONAL {{
 
 # changed DeterminationOfDataRestriction to DataRestriction
 def getRestriction(host):
-    dictionary_DataRestriction = dict()
     query = (f"""SELECT ?sub ?seq?item ?label ?featureName ?seq ?containerMembershipProperty WHERE {{
     ?sub rdf:type rprov:DeterminationOfDataRestriction.
     ?seq rprov:wasGeneratedByDUA ?sub.

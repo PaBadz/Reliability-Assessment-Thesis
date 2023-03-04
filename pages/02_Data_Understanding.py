@@ -16,7 +16,7 @@ from functions.functions_Reliability import defaultValuesCardinalRestriction, de
 from functions.functions_Reliability import getDefault
 from functions.fuseki_connection import login, getTimestamp, determinationActivity, uploadDUE, \
     deleteWasGeneratedByDUA, getUniqueValuesSeq, uploadDR, getSensorPrecision, uploadUniqueValues, \
-    getDataRestrictionSeq, getAttributesDataUnderstanding, get_feature_names, get_dataset
+    getDataRestrictionSeq, getAttributesDataUnderstanding, get_feature_names, get_dataset, uploadDUE_scale
 
 login()
 host, host_upload = get_dataset()
@@ -83,7 +83,6 @@ if optionsDataUnderstanding == "Scale":
                 - **Ordinal**: ordered values, which can be arranged in the next step
                 - **Nominal**: all values are saved with no further ordering"""
             )
-            starting_time = getTimestamp()
 
             with st.form("Change level of measurement for features"):
                 options = ['Cardinal', 'Ordinal', 'Nominal']
@@ -96,6 +95,8 @@ if optionsDataUnderstanding == "Scale":
                     st.session_state.level_of_measurement_dic[row] = selectbox(f"**{row}**", options=options,
                                                                                key=f'level_of_measurement_{row}_widget')
 
+                st.session_state.level_of_measurement_dic
+
                 # submit selected scale of measurements
                 if st.form_submit_button("Submit", type="primary"):
 
@@ -104,8 +105,8 @@ if optionsDataUnderstanding == "Scale":
                         st.stop()
                     ending_time = getTimestamp()
                     uuid_determinationScale = determinationActivity(host_upload, determinationName, label,
-                                                                    starting_time, ending_time)
-                    uploadDUE(host_upload, host, st.session_state["level_of_measurement_dic"], uuid_determinationScale,
+                                                                    ending_time)
+                    uploadDUE_scale(host_upload, host, st.session_state["level_of_measurement_dic"], uuid_determinationScale,
                               name,
                               rprovName)
                     st.experimental_rerun()
@@ -137,18 +138,20 @@ if optionsDataUnderstanding == "Scale":
         )
 
         try:
+
             getUniqueValuesSeq(host)
+
 
 
 
         except Exception as e:
             if "first_unique_values_dict" not in st.session_state:
                 st.error("No unique values available, please upload dataset again.")
-            st.stop()
+                st.stop()
+
 
 
             for feature, scale in st.session_state["level_of_measurement_dic"].items():
-                starting_time = getTimestamp()
                 # data_restrictions_dic = dict()
                 data = list()
                 if scale == "Cardinal":
@@ -169,8 +172,6 @@ if optionsDataUnderstanding == "Scale":
                         # falls es eine session_state gibt, übergib die session state an die liste
                         if f'order_of_ordinal_{feature}' not in st.session_state:
                             st.session_state[f'order_of_ordinal_{feature}'] = list()
-                            # st.session_state[f'data_restrictions_{feature}_ordinal'] = \
-                            # st.session_state['unique_values_dict'][feature]
                             for unique_values in st.session_state.first_unique_values_dict[feature]:
                                 dictionary_values = {'name': unique_values}
                                 data.append(str(unique_values))
@@ -183,7 +184,6 @@ if optionsDataUnderstanding == "Scale":
 
                         st.session_state['first_unique_values_dict'][feature] = st.session_state[
                             f'order_of_ordinal_{feature}']
-                        # st.session_state[f'data_restrictions_{feature}_ordinal'] = st.session_state[f'order_of_ordinal_{feature}']
             st.error("Please define order of ordinal features and upload!")
             if st.button("Upload values", help="All values must be uploaded for further processing.", type="primary"):
                 determinationNameUUID = 'DeterminationOfUniqueValuesOfFeature_'
@@ -194,8 +194,7 @@ if optionsDataUnderstanding == "Scale":
                 rprovName = 'uniqueValues'
                 try:
                     ending_time = getTimestamp()
-                    uuid_determinationUniqueValues = determinationActivity(host_upload, determinationName, label,
-                                                                           starting_time, ending_time)
+                    uuid_determinationUniqueValues = determinationActivity(host_upload, determinationName, label, ending_time)
                     uploadUniqueValues(host_upload, host, st.session_state["first_unique_values_dict"],
                                        st.session_state["level_of_measurement_dic"], uuid_determinationUniqueValues,
                                        name,
@@ -234,7 +233,6 @@ if optionsDataUnderstanding == "Volatility":
         """)
 
         with st.expander("Click here to changes volatility of features"):
-            starting_time = getTimestamp()
             options = ['High Volatility', 'Medium Volatility', 'Low Volatility']
             with st.form("Change level of volatility for features"):
 
@@ -248,7 +246,7 @@ if optionsDataUnderstanding == "Volatility":
                         st.stop()
                     ending_time = getTimestamp()
                     uuid_determinationVolatility = determinationActivity(host_upload, determinationName, label,
-                                                                         starting_time, ending_time)
+                                                                          ending_time)
                     uploadDUE(host_upload, host, st.session_state["volatility_of_features_dic"],
                               uuid_determinationVolatility, name,
                               rprovName)
@@ -383,8 +381,8 @@ if optionsDataUnderstanding == "Data Restrictions":
             with st.expander("Defined Data Restriction"):
                 st.write(st.session_state['data_restrictions_dict'])
             if st.button("Upload Data Restrictions", type="primary", help="Upload the defined Data Restrictions."):
-                starting_time = getTimestamp()
-                uploadDR(starting_time, host_upload, host)
+
+                uploadDR(host_upload, host)
 
                 dr_success = st.success("Data Restriction uploaded")
                 dr_success.empty()
@@ -438,8 +436,6 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
     rprovName = 'SensorPrecisionLevel'
     ending_time = getTimestamp()
 
-    starting_time = getTimestamp()
-
     if st.session_state["loaded_feature_sensor_precision_dict"] == {}:
         st.markdown("""
         **Here you can set the Sensor Precision for each feature**
@@ -480,7 +476,7 @@ if optionsDataUnderstanding == "Feature Sensor Precision":
             if st.button("Upload Feature Sensor Precision", type="primary"):
                 uuid_determinationSensorPrecision = determinationActivity(host_upload, determinationName,
                                                                           label,
-                                                                          starting_time, ending_time)
+                                                                          ending_time)
                 uploadDUE(host_upload, host, st.session_state["feature_sensor_precision_dict"],
                           uuid_determinationSensorPrecision, name,
                           rprovName)

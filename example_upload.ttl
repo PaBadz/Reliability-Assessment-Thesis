@@ -40,6 +40,11 @@ rprov:assignedPerturbationLevel rdf:type owl:ObjectProperty ;
                 rdfs:domain rprov:PerturbationOption ;
                 rdfs:range rprov:PerturbationLevel .
 
+rprov:assignedPerturbationSetting
+        rdf:type     owl:ObjectProperty ;
+        rdfs:domain  rprov:PerturbationOption ;
+		rdfs:range   rprov:string .
+
 
 #################################################################
 #    Data properties
