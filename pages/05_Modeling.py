@@ -10,12 +10,12 @@ from streamlit_extras.colored_header import colored_header
 from streamlit_extras.switch_page_button import switch_page
 from streamlit_option_menu import option_menu
 
-from functions.functions_Reliability import getDefault, changeAlgorithm, getRestriction, \
+from functions.functions_Modeling import getDefault, changeAlgorithm, getRestriction, \
     defaultValuesCardinalRestriction, defaultValuesOrdinalRestriction, defaultValuesNominalRestriction, update_steps, \
     update_perturbation_level, update_additional_value, upper_lower_bound, update_value_perturbate
 from functions.fuseki_connection import login, getAttributes, getDataRestrictionSeq, getUniqueValuesSeq, \
     get_connection_fuseki, prefix, getApproach, uploadApproach, getTimestamp, determinationActivity, get_dataset
-from functions.perturbation_algorithms_ohne_values import percentage_perturbation_settings, sensorPrecision_settings, \
+from functions.perturbation_algorithms import percentage_perturbation_settings, sensorPrecision_settings, \
     fixedAmountSteps_settings, perturbRange_settings, perturbRange, perturbBin_settings, perturbInOrder_settings, \
     perturbAllValues_settings, perturbAllValues
 

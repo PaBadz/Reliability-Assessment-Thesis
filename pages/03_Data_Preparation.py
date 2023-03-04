@@ -5,7 +5,7 @@ from streamlit_extras.switch_page_button import switch_page
 from streamlit_option_menu import option_menu
 import streamlit_nested_layout
 
-from functions.functions_Reliability import getDefault, getRestriction
+from functions.functions_Modeling import getDefault, getRestriction
 from functions.fuseki_connection import login, getAttributes, getTimestamp, uploadBinValues, determinationActivity, \
     deleteWasGeneratedByDPA, uploadMissingValues, getAttributesDataPreparation, getUniqueValuesSeq, get_feature_names, \
     getDataRestrictionSeq, get_dataset

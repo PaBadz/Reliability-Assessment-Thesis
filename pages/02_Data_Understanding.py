@@ -11,9 +11,9 @@ from streamlit_sortables import sort_items
 from functions.functions_DataUnderstanding import update_feature_sensor_precision, defaultValuesCardinal, \
     update_data_restrictions_cardinal, defaultValuesOrdinal, update_data_restrictions_ordinal, defaultValuesNominal, \
     update_data_restrictions_nominal
-from functions.functions_Reliability import defaultValuesCardinalRestriction, defaultValuesOrdinalRestriction, \
+from functions.functions_Modeling import defaultValuesCardinalRestriction, defaultValuesOrdinalRestriction, \
     defaultValuesNominalRestriction, getRestriction
-from functions.functions_Reliability import getDefault
+from functions.functions_Modeling import getDefault
 from functions.fuseki_connection import login, getTimestamp, determinationActivity, uploadDUE, \
     deleteWasGeneratedByDUA, getUniqueValuesSeq, uploadDR, getSensorPrecision, uploadUniqueValues, \
     getDataRestrictionSeq, getAttributesDataUnderstanding, get_feature_names, get_dataset, uploadDUE_scale

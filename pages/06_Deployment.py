@@ -15,15 +15,15 @@ from streamlit_option_menu import option_menu
 from streamlit_sortables import sort_items
 
 from functions.functions import switch_page
-from functions.functions_Reliability import getDefault, getPerturbationOptions, getPerturbationRecommendations, \
+from functions.functions_Modeling import getDefault, getPerturbationOptions, getPerturbationRecommendations, \
     changePerturbationOption, getRestriction, defaultValuesCardinalRestriction, defaultValuesOrdinalRestriction, \
     defaultValuesNominalRestriction, deleteTable
-from functions.functions_deployment import get_perturbation_level, color_map
+from functions.functions_Deployment import get_perturbation_level, color_map
 from functions.fuseki_connection import getAttributes, getDataRestrictionSeqDeployment, \
     getFeatureVolatilityDeployment, getMissingValuesDeployment, getTimestamp, determinationActivity, \
     uploadPerturbationAssessment, uploadClassificationCase, getAttributesDeployment, getBinValuesSeq, getBinsDeployment, \
     getUniqueValuesSeq, login_analyst, get_dataset
-from functions.perturbation_algorithms_ohne_values import percentage_perturbation, sensorPrecision, fixedAmountSteps, \
+from functions.perturbation_algorithms import percentage_perturbation, sensorPrecision, fixedAmountSteps, \
     perturbRange, perturbInOrder, perturbAllValues
 
 # Set render max elements higher so that all perturbed values can be seen
