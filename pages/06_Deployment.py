@@ -14,7 +14,7 @@ from streamlit_extras.colored_header import colored_header
 from streamlit_option_menu import option_menu
 from streamlit_sortables import sort_items
 
-from functions.functions import switch_page
+from streamlit_extras.switch_page_button import switch_page
 from functions.functions_Modeling import getDefault, getPerturbationOptions, getPerturbationRecommendations, \
     changePerturbationOption, getRestriction, defaultValuesCardinalRestriction, defaultValuesOrdinalRestriction, \
     defaultValuesNominalRestriction, deleteTable
