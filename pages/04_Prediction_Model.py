@@ -10,7 +10,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from streamlit_extras.switch_page_button import switch_page
 
-from functions.functions_PredictiveModel import add_parameter_ui, get_classifier
+from functions.functions_Prediction_Model import add_parameter_ui, get_classifier
 from functions.fuseki_connection import login_analyst, get_dataset, getUniqueValuesSeq
 
 login_analyst()

@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-from functions_PredictiveModel.fuseki_connection import getUniqueValuesSeq, get_connection_fuseki, prefix, \
+from functions_Prediction_Model.fuseki_connection import getUniqueValuesSeq, get_connection_fuseki, prefix, \
     getDataRestrictionSeqDeployment
 
 
